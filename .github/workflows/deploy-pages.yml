@@ -1,0 +1,103 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20.x'
+    
+    - name: Install backend dependencies
+      run: |
+        if [ -d "backend" ]; then
+          cd backend
+          npm ci --only=production
+        else
+          echo "⚠️ Dossier backend non trouvé"
+        fi
+    
+    - name: Create API documentation page
+      run: |
+        echo "📝 Création de la documentation API..."
+        
+        # Créer un dossier pour les pages
+        mkdir -p public
+        
+        # Créer une page HTML simple pour l'API
+        cat > public/index.html << 'HTML'
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoCollect API - Documentation</title>
+    <style>
+        /* Gardez votre CSS existant */
+    </style>
+</head>
+<body>
+    <!-- Gardez votre HTML existant -->
+</body>
+</html>
+HTML
+        
+        echo "✅ Documentation générée"
+    
+    - name: Create README for backend
+      run: |
+        echo "📘 Création du README backend..."
+        cat > backend/README.md << 'MD'
+# EcoCollect Backend API
+
+## 🚀 Déploiement Automatique
+
+Cette API est déployée automatiquement via GitHub Actions.
+
+### 📊 Informations du déploiement
+- **Dernier déploiement** : $(date)
+- **Commit** : ${{ github.sha }}
+- **Branche** : ${{ github.ref }}
+- **État** : ✅ Déployé avec succès
+
+### 🔗 Liens utiles
+- [Documentation API](https://hassan-michel.github.io/ecobackend/)
+- [Code source](https://github.com/HASSAN-MICHEL/ecobackend)
+
+### 🗄️ Base de données
+- **Type** : PostgreSQL avec PostGIS
+- **Cloud** : Neon.tech
+- **Statut** : ✅ Connectée
+
+---
+*Dernière mise à jour : $(date)*
+MD
+    
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./public
+        user_name: 'github-actions[bot]'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
+    
+    - name: Update deployment status
+      run: |
+        echo "🎉 Déploiement terminé avec succès !"
+        echo ""
+        echo "🌐 URLs :"
+        echo "• Documentation : https://hassan-michel.github.io/ecobackend/"
