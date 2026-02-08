@@ -1,0 +1,18 @@
+# Configuration serveur
+PORT=3000
+NODE_ENV=development
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=ecocollect_db
+DB_USER=postgres
+DB_PASSWORD=HASSAN237
+DB_SSL=false  # Désactive explicitement SSL
+
+JWT_SECRET=ytr-è-çàçè&éhfgvbnsdrecocollectù!
+JWT_EXPIRE=7d
+
+# Application
+APP_URL=http://localhost:3000
+FRONTEND_URL=http://127.0.0.1:5500
+

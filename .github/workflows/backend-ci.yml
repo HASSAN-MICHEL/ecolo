@@ -1,0 +1,167 @@
+name: Backend CI/CD Pipeline
+
+on:
+  push:
+    branches: [ backend ]
+  pull_request:
+    branches: [ backend, test ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    
+    env:
+      NODE_ENV: test
+      JWT_SECRET: test_jwt_secret_for_ci_123
+      PORT: 3000
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: './backend/package-lock.json'
+    
+    - name: Install backend dependencies
+      run: npm ci
+    
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Run tests
+      run: npm test
+    
+    - name: Check security vulnerabilities
+      run: npm audit --production --audit-level=moderate || true
+
+  deploy-test-database:
+    needs: test-backend
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/backend' && success()
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20.x'
+    
+    - name: Deploy schema to Neon.tech
+      env:
+        NEON_DB_URL: ${{ secrets.NEON_DB_URL }}
+      run: |
+        cd backend
+        npm install pg
+        node -e "
+          const { execSync } = require('child_process');
+          const fs = require('fs');
+          const schema = fs.readFileSync('./database/schema.sql', 'utf8');
+          
+          console.log('🔄 Déploiement du schéma sur Neon.tech...');
+          try {
+            execSync(\`psql '\${process.env.NEON_DB_URL}' -c \\\"\${schema}\\\" \`, { stdio: 'inherit' });
+            console.log('✅ Schéma déployé avec succès');
+          } catch (error) {
+            console.error('❌ Erreur lors du déploiement:', error.message);
+            process.exit(1);
+          }
+        "
+
+  auto-merge-to-test:
+    needs: [test-backend, deploy-test-database]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/backend' && success()
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Configure Git
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+    
+    - name: Merge backend to test
+      run: |
+        git fetch origin backend test
+        git checkout test
+        git merge --no-ff origin/backend -m "Auto-merge: Backend → Test [${{ github.sha }}]"
+        git push origin test
+
+  deploy-test-environment:
+    needs: auto-merge-to-test
+    runs-on: ubuntu-latest
+    environment: test
+    defaults:
+      run:
+        working-directory: ./backend
+    
+    env:
+      NODE_ENV: production
+      NEON_DB_URL: ${{ secrets.NEON_DB_URL }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      PORT: 3000
+      FRONTEND_URL: ${{ vars.TEST_FRONTEND_URL }}
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: test
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: './backend/package-lock.json'
+    
+    - name: Install production dependencies
+      run: npm ci --only=production
+    
+    - name: Deploy to Railway
+      uses: railway/action@v1.4.0
+      if: secrets.RAILWAY_TOKEN
+      with:
+        railway_token: ${{ secrets.RAILWAY_TOKEN }}
+        service: ecocollect-backend
+        environment: production
+    
+    - name: Deploy to Vercel
+      if: secrets.VERCEL_TOKEN
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      run: |
+        npm install -g vercel
+        vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+        vercel build --prod --token=$VERCEL_TOKEN
+        vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+    
+    - name: Health check deployment
+      run: |
+        echo "🩺 Vérification du déploiement..."
+        # Attendre 30 secondes que l'application démarre
+        sleep 30
+        
+        # Faire un health check
+        DEPLOY_URL="https://ecocollect-backend-production.up.railway.app"
+        if curl -s -f "$DEPLOY_URL/health" > /dev/null; then
+          echo "✅ Déploiement réussi et application en ligne"
+          echo "🌐 URL: $DEPLOY_URL"
+        else
+          echo "⚠️  L'application semble déployée mais ne répond pas au health check"
+        fi
