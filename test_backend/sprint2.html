@@ -1,0 +1,2100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoCollect - Test Sprint 2 (Collecteurs & Gestionnaires)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --collecteur-color: #2196F3;
+            --gestionnaire-color: #4CAF50;
+            --superviseur-color: #9C27B0;
+            --primary-dark: #1B5E20;
+            --danger-color: #f44336;
+            --warning-color: #ff9800;
+            --success-color: #4caf50;
+            --gray-color: #757575;
+            --border-color: #e0e0e0;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* En-tête */
+        header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            color: var(--primary-dark);
+        }
+
+        .api-config {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .api-config input {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            width: 300px;
+        }
+
+        /* Navigation des rôles */
+        .role-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .role-btn.collecteur {
+            background: var(--collecteur-color);
+        }
+        .role-btn.gestionnaire {
+            background: var(--gestionnaire-color);
+        }
+        .role-btn.superviseur {
+            background: var(--superviseur-color);
+        }
+        .role-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+        .role-btn.active {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Panels */
+        .panel {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--gray-color);
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-dark);
+            background: #e8f5e9;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Grilles */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Cartes */
+        .card {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary-dark);
+        }
+
+        /* Formulaires */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-dark);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        /* Boutons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2E7D32;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-collecteur {
+            background: var(--collecteur-color);
+            color: white;
+        }
+
+        .btn-gestionnaire {
+            background: var(--gestionnaire-color);
+            color: white;
+        }
+
+        .btn-superviseur {
+            background: var(--superviseur-color);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        /* Badges */
+        .badge {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        /* Listes */
+        .items-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .item {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .item:hover {
+            box-shadow: var(--shadow);
+            transform: translateX(5px);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .item-body {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .item-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Messages */
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        /* Statistiques */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .stat-label {
+            color: var(--gray-color);
+            font-size: 14px;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* Utilitaires */
+        .hidden {
+            display: none !important;
+        }
+
+        .mt-20 {
+            margin-top: 20px;
+        }
+
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .api-config {
+                width: 100%;
+            }
+
+            .api-config input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-recycle"></i>
+                    <h2>EcoCollect - Test Sprint 2</h2>
+                </div>
+                <div class="api-config">
+                    <input type="text" id="apiUrl" value="http://localhost:3000" placeholder="URL de l'API">
+                    <button class="btn btn-primary" id="saveApiUrl">
+                        <i class="fas fa-save"></i> Sauvegarder
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation des rôles -->
+        <div class="role-nav">
+            <button class="role-btn collecteur active" data-role="collecteur">
+                <i class="fas fa-user"></i> Collecteur
+            </button>
+            <button class="role-btn gestionnaire" data-role="gestionnaire">
+                <i class="fas fa-warehouse"></i> Gestionnaire
+            </button>
+            <button class="role-btn superviseur" data-role="superviseur">
+                <i class="fas fa-user-tie"></i> Superviseur
+            </button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- PANEL COLLECTEUR -->
+        <!-- ============================================ -->
+        <div id="panel-collecteur" class="panel active">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="collecteur-auth">Authentification</button>
+                <button class="tab-btn" data-tab="collecteur-missions">Missions</button>
+                <button class="tab-btn" data-tab="collecteur-gains">Gains</button>
+                <button class="tab-btn" data-tab="collecteur-profil">Profil</button>
+                <button class="tab-btn" data-tab="collecteur-dashboard">Tableau de bord</button>
+            </div>
+
+            <!-- Onglet Authentification Collecteur -->
+            <div id="collecteur-auth" class="tab-content active">
+                <div class="grid-2">
+                    <!-- Inscription -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-plus"></i> Inscription Collecteur</h3>
+                        </div>
+                        <form id="collecteur-inscription-form">
+                            <div class="form-group">
+                                <label>Email *</label>
+                                <input type="email" id="collecteur-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Téléphone *</label>
+                                <input type="tel" id="collecteur-telephone" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mot de passe *</label>
+                                <input type="password" id="collecteur-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nom complet *</label>
+                                <input type="text" id="collecteur-nom" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Type de collecteur *</label>
+                                <select id="collecteur-type" required>
+                                    <option value="">Sélectionnez...</option>
+                                    <option value="independant">Indépendant</option>
+                                    <option value="cooperative">Coopérative</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Numéro d'identité (pour indépendant)</label>
+                                <input type="text" id="collecteur-numero-identite">
+                            </div>
+                            <div class="form-group">
+                                <label>Zone d'intervention (nom) *</label>
+                                <input type="text" id="collecteur-zone-nom" placeholder="Ex: Zone Centre" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Quartiers habituels (séparés par des virgules)</label>
+                                <input type="text" id="collecteur-quartiers" placeholder="Centre-ville, République">
+                            </div>
+                            <div class="form-group">
+                                <label>Communes (séparées par des virgules)</label>
+                                <input type="text" id="collecteur-communes" placeholder="Paris, Dakar">
+                            </div>
+                            <div class="form-group">
+                                <label>Photo profil URL</label>
+                                <input type="url" id="collecteur-photo">
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="collecteur-cgu"> J'accepte les CGU
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-collecteur">
+                                <i class="fas fa-user-plus"></i> S'inscrire
+                            </button>
+                            <div id="collecteur-inscription-message" class="message"></div>
+                        </form>
+                    </div>
+
+                    <!-- Connexion -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-sign-in-alt"></i> Connexion Collecteur</h3>
+                        </div>
+                        <form id="collecteur-connexion-form">
+                            <div class="form-group">
+                                <label>Email ou Téléphone</label>
+                                <input type="text" id="collecteur-login-identifiant" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mot de passe</label>
+                                <input type="password" id="collecteur-login-password" required>
+                            </div>
+                            <button type="submit" class="btn btn-collecteur">
+                                <i class="fas fa-sign-in-alt"></i> Se connecter
+                            </button>
+                            <div id="collecteur-connexion-message" class="message"></div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- État de connexion -->
+                <div id="collecteur-connected-state" class="hidden">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> Connecté en tant que : <span id="collecteur-connected-name"></span>
+                        <button class="btn btn-sm btn-danger" id="collecteur-deconnexion">
+                            <i class="fas fa-sign-out-alt"></i> Déconnexion
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Missions Collecteur -->
+            <div id="collecteur-missions" class="tab-content">
+                <div class="grid-2">
+                    <!-- Missions disponibles -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-clock"></i> Missions disponibles</h3>
+                            <button class="btn btn-sm btn-primary" id="refresh-missions-dispo">
+                                <i class="fas fa-sync"></i>
+                            </button>
+                        </div>
+                        <div id="missions-disponibles" class="items-list">
+                            <p class="text-center">Cliquez sur rafraîchir pour voir les missions</p>
+                        </div>
+                    </div>
+
+                    <!-- Mes missions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-tasks"></i> Mes missions</h3>
+                            <select id="filter-mes-missions">
+                                <option value="tous">Tous</option>
+                                <option value="acceptee">Acceptée</option>
+                                <option value="en_cours">En cours</option>
+                                <option value="deposee">Déposée</option>
+                                <option value="validee">Validée</option>
+                            </select>
+                        </div>
+                        <div id="mes-missions" class="items-list">
+                            <p class="text-center">Aucune mission</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions sur mission -->
+                <div id="mission-actions" class="card hidden">
+                    <div class="card-header">
+                        <h3><i class="fas fa-truck"></i> Actions sur la mission</h3>
+                        <span id="mission-selected-id" class="badge badge-info"></span>
+                    </div>
+                    <div class="grid-3">
+                        <button class="btn btn-success" id="mission-accepter">
+                            <i class="fas fa-check"></i> Accepter
+                        </button>
+                        <button class="btn btn-primary" id="mission-demarrer">
+                            <i class="fas fa-play"></i> Démarrer
+                        </button>
+                        <button class="btn btn-warning" id="mission-terminer">
+                            <i class="fas fa-flag-checkered"></i> Terminer
+                        </button>
+                    </div>
+                    <div class="grid-2 mt-20">
+                        <div class="form-group">
+                            <label>Photo preuve URL</label>
+                            <input type="url" id="mission-photo-url">
+                        </div>
+                        <div class="form-group">
+                            <label>Code confirmation</label>
+                            <input type="text" id="mission-code">
+                        </div>
+                        <div class="form-group">
+                            <label>Notes collecte</label>
+                            <textarea id="mission-notes" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Conformité tri</label>
+                            <select id="mission-conformite">
+                                <option value="true">Conforme</option>
+                                <option value="false">Non conforme</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Point de dépôt</label>
+                            <select id="mission-point-depot">
+                                <option value="">Sélectionnez...</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="mission-choisir-depot">
+                            <i class="fas fa-map-marker-alt"></i> Choisir point dépôt
+                        </button>
+                    </div>
+                    <div id="mission-action-message" class="message"></div>
+                </div>
+            </div>
+
+            <!-- Onglet Gains Collecteur -->
+            <div id="collecteur-gains" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="gains-total">0</div>
+                        <div class="stat-label">Gains totaux (FCFA)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="gains-valides">0</div>
+                        <div class="stat-label">Gains validés</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="gains-en-attente">0</div>
+                        <div class="stat-label">En attente</div>
+                    </div>
+                </div>
+                <div id="liste-gains" class="items-list"></div>
+            </div>
+
+            <!-- Onglet Profil Collecteur -->
+            <div id="collecteur-profil" class="tab-content">
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-id-card"></i> Mon profil</h3>
+                        </div>
+                        <div id="profil-info">
+                            <p><strong>Nom:</strong> <span id="profil-nom"></span></p>
+                            <p><strong>Email:</strong> <span id="profil-email"></span></p>
+                            <p><strong>Téléphone:</strong> <span id="profil-telephone"></span></p>
+                            <p><strong>Type:</strong> <span id="profil-type"></span></p>
+                            <p><strong>Zone:</strong> <span id="profil-zone"></span></p>
+                            <p><strong>Statut:</strong> <span id="profil-statut"></span></p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-edit"></i> Modifier profil</h3>
+                        </div>
+                        <form id="modifier-profil-form">
+                            <div class="form-group">
+                                <label>Nom complet</label>
+                                <input type="text" id="modif-nom">
+                            </div>
+                            <div class="form-group">
+                                <label>Téléphone</label>
+                                <input type="tel" id="modif-telephone">
+                            </div>
+                            <div class="form-group">
+                                <label>Zone intervention</label>
+                                <input type="text" id="modif-zone">
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Mettre à jour
+                            </button>
+                            <div id="modif-profil-message" class="message"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Tableau de bord Collecteur -->
+            <div id="collecteur-dashboard" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="dashboard-total-missions">0</div>
+                        <div class="stat-label">Total missions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="dashboard-missions-validees">0</div>
+                        <div class="stat-label">Missions validées</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="dashboard-missions-en-cours">0</div>
+                        <div class="stat-label">En cours</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="dashboard-dechets">0</div>
+                        <div class="stat-label">Kg collectés</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>Mission en cours</h4>
+                    <div id="mission-en-cours"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- PANEL GESTIONNAIRE -->
+        <!-- ============================================ -->
+        <div id="panel-gestionnaire" class="panel">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="gestionnaire-auth">Authentification</button>
+                <button class="tab-btn" data-tab="gestionnaire-missions">Missions à valider</button>
+                <button class="tab-btn" data-tab="gestionnaire-credits">Attribution crédits</button>
+                <button class="tab-btn" data-tab="gestionnaire-dashboard">Tableau de bord</button>
+                <button class="tab-btn" data-tab="gestionnaire-securite">Sécurité</button>
+            </div>
+
+            <!-- Onglet Authentification Gestionnaire -->
+            <div id="gestionnaire-auth" class="tab-content active">
+                <div class="card" style="max-width: 500px; margin: 0 auto;">
+                    <div class="card-header">
+                        <h3><i class="fas fa-sign-in-alt"></i> Connexion Gestionnaire</h3>
+                    </div>
+                    <form id="gestionnaire-connexion-form">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="gestionnaire-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Mot de passe</label>
+                            <input type="password" id="gestionnaire-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-gestionnaire">
+                            <i class="fas fa-sign-in-alt"></i> Se connecter
+                        </button>
+                        <div id="gestionnaire-connexion-message" class="message"></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Onglet Missions à valider -->
+            <div id="gestionnaire-missions" class="tab-content">
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-clock"></i> Missions en attente</h3>
+                            <button class="btn btn-sm btn-primary" id="refresh-missions-attente">
+                                <i class="fas fa-sync"></i>
+                            </button>
+                        </div>
+                        <div id="missions-en-attente" class="items-list"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-weight"></i> Valider une mission</h3>
+                        </div>
+                        <form id="valider-mission-form">
+                            <div class="form-group">
+                                <label>ID Mission</label>
+                                <input type="text" id="valider-mission-id" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Poids déposé (kg) *</label>
+                                <input type="number" step="0.1" id="valider-poids" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Qualité</label>
+                                <select id="valider-qualite">
+                                    <option value="conforme">Conforme</option>
+                                    <option value="non_conforme">Non conforme</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <textarea id="valider-notes" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Valider la mission
+                            </button>
+                            <div id="validation-message" class="message"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Attribution crédits -->
+            <div id="gestionnaire-credits" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-coins"></i> Attribuer des crédits</h3>
+                    </div>
+                    <form id="attribuer-credits-form">
+                        <div class="form-group">
+                            <label>Collecteur</label>
+                            <select id="credits-collecteur" required>
+                                <option value="">Sélectionnez...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Mission</label>
+                            <select id="credits-mission" required>
+                                <option value="">Sélectionnez...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Montant (FCFA) *</label>
+                            <input type="number" id="credits-montant" required>
+                        </div>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-gift"></i> Attribuer les crédits
+                        </button>
+                        <div id="credits-message" class="message"></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Onglet Tableau de bord Gestionnaire -->
+            <div id="gestionnaire-dashboard" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="gest-total-receptions">0</div>
+                        <div class="stat-label">Total réceptions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="gest-poids-total">0</div>
+                        <div class="stat-label">Poids total (kg)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="gest-receptions-ajd">0</div>
+                        <div class="stat-label">Aujourd'hui</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>Activités récentes</h4>
+                    <div id="activites-recentes"></div>
+                </div>
+            </div>
+
+            <!-- Onglet Sécurité -->
+            <div id="gestionnaire-securite" class="tab-content">
+                <div class="card" style="max-width: 500px;">
+                    <div class="card-header">
+                        <h3><i class="fas fa-key"></i> Changer mot de passe</h3>
+                    </div>
+                    <form id="gestionnaire-changer-mdp">
+                        <div class="form-group">
+                            <label>Mot de passe actuel</label>
+                            <input type="password" id="gest-mdp-actuel" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nouveau mot de passe</label>
+                            <input type="password" id="gest-nouveau-mdp" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Confirmer</label>
+                            <input type="password" id="gest-confirm-mdp" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Changer le mot de passe
+                        </button>
+                        <div id="gest-mdp-message" class="message"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- PANEL SUPERVISEUR -->
+        <!-- ============================================ -->
+        <div id="panel-superviseur" class="panel">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="superviseur-auth">Authentification</button>
+                <button class="tab-btn" data-tab="superviseur-collecteurs">Gestion collecteurs</button>
+                <button class="tab-btn" data-tab="superviseur-gestionnaires">Gestion gestionnaires</button>
+                <button class="tab-btn" data-tab="superviseur-missions">Gestion missions</button>
+                <button class="tab-btn" data-tab="superviseur-stats">Statistiques</button>
+            </div>
+
+            <!-- Onglet Authentification Superviseur -->
+            <div id="superviseur-auth" class="tab-content active">
+                <div class="card" style="max-width: 500px; margin: 0 auto;">
+                    <div class="card-header">
+                        <h3><i class="fas fa-sign-in-alt"></i> Connexion Superviseur</h3>
+                    </div>
+                    <form id="superviseur-connexion-form">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="superviseur-email" value="superviseur@ecocollect.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Mot de passe</label>
+                            <input type="password" id="superviseur-password" value="password123">
+                        </div>
+                        <button type="submit" class="btn btn-superviseur">
+                            <i class="fas fa-sign-in-alt"></i> Se connecter
+                        </button>
+                        <div id="superviseur-connexion-message" class="message"></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Onglet Gestion collecteurs -->
+            <div id="superviseur-collecteurs" class="tab-content">
+                <div class="grid-2">
+                    <!-- Collecteurs en attente -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-hourglass-half"></i> Collecteurs en attente</h3>
+                            <button class="btn btn-sm btn-primary" id="refresh-collecteurs-attente">
+                                <i class="fas fa-sync"></i>
+                            </button>
+                        </div>
+                        <div id="collecteurs-attente" class="items-list"></div>
+                    </div>
+
+                    <!-- Validation -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-check-circle"></i> Valider un collecteur</h3>
+                        </div>
+                        <form id="valider-collecteur-form">
+                            <div class="form-group">
+                                <label>ID Collecteur</label>
+                                <input type="text" id="valider-collecteur-id" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Notes de validation</label>
+                                <textarea id="valider-notes" rows="3"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Valider le collecteur
+                            </button>
+                            <div id="validation-collecteur-message" class="message"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Gestion gestionnaires -->
+            <div id="superviseur-gestionnaires" class="tab-content">
+                <div class="grid-2">
+                    <!-- Liste gestionnaires -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-list"></i> Gestionnaires</h3>
+                            <button class="btn btn-sm btn-primary" id="refresh-gestionnaires">
+                                <i class="fas fa-sync"></i>
+                            </button>
+                        </div>
+                        <div id="liste-gestionnaires" class="items-list"></div>
+                    </div>
+
+                    <!-- Création gestionnaire -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-plus"></i> Créer un gestionnaire</h3>
+                        </div>
+                        <form id="creer-gestionnaire-form">
+                            <div class="form-group">
+                                <label>Email *</label>
+                                <input type="email" id="gest-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Téléphone *</label>
+                                <input type="tel" id="gest-telephone" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mot de passe *</label>
+                                <input type="password" id="gest-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nom complet *</label>
+                                <input type="text" id="gest-nom" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Point de collecte</label>
+                                <select id="gest-point">
+                                    <option value="">Sélectionnez...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Fonction</label>
+                                <input type="text" id="gest-fonction" value="Gestionnaire">
+                            </div>
+                            <button type="submit" class="btn btn-superviseur">
+                                <i class="fas fa-user-plus"></i> Créer le gestionnaire
+                            </button>
+                            <div id="creation-gestionnaire-message" class="message"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Gestion missions -->
+            <div id="superviseur-missions" class="tab-content">
+                <div class="grid-2">
+                    <!-- Missions disponibles -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-clock"></i> Missions disponibles</h3>
+                        </div>
+                        <div id="super-missions-dispo" class="items-list"></div>
+                    </div>
+
+                    <!-- Attribution -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-check"></i> Attribuer une mission</h3>
+                        </div>
+                        <form id="attribuer-mission-form">
+                            <div class="form-group">
+                                <label>Mission</label>
+                                <select id="attribuer-mission" required>
+                                    <option value="">Sélectionnez...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Collecteur</label>
+                                <select id="attribuer-collecteur" required>
+                                    <option value="">Sélectionnez...</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-link"></i> Attribuer la mission
+                            </button>
+                            <div id="attribution-mission-message" class="message"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Statistiques -->
+            <div id="superviseur-stats" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stats-total-collecteurs">0</div>
+                        <div class="stat-label">Collecteurs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stats-collecteurs-actifs">0</div>
+                        <div class="stat-label">Collecteurs actifs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stats-total-gestionnaires">0</div>
+                        <div class="stat-label">Gestionnaires</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stats-missions-validees">0</div>
+                        <div class="stat-label">Missions validées</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stats-dechets-collectes">0</div>
+                        <div class="stat-label">Kg collectés</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stats-gains-distribues">0</div>
+                        <div class="stat-label">Gains distribués (FCFA)</div>
+                    </div>
+                </div>
+                
+                <div class="card mt-20">
+                    <h4>Évolution des 7 derniers jours</h4>
+                    <div id="evolution-jours" class="items-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        let API_URL = localStorage.getItem('api_url') || 'http://localhost:3000';
+        let currentToken = null;
+        let currentUser = null;
+        let currentRole = 'collecteur';
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('apiUrl').value = API_URL;
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Navigation des rôles
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const role = btn.dataset.role;
+                    switchRole(role);
+                });
+            });
+
+            // Tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const panel = btn.closest('.panel');
+                    const tabId = btn.dataset.tab;
+                    switchTab(panel, tabId);
+                });
+            });
+
+            // Sauvegarde URL API
+            document.getElementById('saveApiUrl').addEventListener('click', () => {
+                API_URL = document.getElementById('apiUrl').value;
+                localStorage.setItem('api_url', API_URL);
+                showMessage(null, 'URL API sauvegardée', 'success');
+            });
+
+            // ========== COLLECTEUR ==========
+            document.getElementById('collecteur-inscription-form').addEventListener('submit', handleCollecteurInscription);
+            document.getElementById('collecteur-connexion-form').addEventListener('submit', handleCollecteurConnexion);
+            document.getElementById('collecteur-deconnexion').addEventListener('click', handleDeconnexion);
+            document.getElementById('refresh-missions-dispo').addEventListener('click', loadMissionsDisponibles);
+            document.getElementById('filter-mes-missions').addEventListener('change', loadMesMissions);
+            document.getElementById('mission-accepter').addEventListener('click', () => handleMissionAction('accepter'));
+            document.getElementById('mission-demarrer').addEventListener('click', () => handleMissionAction('demarrer'));
+            document.getElementById('mission-terminer').addEventListener('click', () => handleMissionAction('terminer'));
+            document.getElementById('mission-choisir-depot').addEventListener('click', handleChoisirDepot);
+            document.getElementById('modifier-profil-form').addEventListener('submit', handleModifierProfil);
+
+            // ========== GESTIONNAIRE ==========
+            document.getElementById('gestionnaire-connexion-form').addEventListener('submit', handleGestionnaireConnexion);
+            document.getElementById('refresh-missions-attente').addEventListener('click', loadMissionsEnAttente);
+            document.getElementById('valider-mission-form').addEventListener('submit', handleValiderMission);
+            document.getElementById('attribuer-credits-form').addEventListener('submit', handleAttribuerCredits);
+            document.getElementById('gestionnaire-changer-mdp').addEventListener('submit', handleChangerMotDePasse);
+
+            // ========== SUPERVISEUR ==========
+            document.getElementById('superviseur-connexion-form').addEventListener('submit', handleSuperviseurConnexion);
+            document.getElementById('refresh-collecteurs-attente').addEventListener('click', loadCollecteursEnAttente);
+            document.getElementById('valider-collecteur-form').addEventListener('submit', handleValiderCollecteur);
+            document.getElementById('refresh-gestionnaires').addEventListener('click', loadGestionnaires);
+            document.getElementById('creer-gestionnaire-form').addEventListener('submit', handleCreerGestionnaire);
+            document.getElementById('attribuer-mission-form').addEventListener('submit', handleAttribuerMission);
+        }
+
+        function switchRole(role) {
+            currentRole = role;
+            
+            // Mettre à jour les boutons
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.role === role) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Afficher le bon panel
+            document.querySelectorAll('.panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            document.getElementById(`panel-${role}`).classList.add('active');
+
+            // Charger les données si connecté
+            if (currentToken && role === 'collecteur') {
+                loadCollecteurData();
+            }
+        }
+
+        function switchTab(panel, tabId) {
+            const tabs = panel.querySelectorAll('.tab-btn');
+            const contents = panel.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+            
+            panel.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            panel.querySelector(`#${tabId}`).classList.add('active');
+        }
+
+        function showMessage(element, message, type = 'info') {
+            if (!element) {
+                alert(message);
+                return;
+            }
+            element.className = `message ${type}`;
+            element.textContent = message;
+            element.style.display = 'block';
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 3000);
+        }
+
+        // ========== COLLECTEUR ==========
+        async function handleCollecteurInscription(e) {
+            e.preventDefault();
+            
+            const data = {
+                email: document.getElementById('collecteur-email').value,
+                telephone: document.getElementById('collecteur-telephone').value,
+                motDePasse: document.getElementById('collecteur-password').value,
+                nomComplet: document.getElementById('collecteur-nom').value,
+                typeCollecteur: document.getElementById('collecteur-type').value,
+                numeroIdentite: document.getElementById('collecteur-numero-identite').value || undefined,
+                zoneInterventionNom: document.getElementById('collecteur-zone-nom').value,
+                quartiersHabituels: document.getElementById('collecteur-quartiers').value.split(',').map(q => q.trim()).filter(q => q),
+                communesIntervention: document.getElementById('collecteur-communes').value.split(',').map(c => c.trim()).filter(c => c),
+                photoProfilUrl: document.getElementById('collecteur-photo').value || undefined,
+                cguAcceptees: document.getElementById('collecteur-cgu').checked
+            };
+
+            const messageDiv = document.getElementById('collecteur-inscription-message');
+
+            try {
+                const response = await fetch(`${API_URL}/api/collecteurs/inscription`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage(messageDiv, result.message, 'success');
+                    document.getElementById('collecteur-inscription-form').reset();
+                } else {
+                    throw new Error(result.message || 'Erreur inscription');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        async function handleCollecteurConnexion(e) {
+            e.preventDefault();
+            
+            const data = {
+                identifiant: document.getElementById('collecteur-login-identifiant').value,
+                motDePasse: document.getElementById('collecteur-login-password').value
+            };
+
+            const messageDiv = document.getElementById('collecteur-connexion-message');
+
+            try {
+                const response = await fetch(`${API_URL}/api/collecteurs/connexion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentToken = result.token;
+                    currentUser = result.collecteur;
+                    
+                    document.getElementById('collecteur-connected-name').textContent = currentUser.nomComplet;
+                    document.getElementById('collecteur-connected-state').classList.remove('hidden');
+                    
+                    showMessage(messageDiv, 'Connexion réussie', 'success');
+                    loadCollecteurData();
+                } else {
+                    throw new Error(result.message || 'Erreur connexion');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        async function loadCollecteurData() {
+            if (!currentToken) return;
+            
+            loadMissionsDisponibles();
+            loadMesMissions();
+            loadGains();
+            loadProfil();
+            loadDashboard();
+        }
+
+        async function loadMissionsDisponibles() {
+            try {
+                const response = await fetch(`${API_URL}/api/collecteurs/missions/disponibles`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                const result = await response.json();
+                const container = document.getElementById('missions-disponibles');
+
+                if (result.success) {
+                    if (result.missions.length === 0) {
+                        container.innerHTML = '<p class="text-center">Aucune mission disponible</p>';
+                    } else {
+                        container.innerHTML = result.missions.map(m => `
+                            <div class="item" onclick="selectMission('${m.id}')">
+                                <div class="item-header">
+                                    <span class="item-title">Mission #${m.id.substring(0,8)}</span>
+                                    <span class="badge badge-info">${m.type_dechet}</span>
+                                </div>
+                                <div class="item-body">
+                                    <p><i class="fas fa-user"></i> ${m.producteur_nom}</p>
+                                    <p><i class="fas fa-map-marker"></i> ${m.adresse}</p>
+                                    <p><i class="fas fa-weight"></i> ${m.quantite} ${m.unite}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function loadMesMissions() {
+            const filter = document.getElementById('filter-mes-missions').value;
+            
+            try {
+                const url = filter !== 'tous' 
+                    ? `${API_URL}/api/collecteurs/missions?statut=${filter}`
+                    : `${API_URL}/api/collecteurs/missions`;
+                    
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                const result = await response.json();
+                const container = document.getElementById('mes-missions');
+
+                if (result.success) {
+                    if (result.missions.length === 0) {
+                        container.innerHTML = '<p class="text-center">Aucune mission</p>';
+                    } else {
+                        container.innerHTML = result.missions.map(m => `
+                            <div class="item" onclick="selectMission('${m.id}')">
+                                <div class="item-header">
+                                    <span class="item-title">Mission #${m.id.substring(0,8)}</span>
+                                    <span class="badge ${getStatusBadgeClass(m.statut)}">${m.statut}</span>
+                                </div>
+                                <div class="item-body">
+                                    <p><i class="fas fa-user"></i> ${m.producteur_nom}</p>
+                                    <p><i class="fas fa-weight"></i> ${m.quantite} ${m.unite}</p>
+                                    ${m.poids_depose ? `<p><i class="fas fa-weight"></i> Poids déposé: ${m.poids_depose} kg</p>` : ''}
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        function getStatusBadgeClass(status) {
+            const classes = {
+                'disponible': 'badge-info',
+                'acceptee': 'badge-primary',
+                'en_cours': 'badge-warning',
+                'deposee': 'badge-secondary',
+                'validee': 'badge-success'
+            };
+            return classes[status] || 'badge-secondary';
+        }
+
+        window.selectMission = function(missionId) {
+            document.getElementById('mission-selected-id').textContent = missionId;
+            document.getElementById('mission-actions').classList.remove('hidden');
+            document.getElementById('valider-mission-id').value = missionId;
+        }
+
+        async function handleMissionAction(action) {
+            const missionId = document.getElementById('mission-selected-id').textContent;
+            const messageDiv = document.getElementById('mission-action-message');
+            
+            let url = '';
+            let method = 'POST';
+            let body = {};
+
+            switch(action) {
+                case 'accepter':
+                    url = `${API_URL}/api/collecteurs/missions/${missionId}/accepter`;
+                    break;
+                case 'demarrer':
+                    url = `${API_URL}/api/collecteurs/missions/${missionId}/demarrer`;
+                    break;
+                case 'terminer':
+                    url = `${API_URL}/api/collecteurs/missions/${missionId}/terminer`;
+                    body = {
+                        photoPreuveUrl: document.getElementById('mission-photo-url').value,
+                        codeConfirmation: document.getElementById('mission-code').value,
+                        notes: document.getElementById('mission-notes').value,
+                        conformiteTri: document.getElementById('mission-conformite').value === 'true'
+                    };
+                    break;
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: Object.keys(body).length ? JSON.stringify(body) : undefined
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(messageDiv, 'Action effectuée avec succès', 'success');
+                    loadMissionsDisponibles();
+                    loadMesMissions();
+                } else {
+                    throw new Error(result.message || 'Erreur');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        async function handleChoisirDepot() {
+            const missionId = document.getElementById('mission-selected-id').textContent;
+            const pointDepotId = document.getElementById('mission-point-depot').value;
+            const messageDiv = document.getElementById('mission-action-message');
+
+            if (!pointDepotId) {
+                showMessage(messageDiv, 'Veuillez sélectionner un point de dépôt', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/collecteurs/missions/${missionId}/depot`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ pointDepotId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(messageDiv, 'Point de dépôt sélectionné', 'success');
+                    loadMesMissions();
+                } else {
+                    throw new Error(result.message || 'Erreur');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        async function loadGains() {
+            try {
+                const response = await fetch(`${API_URL}/api/collecteurs/gains`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('gains-total').textContent = result.resume.total;
+                    document.getElementById('gains-valides').textContent = result.resume.valides;
+                    document.getElementById('gains-en-attente').textContent = result.resume.enAttente;
+
+                    const container = document.getElementById('liste-gains');
+                    if (result.gains.length === 0) {
+                        container.innerHTML = '<p class="text-center">Aucun gain</p>';
+                    } else {
+                        container.innerHTML = result.gains.map(g => `
+                            <div class="item">
+                                <div class="item-header">
+                                    <span class="item-title">${g.montant} FCFA</span>
+                                    <span class="badge ${g.statut === 'valide' ? 'badge-success' : 'badge-warning'}">${g.statut}</span>
+                                </div>
+                                <div class="item-body">
+                                    <p>Type: ${g.type_gain}</p>
+                                    <p>Date: ${new Date(g.cree_le).toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function loadProfil() {
+            // Simuler le chargement du profil
+            if (currentUser) {
+                document.getElementById('profil-nom').textContent = currentUser.nomComplet;
+                document.getElementById('profil-email').textContent = currentUser.email;
+                document.getElementById('profil-telephone').textContent = currentUser.telephone;
+                document.getElementById('profil-type').textContent = currentUser.typeCollecteur;
+                document.getElementById('profil-zone').textContent = currentUser.zone_intervention_nom || 'Non spécifiée';
+                document.getElementById('profil-statut').textContent = currentUser.statut;
+                
+                document.getElementById('modif-nom').value = currentUser.nomComplet;
+                document.getElementById('modif-telephone').value = currentUser.telephone;
+                document.getElementById('modif-zone').value = currentUser.zone_intervention_nom || '';
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API_URL}/api/collecteurs/tableau-bord`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const d = result.dashboard;
+                    document.getElementById('dashboard-total-missions').textContent = d.total_missions || 0;
+                    document.getElementById('dashboard-missions-validees').textContent = d.missions_validees || 0;
+                    document.getElementById('dashboard-missions-en-cours').textContent = d.missions_en_cours || 0;
+                    document.getElementById('dashboard-dechets').textContent = d.total_dechets_collectes || 0;
+
+                    if (result.missionEnCours) {
+                        const m = result.missionEnCours;
+                        document.getElementById('mission-en-cours').innerHTML = `
+                            <p><strong>Mission #${m.id.substring(0,8)}</strong></p>
+                            <p>Producteur: ${m.producteur_nom}</p>
+                            <p>Déchets: ${m.quantite} ${m.unite} de ${m.type_dechet}</p>
+                            <p>Adresse: ${m.producteur_adresse}</p>
+                        `;
+                    } else {
+                        document.getElementById('mission-en-cours').innerHTML = '<p>Aucune mission en cours</p>';
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function handleModifierProfil(e) {
+            e.preventDefault();
+            
+            const data = {
+                nomComplet: document.getElementById('modif-nom').value,
+                telephone: document.getElementById('modif-telephone').value,
+                zoneInterventionNom: document.getElementById('modif-zone').value
+            };
+
+            const messageDiv = document.getElementById('modif-profil-message');
+
+            try {
+                const response = await fetch(`${API_URL}/api/collecteurs/profil`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(messageDiv, 'Profil mis à jour', 'success');
+                    loadProfil();
+                } else {
+                    throw new Error(result.message || 'Erreur');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        // ========== GESTIONNAIRE ==========
+        async function handleGestionnaireConnexion(e) {
+            e.preventDefault();
+            
+            const data = {
+                identifiant: document.getElementById('gestionnaire-email').value,
+                motDePasse: document.getElementById('gestionnaire-password').value
+            };
+
+            const messageDiv = document.getElementById('gestionnaire-connexion-message');
+
+            try {
+                const response = await fetch(`${API_URL}/api/gestionnaires/connexion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentToken = result.token;
+                    currentUser = result.gestionnaire;
+                    showMessage(messageDiv, 'Connexion réussie', 'success');
+                    loadMissionsEnAttente();
+                } else {
+                    throw new Error(result.message || 'Erreur connexion');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        async function loadMissionsEnAttente() {
+            try {
+                const response = await fetch(`${API_URL}/api/gestionnaires/missions/en-attente`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                const result = await response.json();
+                const container = document.getElementById('missions-en-attente');
+
+                if (result.success) {
+                    if (result.missions.length === 0) {
+                        container.innerHTML = '<p class="text-center">Aucune mission en attente</p>';
+                    } else {
+                        container.innerHTML = result.missions.map(m => `
+                            <div class="item" onclick="selectMission('${m.id}')">
+                                <div class="item-header">
+                                    <span class="item-title">Mission #${m.id.substring(0,8)}</span>
+                                    <span class="badge badge-warning">${m.statut}</span>
+                                </div>
+                                <div class="item-body">
+                                    <p><i class="fas fa-user"></i> Collecteur: ${m.collecteur_nom}</p>
+                                    <p><i class="fas fa-trash"></i> ${m.type_dechet}</p>
+                                    <p><i class="fas fa-calendar"></i> ${new Date(m.date_depot_point).toLocaleString()}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function handleValiderMission(e) {
+            e.preventDefault();
+            
+            const missionId = document.getElementById('valider-mission-id').value;
+            const data = {
+                poidsDepose: document.getElementById('valider-poids').value,
+                qualiteDechets: document.getElementById('valider-qualite').value,
+                notes: document.getElementById('valider-notes').value
+            };
+
+            const messageDiv = document.getElementById('validation-message');
+
+            try {
+                const response = await fetch(`${API_URL}/api/gestionnaires/missions/${missionId}/valider`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(messageDiv, 'Mission validée avec succès', 'success');
+                    document.getElementById('valider-mission-form').reset();
+                    loadMissionsEnAttente();
+                } else {
+                    throw new Error(result.message || 'Erreur');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        async function handleAttribuerCredits(e) {
+            e.preventDefault();
+            
+            const collecteurId = document.getElementById('credits-collecteur').value;
+            const missionId = document.getElementById('credits-mission').value;
+            const montant = document.getElementById('credits-montant').value;
+
+            const messageDiv = document.getElementById('credits-message');
+
+            try {
+                const response = await fetch(`${API_URL}/api/gestionnaires/collecteurs/${collecteurId}/missions/${missionId}/credits`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ montant })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(messageDiv, 'Crédits attribués avec succès', 'success');
+                    document.getElementById('attribuer-credits-form').reset();
+                } else {
+                    throw new Error(result.message || 'Erreur');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        async function handleChangerMotDePasse(e) {
+            e.preventDefault();
+            
+            const mdpActuel = document.getElementById('gest-mdp-actuel').value;
+            const nouveauMdp = document.getElementById('gest-nouveau-mdp').value;
+            const confirmMdp = document.getElementById('gest-confirm-mdp').value;
+
+            const messageDiv = document.getElementById('gest-mdp-message');
+
+            if (nouveauMdp !== confirmMdp) {
+                showMessage(messageDiv, 'Les mots de passe ne correspondent pas', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/gestionnaires/changer-mot-de-passe`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({
+                        motDePasseActuel: mdpActuel,
+                        nouveauMotDePasse: nouveauMdp
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(messageDiv, 'Mot de passe modifié avec succès', 'success');
+                    document.getElementById('gestionnaire-changer-mdp').reset();
+                } else {
+                    throw new Error(result.message || 'Erreur');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        // ========== SUPERVISEUR ==========
+        async function handleSuperviseurConnexion(e) {
+            e.preventDefault();
+            
+            const data = {
+                identifiant: document.getElementById('superviseur-email').value,
+                motDePasse: document.getElementById('superviseur-password').value
+            };
+
+            const messageDiv = document.getElementById('superviseur-connexion-message');
+
+            try {
+                const response = await fetch(`${API_URL}/api/superviseurs/connexion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentToken = result.token;
+                    currentUser = result.superviseur;
+                    showMessage(messageDiv, 'Connexion réussie', 'success');
+                    loadCollecteursEnAttente();
+                    loadGestionnaires();
+                    loadStats();
+                } else {
+                    throw new Error(result.message || 'Erreur connexion');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        async function loadCollecteursEnAttente() {
+            try {
+                const response = await fetch(`${API_URL}/api/superviseurs/collecteurs/en-attente`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                const result = await response.json();
+                const container = document.getElementById('collecteurs-attente');
+
+                if (result.success) {
+                    if (result.collecteurs.length === 0) {
+                        container.innerHTML = '<p class="text-center">Aucun collecteur en attente</p>';
+                    } else {
+                        container.innerHTML = result.collecteurs.map(c => `
+                            <div class="item" onclick="document.getElementById('valider-collecteur-id').value='${c.id}'">
+                                <div class="item-header">
+                                    <span class="item-title">${c.nom_complet}</span>
+                                    <span class="badge badge-warning">En attente</span>
+                                </div>
+                                <div class="item-body">
+                                    <p><i class="fas fa-envelope"></i> ${c.email}</p>
+                                    <p><i class="fas fa-phone"></i> ${c.telephone}</p>
+                                    <p><i class="fas fa-map"></i> ${c.zone_intervention_nom}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function handleValiderCollecteur(e) {
+            e.preventDefault();
+            
+            const collecteurId = document.getElementById('valider-collecteur-id').value;
+            const notes = document.getElementById('valider-notes').value;
+
+            const messageDiv = document.getElementById('validation-collecteur-message');
+
+            if (!collecteurId) {
+                showMessage(messageDiv, 'Sélectionnez un collecteur', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/superviseurs/collecteurs/${collecteurId}/valider`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ notes })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(messageDiv, 'Collecteur validé avec succès', 'success');
+                    document.getElementById('valider-collecteur-id').value = '';
+                    document.getElementById('valider-notes').value = '';
+                    loadCollecteursEnAttente();
+                } else {
+                    throw new Error(result.message || 'Erreur');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        async function loadGestionnaires() {
+            try {
+                const response = await fetch(`${API_URL}/api/superviseurs/gestionnaires`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                const result = await response.json();
+                const container = document.getElementById('liste-gestionnaires');
+
+                if (result.success) {
+                    if (result.gestionnaires.length === 0) {
+                        container.innerHTML = '<p class="text-center">Aucun gestionnaire</p>';
+                    } else {
+                        container.innerHTML = result.gestionnaires.map(g => `
+                            <div class="item">
+                                <div class="item-header">
+                                    <span class="item-title">${g.nom_complet}</span>
+                                    <span class="badge ${g.est_actif ? 'badge-success' : 'badge-danger'}">
+                                        ${g.est_actif ? 'Actif' : 'Inactif'}
+                                    </span>
+                                </div>
+                                <div class="item-body">
+                                    <p><i class="fas fa-envelope"></i> ${g.email}</p>
+                                    <p><i class="fas fa-map-marker"></i> ${g.point_collecte_nom || 'Non assigné'}</p>
+                                    <p><i class="fas fa-briefcase"></i> ${g.fonction}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function handleCreerGestionnaire(e) {
+            e.preventDefault();
+            
+            const data = {
+                email: document.getElementById('gest-email').value,
+                telephone: document.getElementById('gest-telephone').value,
+                motDePasse: document.getElementById('gest-password').value,
+                nomComplet: document.getElementById('gest-nom').value,
+                pointCollecteId: document.getElementById('gest-point').value || undefined,
+                fonction: document.getElementById('gest-fonction').value
+            };
+
+            const messageDiv = document.getElementById('creation-gestionnaire-message');
+
+            try {
+                const response = await fetch(`${API_URL}/api/superviseurs/gestionnaires`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(messageDiv, 'Gestionnaire créé avec succès', 'success');
+                    document.getElementById('creer-gestionnaire-form').reset();
+                    loadGestionnaires();
+                } else {
+                    throw new Error(result.message || 'Erreur');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        async function handleAttribuerMission(e) {
+            e.preventDefault();
+            
+            const missionId = document.getElementById('attribuer-mission').value;
+            const collecteurId = document.getElementById('attribuer-collecteur').value;
+
+            const messageDiv = document.getElementById('attribution-mission-message');
+
+            try {
+                const response = await fetch(`${API_URL}/api/superviseurs/missions/${missionId}/attribuer/${collecteurId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(messageDiv, 'Mission attribuée avec succès', 'success');
+                } else {
+                    throw new Error(result.message || 'Erreur');
+                }
+            } catch (error) {
+                showMessage(messageDiv, error.message, 'error');
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/superviseurs/statistiques`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const s = result.stats;
+                    document.getElementById('stats-total-collecteurs').textContent = s.total_collecteurs || 0;
+                    document.getElementById('stats-collecteurs-actifs').textContent = s.collecteurs_actifs || 0;
+                    document.getElementById('stats-total-gestionnaires').textContent = s.total_gestionnaires || 0;
+                    document.getElementById('stats-missions-validees').textContent = s.missions_validees || 0;
+                    document.getElementById('stats-dechets-collectes').textContent = s.total_dechets_collectes || 0;
+                    document.getElementById('stats-gains-distribues').textContent = s.total_gains_distribues || 0;
+
+                    if (result.evolution) {
+                        const evolutionContainer = document.getElementById('evolution-jours');
+                        evolutionContainer.innerHTML = result.evolution.map(j => `
+                            <div class="item">
+                                <div class="item-header">
+                                    <span class="item-title">${new Date(j.jour).toLocaleDateString()}</span>
+                                </div>
+                                <div class="item-body">
+                                    <p>Missions: ${j.missions_validees}</p>
+                                    <p>Poids: ${j.poids_total} kg</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        // ========== UTILITAIRES ==========
+        function handleDeconnexion() {
+            currentToken = null;
+            currentUser = null;
+            document.getElementById('collecteur-connected-state').classList.add('hidden');
+            document.getElementById('collecteur-connexion-form').reset();
+            showMessage(document.getElementById('collecteur-connexion-message'), 'Déconnexion réussie', 'success');
+        }
+    </script>
+</body>
+</html>

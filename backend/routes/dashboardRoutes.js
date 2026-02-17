@@ -1,5 +1,6 @@
 import express from 'express';
-import AuthController from '../controllers/authController.js';
+// import AuthController from '../controllers/AuthController.js';
+import AuthController from '../controllers/AuthController.js'; // ✅ Correct (A majuscule)
 import DashboardController from '../controllers/dashboardController.js';
 
 const router = express.Router();

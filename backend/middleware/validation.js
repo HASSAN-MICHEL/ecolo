@@ -81,9 +81,48 @@ const valider = (schema) => {
     };
 };
 
+
+const schemaInscriptionCollecteur = Joi.object({
+    email: Joi.string().email().required(),
+    telephone: Joi.string().pattern(/^[0-9]{10,15}$/).required(),
+    motDePasse: Joi.string().min(8).required(),
+    nomComplet: Joi.string().min(2).max(100).required(),
+    typeCollecteur: Joi.string().valid('independant', 'cooperative').required(),
+    numeroIdentite: Joi.string().when('typeCollecteur', {
+        is: 'independant',
+        then: Joi.string().required(),
+        otherwise: Joi.string().optional()
+    }),
+    zoneInterventionNom: Joi.string().required(),
+    quartiersHabituels: Joi.array().items(Joi.string()).min(1),
+    communesIntervention: Joi.array().items(Joi.string()).min(1),
+    photoProfilUrl: Joi.string().uri().optional(),
+    cguAcceptees: Joi.boolean().valid(true).required()
+});
+
+// Middleware de validation
+export const validerInscriptionCollecteur = (req, res, next) => {
+    const { error } = schemaInscriptionCollecteur.validate(req.body, { abortEarly: false });
+    
+    if (error) {
+        const erreurs = error.details.map(detail => ({
+            champ: detail.context.key,
+            message: detail.message
+        }));
+        
+        return res.status(400).json({
+            success: false,
+            message: 'Erreur de validation',
+            erreurs
+        });
+    }
+    
+    next();
+};
+
 export {
     schemaInscription,
     schemaConnexion,
-    schemaDeclaration,
+    schemaDeclaration, schemaInscriptionCollecteur , 
     valider
 };

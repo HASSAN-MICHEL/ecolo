@@ -1,0 +1,25 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:HASSAN237@db:5432/ecocollect_db
+  
+  frontend:
+    build: ./test_backend
+    ports:
+      - "5500:80"
+    depends_on:
+      - backend
+  
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: HASSAN237
+      POSTGRES_DB: ecocollect_db
+    ports:
+      - "5432:5432"

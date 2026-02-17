@@ -1,7 +1,7 @@
   
   -- Creons notre  base de données , et ici nous allons utilisé des triggers et implementé les fonctions et vue  necessaire en base de données pour mon travail : ICI on a commencé par les Producteurs
 CREATE DATABASE ecocollect_db;
-\c ecocollect_db;
+\c ecocollect_db;   ALTER TABLE producteurs ADD COLUMN IF NOT EXISTS derniere_connexion TIMESTAMP;
 
 -- Extension pour UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -13,6 +13,12 @@ CREATE TYPE type_dechet AS ENUM ('plastique_pet', 'plastique_pehd', 'papier_cart
 CREATE TYPE mode_collecte AS ENUM ('collecte_domicile', 'depot_volontaire');
 CREATE TYPE statut_declaration AS ENUM ('en_attente', 'affecte', 'programme', 'termine', 'annule');
 
+
+CREATE TYPE statut_collecteur AS ENUM ('en_attente', 'actif', 'suspendu', 'inactif');
+CREATE TYPE type_collecteur AS ENUM ('independant', 'cooperative');
+CREATE TYPE statut_mission AS ENUM ('disponible', 'acceptee', 'en_cours', 'deposee', 'validee', 'refusee', 'annulee');
+CREATE TYPE type_utilisateur AS ENUM ('collecteur', 'gestionnaire', 'superviseur' , 'producteur');
+CREATE TYPE type_utilisateur AS ENUM ('producteur');
 -- Table des producteurs
 CREATE TABLE producteurs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -60,32 +66,25 @@ CREATE TABLE types_dechets_declaration (
     PRIMARY KEY (declaration_id, type_dechet)
 );
 
--- Table des collectes
-CREATE TABLE collectes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    declaration_id UUID REFERENCES declarations_dechets(id) ON DELETE SET NULL,
-    collecteur_id UUID, -- À relier à la table des collecteurs (future implémentation)
-    date_programmee DATE NOT NULL,
-    heure_programmee VARCHAR(50),
-    date_reelle DATE,
-    poids_reel DECIMAL(10, 2),
-    statut VARCHAR(50) DEFAULT 'programmee',
-    notes TEXT,
-    points_attribues INTEGER DEFAULT 0,
-    terminee_le TIMESTAMP,
-    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- -- Table des collectes
+-- CREATE TABLE collectes (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--     declaration_id UUID REFERENCES declarations_dechets(id) ON DELETE SET NULL,
+--     collecteur_id UUID, -- À relier à la table des collecteurs (future implémentation)
+--     date_programmee DATE NOT NULL,
+--     heure_programmee VARCHAR(50),
+--     date_reelle DATE,
+--     poids_reel DECIMAL(10, 2),
+--     statut VARCHAR(50) DEFAULT 'programmee',
+--     notes TEXT,
+--     points_attribues INTEGER DEFAULT 0,
+--     terminee_le TIMESTAMP,
+--     cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
 
--- Table des notifications
-CREATE TABLE notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    producteur_id UUID REFERENCES producteurs(id) ON DELETE CASCADE,
-    titre VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    type_notification VARCHAR(50) CHECK (type_notification IN ('info', 'succes', 'alerte', 'collecteur_affecte', 'collecte_programmee', 'collecte_terminee')),
-    est_lue BOOLEAN DEFAULT false,
-    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+ALTER TABLE missions 
+ADD COLUMN IF NOT EXISTS date_programmee DATE,
+ADD COLUMN IF NOT EXISTS heure_programmee VARCHAR(50);
 
 -- Table des points/récompenses
 CREATE TABLE historique_points (
@@ -271,3 +270,342 @@ FROM declarations_dechets dd
 JOIN producteurs p ON dd.producteur_id = p.id
 WHERE dd.statut = 'en_attente'
 ORDER BY dd.cree_le ASC;
+
+
+
+-- LANCEMENT DU SPRINT 2 COLLECTEURS ET GESTIONNAIRES DE POINT : NOUVELLE TABLE ET TRIGGERS 
+
+CREATE TABLE collecteurs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    telephone VARCHAR(20) UNIQUE NOT NULL,
+    mot_de_passe_hash VARCHAR(255) NOT NULL,
+    nom_complet VARCHAR(255) NOT NULL,
+    type_collecteur type_collecteur NOT NULL,
+    numero_identite VARCHAR(50),
+    zone_intervention GEOMETRY(POLYGON, 4326), -- Zone sous forme de polygone
+    zone_intervention_nom VARCHAR(255),
+    quartiers_habituels TEXT[], -- Liste des quartiers
+    communes_intervention TEXT[],
+    statut statut_collecteur DEFAULT 'en_attente',
+    est_actif BOOLEAN DEFAULT false,
+    notes_validation TEXT,
+    valide_par UUID, -- ID du superviseur
+    valide_le TIMESTAMP,
+    photo_profil_url TEXT,
+    cgu_acceptees BOOLEAN DEFAULT false,
+    cgu_acceptees_le TIMESTAMP,
+    points_total INTEGER DEFAULT 0,
+    gains_total DECIMAL(10, 2) DEFAULT 0,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    derniere_connexion TIMESTAMP
+);
+
+
+CREATE TABLE gestionnaires_points (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    telephone VARCHAR(20) UNIQUE NOT NULL,
+    mot_de_passe_hash VARCHAR(255) NOT NULL,
+    nom_complet VARCHAR(255) NOT NULL,
+    point_collecte_id UUID REFERENCES points_depot_volontaire(id) ON DELETE SET NULL,
+    fonction VARCHAR(100),
+    est_actif BOOLEAN DEFAULT true,
+    cree_par UUID, -- ID du superviseur qui a créé le compte
+    derniere_connexion TIMESTAMP,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE superviseurs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    telephone VARCHAR(20) UNIQUE,
+    mot_de_passe_hash VARCHAR(255) NOT NULL,
+    nom_complet VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'superviseur',
+    est_actif BOOLEAN DEFAULT true,
+    derniere_connexion TIMESTAMP,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE collectes RENAME TO missions;
+
+-- Recréation de la table missions avec plus de champs
+DROP TABLE IF EXISTS missions CASCADE;
+CREATE TABLE missions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    declaration_id UUID REFERENCES declarations_dechets(id) ON DELETE SET NULL,
+    collecteur_id UUID REFERENCES collecteurs(id) ON DELETE SET NULL,
+    statut statut_mission DEFAULT 'disponible',
+    date_disponibilite TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_acceptation TIMESTAMP,
+    date_debut_collecte TIMESTAMP,
+    date_fin_collecte TIMESTAMP,
+    date_depot_point TIMESTAMP,
+    date_validation TIMESTAMP,
+    
+    -- Informations collecte
+    photo_preuve_url TEXT,
+    code_confirmation_producteur VARCHAR(10),
+    notes_collecte TEXT,
+    conformite_tri BOOLEAN,
+    
+    -- Informations dépôt
+    point_depot_id UUID REFERENCES points_depot_volontaire(id),
+    poids_depose DECIMAL(10, 2),
+    qualite_dechets VARCHAR(50), -- conforme / non_conforme
+    
+    -- Validation gestionnaire
+    valide_par UUID, -- ID du gestionnaire
+    validation_notes TEXT,
+    points_attribues INTEGER DEFAULT 0,
+    gains_attribues DECIMAL(10, 2) DEFAULT 0,
+    
+    -- Métadonnées
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- TABLE DES NOTIFICATIONS (améliorée)
+-- ============================================
+DROP TABLE IF EXISTS notifications CASCADE;
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    utilisateur_id UUID NOT NULL,
+    type_utilisateur type_utilisateur NOT NULL,
+    titre VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type_notification VARCHAR(50) CHECK (type_notification IN (
+        'info', 'succes', 'alerte', 'nouvelle_mission', 'mission_acceptee', 
+        'mission_terminee', 'validation_collecte', 'paiement_recu', 'compte_valide'
+    )),
+    reference_id UUID, -- ID de la mission, collecte, etc.
+    reference_type VARCHAR(50),
+    est_lue BOOLEAN DEFAULT false,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- TABLE DES TOKENS (unifiée)
+-- ============================================
+DROP TABLE IF EXISTS tokens_reinitialisation_mdp CASCADE;
+CREATE TABLE tokens (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    utilisateur_id UUID NOT NULL,
+    type_utilisateur type_utilisateur NOT NULL,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    type_token VARCHAR(50) CHECK (type_token IN ('reset_password', 'validation_email', 'validation_compte')),
+    expire_le TIMESTAMP NOT NULL,
+    utilise BOOLEAN DEFAULT false,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+CREATE TABLE photos_preuves (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    mission_id UUID REFERENCES missions(id) ON DELETE CASCADE,
+    collecteur_id UUID REFERENCES collecteurs(id),
+    url_photo TEXT NOT NULL,
+    type_photo VARCHAR(50) CHECK (type_photo IN ('avant_collecte', 'apres_collecte', 'depot', 'autre')),
+    description TEXT,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- TABLE DES GAINS COLLECTEURS
+-- ============================================
+CREATE TABLE gains_collecteurs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    collecteur_id UUID REFERENCES collecteurs(id) ON DELETE CASCADE,
+    mission_id UUID REFERENCES missions(id) ON DELETE SET NULL,
+    montant DECIMAL(10, 2) NOT NULL,
+    type_gain VARCHAR(50) CHECK (type_gain IN ('collecte', 'bonus', 'prime')),
+    statut VARCHAR(50) DEFAULT 'en_attente' CHECK (statut IN ('en_attente', 'valide', 'paye')),
+    date_validation TIMESTAMP,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- TABLE DES HISTORIQUES D'ACTIONS
+-- ============================================
+CREATE TABLE historique_actions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    utilisateur_id UUID NOT NULL,
+    type_utilisateur type_utilisateur NOT NULL,
+    action VARCHAR(255) NOT NULL,
+    details JSONB,
+    adresse_ip INET,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- INDEX POUR OPTIMISATION
+-- ============================================
+-- Index pour collecteurs
+CREATE INDEX idx_collecteurs_email ON collecteurs(email);
+CREATE INDEX idx_collecteurs_telephone ON collecteurs(telephone);
+CREATE INDEX idx_collecteurs_statut ON collecteurs(statut);
+CREATE INDEX idx_collecteurs_zone ON collecteurs USING GIST(zone_intervention);
+
+-- Index pour missions
+CREATE INDEX idx_missions_collecteur_id ON missions(collecteur_id);
+CREATE INDEX idx_missions_statut ON missions(statut);
+CREATE INDEX idx_missions_declaration_id ON missions(declaration_id);
+CREATE INDEX idx_missions_point_depot ON missions(point_depot_id);
+CREATE INDEX idx_missions_date_validation ON missions(date_validation);
+
+-- Index pour gestionnaires
+CREATE INDEX idx_gestionnaires_email ON gestionnaires_points(email);
+CREATE INDEX idx_gestionnaires_point_collecte ON gestionnaires_points(point_collecte_id);
+
+-- Index pour notifications
+CREATE INDEX idx_notifications_utilisateur ON notifications(utilisateur_id, type_utilisateur);
+CREATE INDEX idx_notifications_non_lues ON notifications(est_lue) WHERE est_lue = false;
+
+-- ============================================
+-- FONCTIONS ET TRIGGERS
+-- ============================================
+
+-- Trigger pour mettre à jour modifié_le sur toutes les tables
+CREATE OR REPLACE FUNCTION mettre_a_jour_modifie_le()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.modifie_le = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Application des triggers
+CREATE TRIGGER mettre_a_jour_collecteurs_modifie_le 
+    BEFORE UPDATE ON collecteurs 
+    FOR EACH ROW EXECUTE FUNCTION mettre_a_jour_modifie_le();
+
+CREATE TRIGGER mettre_a_jour_gestionnaires_modifie_le 
+    BEFORE UPDATE ON gestionnaires_points 
+    FOR EACH ROW EXECUTE FUNCTION mettre_a_jour_modifie_le();
+
+CREATE TRIGGER mettre_a_jour_superviseurs_modifie_le 
+    BEFORE UPDATE ON superviseurs 
+    FOR EACH ROW EXECUTE FUNCTION mettre_a_jour_modifie_le();
+
+CREATE TRIGGER mettre_a_jour_missions_modifie_le 
+    BEFORE UPDATE ON missions 
+    FOR EACH ROW EXECUTE FUNCTION mettre_a_jour_modifie_le();
+
+-- Fonction pour notifier collecteur d'une nouvelle mission
+CREATE OR REPLACE FUNCTION notifier_nouvelle_mission()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.statut = 'disponible' AND (OLD.statut IS NULL OR OLD.statut != 'disponible') THEN
+        -- Créer des notifications pour les collecteurs dans la zone
+        INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification, reference_id, reference_type)
+        SELECT 
+            c.id,
+            'collecteur',
+            'Nouvelle mission disponible',
+            'Une nouvelle mission de collecte est disponible dans votre zone.',
+            'nouvelle_mission',
+            NEW.id,
+            'mission'
+        FROM collecteurs c
+        WHERE c.statut = 'actif' 
+          AND c.est_actif = true
+          AND ST_Intersects(
+              c.zone_intervention,
+              (SELECT localisation_gps::geometry FROM producteurs 
+               WHERE id = (SELECT producteur_id FROM declarations_dechets WHERE id = NEW.declaration_id))
+          );
+    END IF;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER notifier_nouvelle_mission_trigger
+    AFTER INSERT ON missions
+    FOR EACH ROW EXECUTE FUNCTION notifier_nouvelle_mission();
+
+-- Fonction pour calculer les gains du collecteur
+CREATE OR REPLACE FUNCTION calculer_gains_collecteur()
+RETURNS TRIGGER AS $$
+DECLARE
+    montant_gain DECIMAL(10, 2);
+BEGIN
+    IF NEW.statut = 'validee' AND (OLD.statut IS NULL OR OLD.statut != 'validee') THEN
+        -- Calcul du gain (exemple: 100 FCFA par kg)
+        montant_gain := NEW.poids_depose * 100;
+        
+        -- Mise à jour des gains du collecteur
+        UPDATE collecteurs 
+        SET gains_total = gains_total + montant_gain
+        WHERE id = NEW.collecteur_id;
+        
+        -- Enregistrement du gain
+        INSERT INTO gains_collecteurs (collecteur_id, mission_id, montant, type_gain, statut)
+        VALUES (NEW.collecteur_id, NEW.id, montant_gain, 'collecte', 'valide');
+        
+        -- Notification au collecteur
+        INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification, reference_id, reference_type)
+        VALUES (
+            NEW.collecteur_id,
+            'collecteur',
+            'Mission validée',
+            'Votre mission a été validée. Vous avez gagné ' || montant_gain || ' FCFA.',
+            'validation_collecte',
+            NEW.id,
+            'mission'
+        );
+    END IF;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER calculer_gains_sur_validation
+    AFTER UPDATE ON missions
+    FOR EACH ROW EXECUTE FUNCTION calculer_gains_collecteur();
+
+-- ============================================
+-- VUES POUR TABLEAUX DE BORD
+-- ============================================
+
+-- Vue pour tableau de bord collecteur
+CREATE OR REPLACE VIEW tableau_bord_collecteur AS
+SELECT 
+    c.id as collecteur_id,
+    c.nom_complet,
+    c.email,
+    c.telephone,
+    c.statut,
+    c.points_total,
+    c.gains_total,
+    COUNT(DISTINCT m.id) as total_missions,
+    COUNT(DISTINCT CASE WHEN m.statut = 'validee' THEN m.id END) as missions_validees,
+    COUNT(DISTINCT CASE WHEN m.statut = 'en_cours' THEN m.id END) as missions_en_cours,
+    COALESCE(SUM(m.poids_depose), 0) as total_dechets_collectes,
+    COALESCE(SUM(CASE WHEN m.statut = 'validee' THEN m.gains_attribues END), 0) as gains_du_mois,
+    MAX(m.date_validation) as derniere_mission_validee
+FROM collecteurs c
+LEFT JOIN missions m ON c.id = m.collecteur_id
+GROUP BY c.id, c.nom_complet, c.email, c.telephone, c.statut, c.points_total, c.gains_total;
+
+-- Vue pour tableau de bord gestionnaire
+CREATE OR REPLACE VIEW tableau_bord_gestionnaire AS
+SELECT 
+    gp.id as gestionnaire_id,
+    gp.nom_complet,
+    gp.point_collecte_id,
+    pdv.nom as point_collecte_nom,
+    COUNT(DISTINCT m.id) as total_receptions,
+    COALESCE(SUM(m.poids_depose), 0) as total_poids_recu,
+    COUNT(DISTINCT CASE WHEN m.date_validation >= CURRENT_DATE THEN m.id END) as receptions_aujourdhui,
+    COALESCE(SUM(CASE WHEN m.date_validation >= CURRENT_DATE THEN m.poids_depose END), 0) as poids_aujourdhui
+FROM gestionnaires_points gp
+LEFT JOIN points_depot_volontaire pdv ON gp.point_collecte_id = pdv.id
+LEFT JOIN missions m ON pdv.id = m.point_depot_id AND m.statut = 'validee'
+GROUP BY gp.id, gp.nom_complet, gp.point_collecte_id, pdv.nom;
+

@@ -115,6 +115,66 @@ class DeclarationController {
         }
     }
 
+    // Suivre une déclaration (statut + collecte associée)
+    // static async suivreDeclaration(req, res) {
+    //     try {
+    //         const { id } = req.params;
+    //         const producteurId = req.producteurId;
+
+    //         // Obtenir la déclaration avec les détails de collecte
+    //         const requete = `
+    //             SELECT 
+    //                 dd.*,
+    //                 c.date_programmee,
+    //                 c.heure_programmee,
+    //                 c.date_reelle,
+    //                 c.poids_reel,
+    //                 c.statut as statut_collecte,
+    //                 c.notes as notes_collecte,
+    //                 c.terminee_le,
+    //                 p.nom_complet,
+    //                 p.telephone
+    //             FROM declarations_dechets dd
+    //             LEFT JOIN collectes c ON dd.id = c.declaration_id
+    //             JOIN producteurs p ON dd.producteur_id = p.id
+    //             WHERE dd.id = $1
+    //         `;
+    //         const resultat = await pool.query(requete, [id]);
+    //         const declaration = resultat.rows[0];
+
+    //         if (!declaration) {
+    //             return res.status(404).json({ 
+    //                 message: 'Déclaration non trouvée' 
+    //             });
+    //         }
+
+    //         // Vérifier les permissions
+    //         if (declaration.producteur_id !== producteurId) {
+    //             return res.status(403).json({ 
+    //                 message: 'Accès non autorisé' 
+    //             });
+    //         }
+
+    //         // Utiliser les méthodes directement avec le nom de la classe
+    //         res.json({ 
+    //             declaration,
+    //             suivre: {
+    //                 etapeActuelle: DeclarationController.determinerEtape(declaration.statut),
+    //                 prochaineAction: DeclarationController.getProchaineAction(declaration.statut),
+    //                 estTerminee: declaration.statut === 'termine'
+    //             }
+    //         });
+    //     } catch (erreur) {
+    //         console.error('Erreur suivi déclaration:', erreur);
+    //         res.status(500).json({ 
+    //             message: 'Erreur lors du suivi de la déclaration',
+    //             erreur: erreur.message 
+    //         });
+    //     }
+    // }
+
+    // Dans declarationController.js - méthode suivreDeclaration
+
 static async suivreDeclaration(req, res) {
     try {
         const { id } = req.params;
@@ -335,107 +395,17 @@ static getProchaineAction(statutDecla, statutMission) {
         return etapes[statut] || 'Statut inconnu';
     }
 
-static async suivreDeclaration(req, res) {
-    try {
-        const { id } = req.params;
-        const producteurId = req.producteurId;
-
-        // Utiliser la méthode trouverParId qui inclut maintenant les infos de mission
-        const declaration = await DeclarationDechets.trouverParId(id);
-
-        if (!declaration) {
-            return res.status(404).json({ 
-                message: 'Déclaration non trouvée' 
-            });
-        }
-
-        // Vérifier les permissions
-        if (declaration.producteur_id !== producteurId) {
-            return res.status(403).json({ 
-                message: 'Accès non autorisé' 
-            });
-        }
-
-        // Construire l'objet de suivi
-        const suivre = {
-            etapeActuelle: DeclarationController.determinerEtape(declaration.statut, declaration.statut_mission),
-            prochaineAction: DeclarationController.getProchaineAction(declaration.statut, declaration.statut_mission),
-            estTerminee: declaration.statut === 'termine' || declaration.statut_mission === 'validee',
-            mission: declaration.mission_id ? {
-                id: declaration.mission_id,
-                statut: declaration.statut_mission,
-                collecteur: declaration.collecteur_nom,
-                collecteur_telephone: declaration.collecteur_telephone,
-                date_acceptation: declaration.date_acceptation,
-                date_debut_collecte: declaration.date_debut_collecte,
-                date_fin_collecte: declaration.date_fin_collecte,
-                date_validation: declaration.date_validation,
-                poids: declaration.poids_depose,
-                gains: declaration.gains_attribues
-            } : null
-        };
-
-        res.json({ 
-            declaration,
-            suivre
-        });
-    } catch (erreur) {
-        console.error('Erreur suivi déclaration:', erreur);
-        res.status(500).json({ 
-            message: 'Erreur lors du suivi de la déclaration',
-            erreur: erreur.message 
-        });
-    }
-}
-
-// Mettre à jour les méthodes utilitaires
-static determinerEtape(statutDecla, statutMission) {
-    if (statutMission) {
-        const etapesMission = {
-            'disponible': 'En attente de collecteur',
-            'acceptee': 'Collecteur accepté',
-            'en_cours': 'Collecte en cours',
-            'deposee': 'Déposée au point de collecte',
-            'validee': 'Validée',
-            'refusee': 'Refusée',
-            'annulee': 'Annulée'
-        };
-        return etapesMission[statutMission] || statutMission;
-    }
     
-    const etapes = {
-        'en_attente': 'En attente d\'affectation',
-        'affecte': 'Collecteur affecté',
-        'programme': 'Collecte programmée',
-        'termine': 'Collecte terminée',
-        'annule': 'Annulée'
-    };
-    return etapes[statutDecla] || 'Statut inconnu';
-}
-
-static getProchaineAction(statutDecla, statutMission) {
-    if (statutMission) {
-        const actionsMission = {
-            'disponible': 'En attente qu\'un collecteur accepte la mission',
-            'acceptee': 'Le collecteur va bientôt démarrer la collecte',
-            'en_cours': 'Collecte en cours...',
-            'deposee': 'En attente de validation par le gestionnaire',
-            'validee': 'Consultez vos points et gains',
-            'refusee': 'Contactez le support pour plus d\'informations',
-            'annulee': 'Créez une nouvelle déclaration'
+    static getProchaineAction(statut) {
+        const actions = {
+            'en_attente': 'Attente de l\'affectation d\'un collecteur',
+            'affecte': 'Notification du créneau horaire à venir',
+            'programme': 'Préparer vos déchets pour la collecte',
+            'termine': 'Consulter vos points et historique',
+            'annule': 'Créer une nouvelle déclaration si nécessaire'
         };
-        return actionsMission[statutMission] || 'Action inconnue';
+        return actions[statut] || 'Action inconnue';
     }
-    
-    const actions = {
-        'en_attente': 'Attente de l\'affectation d\'un collecteur',
-        'affecte': 'Notification du créneau horaire à venir',
-        'programme': 'Préparer vos déchets pour la collecte',
-        'termine': 'Consulter vos points et historique',
-        'annule': 'Créer une nouvelle déclaration si nécessaire'
-    };
-    return actions[statutDecla] || 'Action inconnue';
-}
 }
 
 export default DeclarationController;

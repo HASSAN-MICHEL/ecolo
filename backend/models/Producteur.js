@@ -74,6 +74,27 @@ class Producteur {
         await pool.query(requete, [nouveauMotDePasseHash, id]);
     }
 
+    // Dans models/Producteur.js
+static async update(id, donnees) {
+    try {
+        const { derniere_connexion } = donnees;
+        
+        const requete = `
+            UPDATE producteurs 
+            SET derniere_connexion = $1,
+                modifie_le = CURRENT_TIMESTAMP
+            WHERE id = $2
+            RETURNING *
+        `;
+        
+        const resultat = await pool.query(requete, [derniere_connexion, id]);
+        return resultat.rows[0];
+    } catch (erreur) {
+        console.error('Erreur update producteur:', erreur);
+        throw erreur;
+    }
+ }
+
     static async obtenirTableauDeBord(producteurId) {
         const requete = `
             SELECT * FROM tableau_bord_producteur 
