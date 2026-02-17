@@ -164,119 +164,231 @@ class GestionnairePoint {
     }
 
     // ✅ Valider une mission et attribuer les gains automatiquement
-    static async validerMission(missionId, gestionnaireId, donnees) {
-        const client = await pool.connect();
+    // static async validerMission(missionId, gestionnaireId, donnees) {
+    //     const client = await pool.connect();
         
-        try {
-            await client.query('BEGIN');
+    //     try {
+    //         await client.query('BEGIN');
 
-            // Vérifier que la mission existe et est en attente
-            const verification = await client.query(`
-                SELECT m.*, m.collecteur_id 
-                FROM missions m
-                JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
-                JOIN gestionnaires_points g ON g.point_collecte_id = pdv.id
-                WHERE m.id = $1 AND g.id = $2 AND m.statut = 'deposee'
-            `, [missionId, gestionnaireId]);
+    //         // Vérifier que la mission existe et est en attente
+    //         const verification = await client.query(`
+    //             SELECT m.*, m.collecteur_id 
+    //             FROM missions m
+    //             JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
+    //             JOIN gestionnaires_points g ON g.point_collecte_id = pdv.id
+    //             WHERE m.id = $1 AND g.id = $2 AND m.statut = 'deposee'
+    //         `, [missionId, gestionnaireId]);
 
-            if (verification.rows.length === 0) {
-                throw new Error('Mission non trouvée ou déjà validée');
-            }
+    //         if (verification.rows.length === 0) {
+    //             throw new Error('Mission non trouvée ou déjà validée');
+    //         }
 
-            const mission = verification.rows[0];
-            const poidsDepose = parseFloat(donnees.poidsDepose);
+    //         const mission = verification.rows[0];
+    //         const poidsDepose = parseFloat(donnees.poidsDepose);
             
-            // Calcul automatique des gains (100 FCFA par kg)
-            const gainsAttribues = poidsDepose * 100;
-            const pointsAttribues = Math.ceil(poidsDepose * 10); // 10 points par kg
+    //         // Calcul automatique des gains (100 FCFA par kg)
+    //         const gainsAttribues = poidsDepose * 100;
+    //         const pointsAttribues = Math.ceil(poidsDepose * 10); // 10 points par kg
 
-            // Mettre à jour la mission
-            const requeteMission = `
-                UPDATE missions 
-                SET statut = 'validee',
-                    date_validation = CURRENT_TIMESTAMP,
-                    poids_depose = $1::numeric,
-                    qualite_dechets = $2,
-                    validation_notes = $3,
-                    valide_par = $4,
-                    points_attribues = $5::integer,
-                    gains_attribues = $6::numeric
-                WHERE id = $7
+    //         // Mettre à jour la mission
+    //         const requeteMission = `
+    //             UPDATE missions 
+    //             SET statut = 'validee',
+    //                 date_validation = CURRENT_TIMESTAMP,
+    //                 poids_depose = $1::numeric,
+    //                 qualite_dechets = $2,
+    //                 validation_notes = $3,
+    //                 valide_par = $4,
+    //                 points_attribues = $5::integer,
+    //                 gains_attribues = $6::numeric
+    //             WHERE id = $7
+    //             RETURNING *
+    //         `;
+            
+    //         const resultatMission = await client.query(requeteMission, [
+    //             poidsDepose,
+    //             donnees.qualiteDechets || 'conforme',
+    //             donnees.validationNotes || null,
+    //             gestionnaireId,
+    //             pointsAttribues,
+    //             gainsAttribues,
+    //             missionId
+    //         ]);
+            
+    //         const missionMaj = resultatMission.rows[0];
+
+    //         // Créer l'entrée dans gains_collecteurs (gain automatique)
+    //         if (mission.collecteur_id) {
+    //             const requeteGain = `
+    //                 INSERT INTO gains_collecteurs (
+    //                     collecteur_id, 
+    //                     mission_id, 
+    //                     montant, 
+    //                     type_gain, 
+    //                     statut,
+    //                     date_validation
+    //                 ) VALUES ($1, $2, $3, 'collecte', 'valide', CURRENT_TIMESTAMP)
+    //                 RETURNING *
+    //             `;
+                
+    //             const resultatGain = await client.query(requeteGain, [
+    //                 mission.collecteur_id,
+    //                 missionId,
+    //                 gainsAttribues
+    //             ]);
+
+    //             // Mettre à jour le total des gains du collecteur
+    //             await client.query(`
+    //                 UPDATE collecteurs 
+    //                 SET gains_total = gains_total + $1,
+    //                     points_total = points_total + $2
+    //                 WHERE id = $3
+    //             `, [gainsAttribues, pointsAttribues, mission.collecteur_id]);
+
+    //             // Notification au collecteur
+    //             await client.query(`
+    //                 INSERT INTO notifications (
+    //                     utilisateur_id, 
+    //                     type_utilisateur, 
+    //                     titre, 
+    //                     message, 
+    //                     type_notification,
+    //                     reference_id,
+    //                     reference_type
+    //                 ) VALUES ($1, 'collecteur', $2, $3, 'validation_collecte', $4, 'gain')
+    //             `, [
+    //                 mission.collecteur_id,
+    //                 'Mission validée',
+    //                 `Votre mission a été validée. Vous avez gagné ${gainsAttribues} FCFA et ${pointsAttribues} points.`,
+    //                 resultatGain.rows[0].id
+    //             ]);
+    //         }
+
+    //         await client.query('COMMIT');
+            
+    //         // Retourner la mission avec tous ses détails
+    //         return await this.missionDetails(missionId, gestionnaireId);
+            
+    //     } catch (erreur) {
+    //         await client.query('ROLLBACK');
+    //         console.error('❌ Erreur validation mission:', erreur);
+    //         throw erreur;
+    //     } finally {
+    //         client.release();
+    //     }
+    // }
+
+    // ✅ Valider une mission (version simplifiée sans point_depot_id)
+static async validerMission(missionId, gestionnaireId, donnees) {
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+
+        // Vérifier que la mission existe et est en attente (sans la jointure sur point_depot)
+        const verification = await client.query(`
+            SELECT m.*, m.collecteur_id 
+            FROM missions m
+            WHERE m.id = $1 AND m.statut = 'deposee'
+        `, [missionId]);
+
+        if (verification.rows.length === 0) {
+            throw new Error('Mission non trouvée ou déjà validée');
+        }
+
+        const mission = verification.rows[0];
+        const poidsDepose = parseFloat(donnees.poidsDepose);
+        
+        // Calcul automatique des gains (100 FCFA par kg)
+        const gainsAttribues = poidsDepose * 100;
+        const pointsAttribues = Math.ceil(poidsDepose * 10);
+
+        // Mettre à jour la mission
+        const requeteMission = `
+            UPDATE missions 
+            SET statut = 'validee',
+                date_validation = CURRENT_TIMESTAMP,
+                poids_depose = $1::numeric,
+                qualite_dechets = $2,
+                validation_notes = $3,
+                valide_par = $4,
+                points_attribues = $5::integer,
+                gains_attribues = $6::numeric
+            WHERE id = $7
+            RETURNING *
+        `;
+        
+        const resultatMission = await client.query(requeteMission, [
+            poidsDepose,
+            donnees.qualiteDechets || 'conforme',
+            donnees.validationNotes || null,
+            gestionnaireId,
+            pointsAttribues,
+            gainsAttribues,
+            missionId
+        ]);
+        
+        const missionMaj = resultatMission.rows[0];
+
+        // Créer l'entrée dans gains_collecteurs
+        if (mission.collecteur_id) {
+            const requeteGain = `
+                INSERT INTO gains_collecteurs (
+                    collecteur_id, 
+                    mission_id, 
+                    montant, 
+                    type_gain, 
+                    statut,
+                    date_validation
+                ) VALUES ($1, $2, $3, 'collecte', 'valide', CURRENT_TIMESTAMP)
                 RETURNING *
             `;
             
-            const resultatMission = await client.query(requeteMission, [
-                poidsDepose,
-                donnees.qualiteDechets || 'conforme',
-                donnees.validationNotes || null,
-                gestionnaireId,
-                pointsAttribues,
-                gainsAttribues,
-                missionId
+            const resultatGain = await client.query(requeteGain, [
+                mission.collecteur_id,
+                missionId,
+                gainsAttribues
             ]);
-            
-            const missionMaj = resultatMission.rows[0];
 
-            // Créer l'entrée dans gains_collecteurs (gain automatique)
-            if (mission.collecteur_id) {
-                const requeteGain = `
-                    INSERT INTO gains_collecteurs (
-                        collecteur_id, 
-                        mission_id, 
-                        montant, 
-                        type_gain, 
-                        statut,
-                        date_validation
-                    ) VALUES ($1, $2, $3, 'collecte', 'valide', CURRENT_TIMESTAMP)
-                    RETURNING *
-                `;
-                
-                const resultatGain = await client.query(requeteGain, [
-                    mission.collecteur_id,
-                    missionId,
-                    gainsAttribues
-                ]);
+            // Mettre à jour le total des gains du collecteur
+            await client.query(`
+                UPDATE collecteurs 
+                SET gains_total = gains_total + $1,
+                    points_total = points_total + $2
+                WHERE id = $3
+            `, [gainsAttribues, pointsAttribues, mission.collecteur_id]);
 
-                // Mettre à jour le total des gains du collecteur
-                await client.query(`
-                    UPDATE collecteurs 
-                    SET gains_total = gains_total + $1,
-                        points_total = points_total + $2
-                    WHERE id = $3
-                `, [gainsAttribues, pointsAttribues, mission.collecteur_id]);
-
-                // Notification au collecteur
-                await client.query(`
-                    INSERT INTO notifications (
-                        utilisateur_id, 
-                        type_utilisateur, 
-                        titre, 
-                        message, 
-                        type_notification,
-                        reference_id,
-                        reference_type
-                    ) VALUES ($1, 'collecteur', $2, $3, 'validation_collecte', $4, 'gain')
-                `, [
-                    mission.collecteur_id,
-                    'Mission validée',
-                    `Votre mission a été validée. Vous avez gagné ${gainsAttribues} FCFA et ${pointsAttribues} points.`,
-                    resultatGain.rows[0].id
-                ]);
-            }
-
-            await client.query('COMMIT');
-            
-            // Retourner la mission avec tous ses détails
-            return await this.missionDetails(missionId, gestionnaireId);
-            
-        } catch (erreur) {
-            await client.query('ROLLBACK');
-            console.error('❌ Erreur validation mission:', erreur);
-            throw erreur;
-        } finally {
-            client.release();
+            // Notification au collecteur
+            await client.query(`
+                INSERT INTO notifications (
+                    utilisateur_id, 
+                    type_utilisateur, 
+                    titre, 
+                    message, 
+                    type_notification,
+                    reference_id,
+                    reference_type
+                ) VALUES ($1, 'collecteur', $2, $3, 'validation_collecte', $4, 'gain')
+            `, [
+                mission.collecteur_id,
+                'Mission validée',
+                `Votre mission a été validée. Vous avez gagné ${gainsAttribues} FCFA et ${pointsAttribues} points.`,
+                resultatGain.rows[0].id
+            ]);
         }
+
+        await client.query('COMMIT');
+        
+        return missionMaj;
+        
+    } catch (erreur) {
+        await client.query('ROLLBACK');
+        console.error('❌ Erreur validation mission:', erreur);
+        throw erreur;
+    } finally {
+        client.release();
     }
+}
 
     // ✅ Attribuer des crédits supplémentaires (bonus)
     static async attribuerCredits(collecteurId, missionId, montant, gestionnaireId) {
