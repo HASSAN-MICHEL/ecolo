@@ -8,108 +8,6 @@ import { pool } from '../config/database.js';
 
 
 
-// // Nouvelle méthode pour mettre à jour les infos personnelles
-// static async mettreAJourInfosPersonnelles(req, res) {
-//     try {
-//         const collecteurId = req.utilisateurId;
-//         const {
-//             nomComplet,
-//             telephone,
-//             numeroIdentite,
-//             zoneInterventionNom,
-//             quartiersHabituels,
-//             communesIntervention,
-//             zoneIntervention,
-//             photoProfilUrl,
-//             photoCniRectoUrl,
-//             photoCniVersoUrl
-//         } = req.body;
-
-//         // Vérifier si le téléphone est déjà utilisé par un autre collecteur
-//         if (telephone) {
-//             const collecteurExistant = await Collecteur.trouverParTelephone(telephone);
-//             if (collecteurExistant && collecteurExistant.id !== collecteurId) {
-//                 return res.status(400).json({
-//                     success: false,
-//                     message: 'Ce numéro de téléphone est déjà utilisé'
-//                 });
-//             }
-//         }
-
-//         const donnees = {
-//             nomComplet,
-//             telephone,
-//             numeroIdentite,
-//             zoneInterventionNom,
-//             quartiersHabituels,
-//             communesIntervention,
-//             zoneIntervention,
-//             photoProfilUrl,
-//             photoCniRectoUrl,
-//             photoCniVersoUrl
-//         };
-
-//         const collecteur = await Collecteur.mettreAJourInfosPersonnelles(collecteurId, donnees);
-
-//         if (!collecteur) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Aucune donnée à mettre à jour'
-//             });
-//         }
-
-//         res.json({
-//             success: true,
-//             message: 'Informations personnelles mises à jour avec succès',
-//             collecteur
-//         });
-//     } catch (erreur) {
-//         console.error('Erreur mise à jour infos personnelles:', erreur);
-//         res.status(500).json({
-//             success: false,
-//             message: 'Erreur lors de la mise à jour des informations',
-//             erreur: erreur.message
-//         });
-//     }
-// }
-
-// // Nouvelle méthode pour changer le mot de passe
-// static async changerMotDePasse(req, res) {
-//     try {
-//         const collecteurId = req.utilisateurId;
-//         const { ancienMotDePasse, nouveauMotDePasse } = req.body;
-
-//         // Vérifier l'ancien mot de passe
-//         const ancienHash = await Collecteur.verifierMotDePasse(collecteurId);
-//         const motDePasseValide = await bcrypt.compare(ancienMotDePasse, ancienHash);
-
-//         if (!motDePasseValide) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: 'Ancien mot de passe incorrect'
-//             });
-//         }
-
-//         // Hasher le nouveau mot de passe
-//         const salt = await bcrypt.genSalt(10);
-//         const nouveauMotDePasseHash = await bcrypt.hash(nouveauMotDePasse, salt);
-
-//         // Mettre à jour
-//         await Collecteur.changerMotDePasse(collecteurId, nouveauMotDePasseHash);
-
-//         res.json({
-//             success: true,
-//             message: 'Mot de passe modifié avec succès'
-//         });
-//     } catch (erreur) {
-//         console.error('Erreur changement mot de passe:', erreur);
-//         res.status(500).json({
-//             success: false,
-//             message: 'Erreur lors du changement de mot de passe',
-//             erreur: erreur.message
-//         });
-//     }
-// }
 
 
 class CollecteurController {
@@ -119,17 +17,22 @@ class CollecteurController {
             // Les fichiers sont dans req.files
             const files = req.files || {};
             
-            // Construire les URLs des fichiers uploadés
-            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            // // Construire les URLs des fichiers uploadés
+            // const baseUrl = `${req.protocol}://${req.get('host')}`;
             
-            const photoProfilUrl = files.photoProfil ? 
-                `${baseUrl}/uploads/profils/${files.photoProfil[0].filename}` : null;
+            // const photoProfilUrl = files.photoProfil ? 
+            //     `${baseUrl}/uploads/profils/${files.photoProfil[0].filename}` : null;
+            const {
+            photoProfilUrl,
+         photoCniRectoUrl,
+         photoCniVersoUrl
+       } = req.body;
             
-            const photoCniRectoUrl = files.photoCniRecto ? 
-                `${baseUrl}/uploads/cnis/${files.photoCniRecto[0].filename}` : null;
+            // const photoCniRectoUrl = files.photoCniRecto ? 
+            //     `${baseUrl}/uploads/cnis/${files.photoCniRecto[0].filename}` : null;
             
-            const photoCniVersoUrl = files.photoCniVerso ? 
-                `${baseUrl}/uploads/cnis/${files.photoCniVerso[0].filename}` : null;
+            // const photoCniVersoUrl = files.photoCniVerso ? 
+            //     `${baseUrl}/uploads/cnis/${files.photoCniVerso[0].filename}` : null;
 
             // Récupérer les données du formulaire (stringifiées)
             const {
