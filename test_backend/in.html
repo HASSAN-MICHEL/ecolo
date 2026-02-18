@@ -1,567 +1,364 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>EcoCollect — Recyclez. Gagnez. Impactez.</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="stylesheet" href="mo.css">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
-  <style>
-   
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoCollect - Connexion</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="config.js"></script>
+    <style>
+        /* Vos styles existants restent identiques */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: #f8faf8;
+            --foreground: #1a1e1a;
+            --card: #ffffff;
+            --primary: #2d8a5e;
+            --primary-foreground: #ffffff;
+            --secondary: #e8f3e8;
+            --secondary-foreground: #1a5c3a;
+            --muted: #f0f3f0;
+            --muted-foreground: #5a655a;
+            --destructive: #dc2626;
+            --border: #d9e0d9;
+            --ring: #2d8a5e;
+            --radius: 0.75rem;
+            --shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--background);
+            color: var(--foreground);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            height: 50px;
+            width: auto;
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--foreground);
+        }
+
+        .logo-text span {
+            color: var(--primary);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--foreground);
+        }
+
+        label i {
+            color: var(--primary);
+            margin-right: 0.5rem;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border-radius: var(--radius);
+            background: var(--muted);
+            border: 1px solid var(--border);
+            color: var(--foreground);
+            font-size: 1rem;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--ring);
+            box-shadow: 0 0 0 3px rgba(45, 138, 94, 0.1);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted-foreground);
+            font-size: 1.1rem;
+        }
+
+        .toggle-password:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            transition: all 0.2s;
+            background: var(--primary);
+            color: white;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(45, 138, 94, 0.2);
+        }
+
+        .message {
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: var(--radius);
+            display: none;
+        }
+
+        .message.success {
+            background: var(--secondary);
+            color: var(--secondary-foreground);
+            border: 1px solid var(--primary);
+            display: block;
+        }
+
+        .message.error {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--destructive);
+            border: 1px solid var(--destructive);
+            display: block;
+        }
+
+        .links {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            color: var(--muted-foreground);
+        }
+
+        .links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-
-<!-- Custom cursor -->
-<div class="cursor" id="cursor">
-  <div class="cursor-dot" id="cursorDot"></div>
-  <div class="cursor-ring" id="cursorRing"></div>
-</div>
-
-<!-- Canvas particles -->
-<canvas id="particles"></canvas>
-
-<!-- ══════════ NAV ══════════ -->
-<nav id="nav">
-  <a href="#" class="nav-logo">
-  <img src="logo.jpeg" alt="EcoCollect" style="height: 42px; width: auto;">
- 
-</a>
-
-  <ul class="nav-links">
-    <li><a href="#how">Fonctionnement</a></li>
-    <li><a href="#waste">Déchets</a></li>
-    <li><a href="#rewards">Récompenses</a></li>
-    <li><a href="#about">À propos</a></li>
-  </ul>
-
-  <div class="nav-cta">
-    <button class="btn-ghost" onclick="window.location='login.html'">Se connecter</button>
-    <button class="btn-pill" onclick="window.location='login.html'">Commencer →</button>
-  </div>
-
-  <button class="nav-hamburger" id="hamburger" aria-label="Menu">
-    <span></span><span></span><span></span>
-  </button>
-</nav>
-
-<!-- ══════════ HERO ══════════ -->
-<section class="hero" id="home">
-  <div class="hero-glow"></div>
-  <div class="orbit-ring orbit-1"></div>
-  <div class="orbit-ring orbit-2"></div>
-  <div class="orbit-ring orbit-3"></div>
-
-  <!-- Floating stat cards -->
-  <div class="hero-stats">
-    <div class="stat-float stat-float-1">
-      <div class="stat-float-icon">♻️</div>
-      <div class="stat-float-num">12k+</div>
-      <div class="stat-float-label">Collectes ce mois</div>
-    </div>
-    <div class="stat-float stat-float-2">
-      <div class="stat-float-icon">🏆</div>
-      <div class="stat-float-num">850</div>
-      <div class="stat-float-label">Points gagnés aujourd'hui</div>
-    </div>
-    <div class="stat-float stat-float-3">
-      <div class="stat-float-icon">🌱</div>
-      <div class="stat-float-num">4.2T</div>
-      <div class="stat-float-label">Kg valorisés ce mois</div>
-    </div>
-  </div>
-
-  <div class="hero-inner">
-    
-
-    <h1 class="hero-title">
-      Recyclez.<br/>
-      <em>Gagnez.</em><br/>
-      Impactez.
-    </h1>
-
-    <p class="hero-sub">
-      Déclarez vos déchets, suivez vos collectes en temps réel
-      et transformez chaque geste écologique en récompenses concrètes.
-    </p>
-
-    <div class="hero-actions">
-      <button class="btn-primary-hero" onclick="window.location='login.html'">
-        Créer mon compte gratuit
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
-      </button>
-      <button class="btn-outline-hero" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
-        </svg>
-        Voir comment ça marche
-      </button>
-    </div>
-  </div>
-
-  <div class="scroll-hint">
-    <span>Découvrir</span>
-    <div class="scroll-line"></div>
-  </div>
-</section>
-
-<!-- ══════════ HOW IT WORKS ══════════ -->
-<section class="how" id="how">
-  <div class="section-inner">
-    <div class="reveal">
-      <p class="section-label">⚡ Processus simplifié</p>
-      <h2 class="section-heading">Quatre étapes,<br/>un impact réel.</h2>
-      <p class="section-sub">De l'inscription à la récompense, chaque action est pensée pour être simple, rapide et motivante.</p>
-    </div>
-
-    <div class="steps-grid">
-      <!-- Step 1 -->
-      <div class="step-card reveal reveal-delay-1">
-        <div class="step-num">01</div>
-        <div class="step-icon-wrap">🪪</div>
-        <div class="step-title">Enrôlement</div>
-        <div class="step-desc">Créez votre compte en choisissant votre profil : ménage, commerce, entreprise ou administration. Localisez-vous en quelques secondes.</div>
-        <div class="step-connector"></div>
-      </div>
-      <!-- Step 2 -->
-      <div class="step-card reveal reveal-delay-2">
-        <div class="step-num">02</div>
-        <div class="step-icon-wrap">🗂️</div>
-        <div class="step-title">Tri & Préparation</div>
-        <div class="step-desc">Triez vos déchets par catégorie — plastique, papier, métal, verre, organique — dans vos contenants ou sacs EcoCollect.</div>
-        <div class="step-connector"></div>
-      </div>
-      <!-- Step 3 -->
-      <div class="step-card reveal reveal-delay-3">
-        <div class="step-num">03</div>
-        <div class="step-icon-wrap">📋</div>
-        <div class="step-title">Déclaration</div>
-        <div class="step-desc">Déclarez vos déchets en 3 clics. Choisissez la collecte à domicile ou déposez dans un point de regroupement proche.</div>
-        <div class="step-connector"></div>
-      </div>
-      <!-- Step 4 -->
-      <div class="step-card reveal reveal-delay-4">
-        <div class="step-num">04</div>
-        <div class="step-icon-wrap">🎁</div>
-        <div class="step-title">Collecte & Récompenses</div>
-        <div class="step-desc">Suivez votre collecte en temps réel, recevez la confirmation et voyez vos points s'accumuler à chaque action.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════ WASTE TYPES ══════════ -->
-<section class="waste" id="waste">
-  <div class="section-inner">
-    <div class="waste-flex">
-      <div class="waste-tiles reveal">
-        <div class="waste-tile">
-          <div class="waste-emoji">🍶</div>
-          <div class="waste-name">Plastique PET</div>
-          <div class="waste-sub">Bouteilles, emballages</div>
-        </div>
-        <div class="waste-tile">
-          <div class="waste-emoji">🪣</div>
-          <div class="waste-name">Plastique PEHD</div>
-          <div class="waste-sub">Bidons, flacons</div>
-        </div>
-        <div class="waste-tile">
-          <div class="waste-emoji">📦</div>
-          <div class="waste-name">Papier / Carton</div>
-          <div class="waste-sub">Boîtes, journaux</div>
-        </div>
-        <div class="waste-tile">
-          <div class="waste-emoji">🥫</div>
-          <div class="waste-name">Métal</div>
-          <div class="waste-sub">Canettes, conserves</div>
-        </div>
-        <div class="waste-tile">
-          <div class="waste-emoji">🍾</div>
-          <div class="waste-name">Verre</div>
-          <div class="waste-sub">Bouteilles, pots</div>
-        </div>
-        <div class="waste-tile">
-          <div class="waste-emoji">🌿</div>
-          <div class="waste-name">Organique</div>
-          <div class="waste-sub">Déchets alimentaires</div>
-        </div>
-      </div>
-
-      <div class="waste-text-col reveal reveal-delay-2">
-        <p class="section-label kicker">🗑️ Catégories de déchets</p>
-        <h2 class="section-heading">Triez tout,<br/>ne ratez rien.</h2>
-        <p class="section-sub">EcoCollect accepte 6 catégories de déchets recyclables. Chaque type trié et déclaré vous rapporte des points et contribue à un environnement plus propre.</p>
-
-        <ul class="feature-list" style="margin-top:2rem">
-          <li class="feature-item">
-            <div class="feature-check">✓</div>
-            <div class="feature-item-text"><strong>Quantités flexibles</strong> — déclarez en kg, sacs ou unités</div>
-          </li>
-          <li class="feature-item">
-            <div class="feature-check">✓</div>
-            <div class="feature-item-text"><strong>Multi-types</strong> — combinez plusieurs catégories en une seule déclaration</div>
-          </li>
-          <li class="feature-item">
-            <div class="feature-check">✓</div>
-            <div class="feature-item-text"><strong>Validation instantanée</strong> — votre déclaration est traitée en temps réel</div>
-          </li>
-          <li class="feature-item">
-            <div class="feature-check">✓</div>
-            <div class="feature-item-text"><strong>Suivi précis</strong> — visualisez le poids réel collecté après chaque passage</div>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════ STATS BAND ══════════ -->
-<section class="stats-band">
-  <div class="section-inner">
-    <div class="stats-band-inner">
-      <div class="stat-item reveal">
-        <div class="stat-num">48k+</div>
-        <div class="stat-desc">Producteurs actifs</div>
-      </div>
-      <div class="stat-item reveal reveal-delay-1">
-        <div class="stat-num">120T</div>
-        <div class="stat-desc">Déchets valorisés</div>
-      </div>
-      <div class="stat-item reveal reveal-delay-2">
-        <div class="stat-num">6,200</div>
-        <div class="stat-desc">Collectes par mois</div>
-      </div>
-      <div class="stat-item reveal reveal-delay-3">
-        <div class="stat-num">98%</div>
-        <div class="stat-desc">Satisfaction producteurs</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════ REWARDS ══════════ -->
-<section class="rewards" id="rewards">
-  <div class="section-inner">
-    <div class="rewards-inner">
-      <div class="reveal">
-        <p class="section-label">🏆 Système de récompenses</p>
-        <h2 class="section-heading">Chaque déchet<br/>vous rapporte.</h2>
-        <p class="section-sub" style="margin-bottom:2.5rem">Accumulez des points à chaque collecte validée. Échangez-les contre des avantages, réductions et services exclusifs.</p>
-
-        <ul class="feature-list">
-          <li class="feature-item">
-            <div class="feature-check">✓</div>
-            <div class="feature-item-text"><strong>Points automatiques</strong> — crédités dès la validation de la collecte</div>
-          </li>
-          <li class="feature-item">
-            <div class="feature-check">✓</div>
-            <div class="feature-item-text"><strong>Historique complet</strong> — suivez chaque point gagné et dépensé</div>
-          </li>
-          <li class="feature-item">
-            <div class="feature-check">✓</div>
-            <div class="feature-item-text"><strong>Niveaux & badges</strong> — progressez et montrez votre engagement</div>
-          </li>
-          <li class="feature-item">
-            <div class="feature-check">✓</div>
-            <div class="feature-item-text"><strong>Récompenses locales</strong> — partenaires et offres dans votre commune</div>
-          </li>
-        </ul>
-      </div>
-
-      <div class="rewards-visual reveal reveal-delay-2">
-        <!-- Mini reward chips -->
-        <div class="reward-chip reward-chip-1">
-          <div class="reward-chip-icon">🎫</div>
-          <div class="reward-chip-txt">
-            <strong>Bon de réduction</strong>
-            <span>-15% chez nos partenaires</span>
-          </div>
-        </div>
-        <div class="reward-chip reward-chip-2">
-          <div class="reward-chip-icon">⚡</div>
-          <div class="reward-chip-txt">
-            <strong>+50 pts bonus</strong>
-            <span>Collecte express validée</span>
-          </div>
-        </div>
-
-        <!-- Main points card -->
-        <div class="points-card points-main">
-          <div class="points-header">
-            <div class="points-label">Mon solde EcoPoints</div>
-            <div class="points-badge">🟢 Actif</div>
-          </div>
-          <div class="points-big">2 450</div>
-          <div class="points-unit">points disponibles</div>
-          <div class="points-bar-wrap">
-            <div class="points-bar"></div>
-          </div>
-          <div class="points-footer">
-            <span>Niveau Argent</span>
-            <span>550 pts → Or</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════ TESTIMONIALS ══════════ -->
-<section class="testimonials" id="about">
-  <div class="section-inner">
-    <div class="reveal" style="text-align:center; max-width:600px; margin:0 auto 1rem;">
-      <p class="section-label">💬 Ils nous font confiance</p>
-      <h2 class="section-heading">Ce que disent<br/>nos producteurs.</h2>
-    </div>
-
-    <div class="testi-grid">
-      <div class="testi-card reveal reveal-delay-1">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"Depuis EcoCollect, on ne rate plus aucune collecte. L'application nous notifie à l'avance et les points s'accumulent automatiquement. Vraiment bien pensé."</p>
-        <div class="testi-author">
-          <div class="testi-avatar av1">A</div>
-          <div>
-            <div class="testi-name">Aminata K.</div>
-            <div class="testi-role">Ménage — Douala 3</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="testi-card reveal reveal-delay-2">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"En tant que gérant de restaurant, on génère beaucoup de déchets. EcoCollect nous a permis de structurer notre tri et de valoriser nos emballages carton efficacement."</p>
-        <div class="testi-author">
-          <div class="testi-avatar av2">J</div>
-          <div>
-            <div class="testi-name">Jean-Pierre M.</div>
-            <div class="testi-role">Commerce — Bafoussam</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="testi-card reveal reveal-delay-3">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"Notre PME produit du plastique industriel. Avec la fonctionnalité 'Entreprise', on gère nos flux de déchets proprement et on obtient des attestations pour nos clients."</p>
-        <div class="testi-author">
-          <div class="testi-avatar av3">F</div>
-          <div>
-            <div class="testi-name">Fatou B.</div>
-            <div class="testi-role">Entreprise — Yaoundé</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════ CTA FINAL ══════════ -->
-<section class="cta-section">
-  <div class="cta-glow"></div>
-  <div class="section-inner" style="position:relative">
-    <p class="section-label reveal">🌍 Rejoignez le mouvement</p>
-    <h2 class="cta-heading reveal">
-      Votre déchet,<br/>
-      <em>notre ressource.</em>
-    </h2>
-    <p class="cta-sub reveal">Plus de 48 000 producteurs font déjà partie d'EcoCollect. Commencez gratuitement aujourd'hui et transformez chaque geste en impact.</p>
-    <div class="cta-buttons reveal">
-      <button class="btn-big" onclick="window.location='login.html'">
-        <span>🚀</span>
-        Rejoindre EcoCollect
-      </button>
-      <button class="btn-outline-hero" onclick="window.location='login.html'">
-        J'ai déjà un compte →
-      </button>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════ FOOTER ══════════ -->
-<footer>
-  <div class="footer-inner">
-    <div class="footer-top">
-      <div class="footer-logo-wrap">
-        <a href="#" class="nav-logo">
-        <img src="logo.jpeg" alt="EcoCollect" style="height: 38px; width: auto;">
- 
-       </a>
-        <p class="footer-tagline">Plateforme intelligente de gestion et valorisation des déchets recyclables.</p>
-      </div>
-
-      <div class="footer-cols">
-        <div class="footer-col">
-          <h4>Plateforme</h4>
-          <ul>
-            <li><a href="#">Fonctionnement</a></li>
-            <li><a href="#">Types de déchets</a></li>
-            <li><a href="#">Récompenses</a></li>
-            <li><a href="#">Points de dépôt</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h4>Producteurs</h4>
-          <ul>
-            <li><a href="#">Ménages</a></li>
-            <li><a href="#">Commerces</a></li>
-            <li><a href="#">Entreprises</a></li>
-            <li><a href="#">Administrations</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h4>Légal</h4>
-          <ul>
-            <li><a href="#">CGU</a></li>
-            <li><a href="#">Confidentialité</a></li>
-            <li><a href="#">Mentions légales</a></li>
-            <li><a href="#">Contact</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="footer-bottom">
-        <a href="#" class="nav-logo">
-     <img src="logo.jpeg" alt="EcoCollect" style="height: 38px; width: auto;">
+    <div class="login-container">
+        <a href="in.html" class="logo">
+            <img src="logo.jpeg" alt="EcoCollect" class="logo-img">
+           
         </a>
-      <span>© 2026 <span class="footer-bottom-lime">EcoCollect</span>. Tous droits réservés.</span>
+
+        <h1><i class="fas fa-sign-in-alt" style="color: var(--primary); margin-right: 0.5rem;"></i>Connexion</h1>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label><i class="fas fa-envelope"></i> Email ou Téléphone</label>
+                <input type="text" id="identifiant" placeholder="exemple@email.com ou 612345678" required>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i> Mot de passe</label>
+                <div class="input-wrap">
+                    <input type="password" id="password" placeholder="Votre mot de passe" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('password', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn">
+                <i class="fas fa-sign-in-alt"></i> Se connecter
+            </button>
+
+            <div id="message" class="message"></div>
+        </form>
+
+        <div class="links">
+            <p>Pas encore de compte ? <a href="login.html">S'inscrire</a></p>
+            <p><a href="in.html">← Retour à l'accueil</a></p>
+        </div>
     </div>
-  </div>
-</footer>
 
-<script>
-  /* ─── CUSTOM CURSOR ─── */
-  const cursor = document.getElementById('cursor');
-  const dot = document.getElementById('cursorDot');
-  const ring = document.getElementById('cursorRing');
-  let mx=0, my=0, rx=0, ry=0;
-  document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
-  function animCursor() {
-    dot.style.left = mx+'px';
-    dot.style.top  = my+'px';
-    rx += (mx-rx)*.12;
-    ry += (my-ry)*.12;
-    ring.style.left = rx+'px';
-    ring.style.top  = ry+'px';
-    requestAnimationFrame(animCursor);
-  }
-  animCursor();
+    <script>
+        // Utiliser la configuration globale
+        const API_URL = window.APP_CONFIG ? window.APP_CONFIG.API_URL : 'https://ecobackend-eopk.vercel.app';
 
-  /* ─── PARTICLES ─── */
-  const canvas = document.getElementById('particles');
-  const ctx = canvas.getContext('2d');
-  let W, H, particles=[];
-
-  function resize() {
-    W=canvas.width=window.innerWidth;
-    H=canvas.height=window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  const COLORS = ['rgba(168,255,62,', 'rgba(42,255,200,', 'rgba(168,255,62,'];
-  function mkParticle() {
-    const c = COLORS[Math.floor(Math.random()*COLORS.length)];
-    return {
-      x: Math.random()*W, y: Math.random()*H,
-      r: Math.random()*1.8+0.4,
-      vx: (Math.random()-.5)*.25, vy: (Math.random()-.5)*.25,
-      alpha: Math.random()*.4+.05,
-      color: c
-    };
-  }
-  for(let i=0;i<90;i++) particles.push(mkParticle());
-
-  function drawParticles() {
-    ctx.clearRect(0,0,W,H);
-    particles.forEach(p => {
-      p.x+=p.vx; p.y+=p.vy;
-      if(p.x<0)p.x=W; if(p.x>W)p.x=0;
-      if(p.y<0)p.y=H; if(p.y>H)p.y=0;
-      ctx.beginPath();
-      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      ctx.fillStyle = p.color+p.alpha+')';
-      ctx.fill();
-    });
-
-    // Draw subtle connecting lines
-    for(let i=0;i<particles.length;i++) {
-      for(let j=i+1;j<particles.length;j++) {
-        const dx=particles[i].x-particles[j].x;
-        const dy=particles[i].y-particles[j].y;
-        const d=Math.sqrt(dx*dx+dy*dy);
-        if(d<120) {
-          ctx.beginPath();
-          ctx.strokeStyle = `rgba(168,255,62,${.04*(1-d/120)})`;
-          ctx.lineWidth=.5;
-          ctx.moveTo(particles[i].x,particles[i].y);
-          ctx.lineTo(particles[j].x,particles[j].y);
-          ctx.stroke();
+        function togglePassword(inputId, btn) {
+            const inp = document.getElementById(inputId);
+            if (!inp) return;
+            
+            inp.type = inp.type === 'password' ? 'text' : 'password';
+            btn.innerHTML = inp.type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
         }
-      }
-    }
-    requestAnimationFrame(drawParticles);
-  }
-  drawParticles();
 
-  /* ─── NAV SCROLL ─── */
-  const nav = document.getElementById('nav');
-  window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY>60);
-  });
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const identifiant = document.getElementById('identifiant').value;
+            const motDePasse = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                messageDiv.className = 'message info';
+                messageDiv.textContent = 'Connexion en cours...';
+                messageDiv.style.display = 'block';
+                
+                console.log('🔍 Tentative de connexion à:', API_URL);
+                
+                // Essayer d'abord la connexion producteur
+                const producteurResponse = await fetch(`${API_URL}/api/auth/connexion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifiant, motDePasse })
+                });
+                
+                const producteurData = await producteurResponse.json();
+                
+                if (producteurResponse.ok && producteurData.token) {
+                    // Connexion producteur réussie
+                    const userData = producteurData.producteur || producteurData.user || producteurData.utilisateur;
+                    
+                    // Sauvegarder les données
+                    localStorage.setItem(window.APP_CONFIG.TOKEN_KEY, producteurData.token);
+                    localStorage.setItem(window.APP_CONFIG.USER_KEY, JSON.stringify(userData));
+                    localStorage.setItem(window.APP_CONFIG.ROLE_KEY, 'producteur');
+                    
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = 'Connexion producteur réussie ! Redirection...';
+                    
+                    setTimeout(() => {
+                        window.location.href = 'producteur.html';
+                    }, 1500);
+                    
+                    return;
+                }
+                
+                // Si échec producteur, essayer la connexion collecteur
+                const collecteurResponse = await fetch(`${API_URL}/api/collecteurs/connexion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifiant, motDePasse })
+                });
+                
+                const collecteurData = await collecteurResponse.json();
+                
+                if (collecteurResponse.ok && collecteurData.success && collecteurData.token) {
+                    // Connexion collecteur réussie
+                    const userData = collecteurData.collecteur;
+                    
+                    // Sauvegarder les données
+                    localStorage.setItem(window.APP_CONFIG.TOKEN_KEY, collecteurData.token);
+                    localStorage.setItem(window.APP_CONFIG.USER_KEY, JSON.stringify(userData));
+                    localStorage.setItem(window.APP_CONFIG.ROLE_KEY, 'collecteur');
+                    
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = 'Connexion collecteur réussie ! Redirection...';
+                    
+                    setTimeout(() => {
+                        window.location.href = 'collecteur.html';
+                    }, 1500);
+                    
+                    return;
+                }
+                
+                // Si les deux échouent
+                throw new Error('Identifiants incorrects');
+                
+            } catch (error) {
+                console.error('❌ Erreur connexion:', error);
+                messageDiv.className = 'message error';
+                messageDiv.textContent = error.message || 'Erreur de connexion au serveur';
+            }
+        }
 
-  /* ─── SCROLL REVEAL ─── */
-  const revealEls = document.querySelectorAll('.reveal');
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
-  }, { threshold:.12 });
-  revealEls.forEach(el => io.observe(el));
+        // Vérifier si déjà connecté
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem(window.APP_CONFIG?.TOKEN_KEY);
+            const role = localStorage.getItem(window.APP_CONFIG?.ROLE_KEY);
+            
+            if (token && role) {
+                if (role === 'producteur') {
+                    window.location.href = 'producteur.html';
+                } else if (role === 'collecteur') {
+                    window.location.href = 'collecteur.html';
+                }
+            }
+        });
 
-  /* ─── SMOOTH SCROLL FOR NAV LINKS ─── */
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
-      const id = a.getAttribute('href').slice(1);
-      const target = document.getElementById(id);
-      if(target) { e.preventDefault(); target.scrollIntoView({behavior:'smooth', block:'start'}); }
-    });
-  });
-
-  /* ─── COUNTER ANIMATION ─── */
-  function animCount(el, target, suffix='') {
-    let start=0;
-    const step = target/60;
-    const timer = setInterval(() => {
-      start += step;
-      if(start >= target) { start = target; clearInterval(timer); }
-      const display = target >= 1000
-        ? (start/1000).toFixed(target>=10000?0:1)+'k'
-        : Math.round(start)+(suffix||'');
-      el.textContent = display+(suffix && target<1000 ? suffix : '');
-    }, 20);
-  }
-
-  const statsIo = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if(e.isIntersecting) {
-        const el = e.target.querySelector('.stat-num');
-        const txt = el.textContent;
-        if(txt.includes('k')) animCount(el, parseFloat(txt)*1000, '');
-        else if(txt.includes('T')) animCount(el, parseFloat(txt)*1000, '');
-        else if(txt.includes('%')) animCount(el, parseInt(txt), '%');
-        else animCount(el, parseInt(txt.replace(',','')), '');
-        statsIo.unobserve(e.target);
-      }
-    });
-  }, {threshold:.5});
-  document.querySelectorAll('.stat-item').forEach(el => statsIo.observe(el));
-
-  /* ─── MOBILE HAMBURGER (no-op, just visual) ─── */
-  document.getElementById('hamburger')?.addEventListener('click', () => {
-    // In a real app this would toggle a mobile menu
-    alert('Menu mobile - à intégrer selon vos besoins');
-  });
-</script>
+        // Attacher l'événement au formulaire
+        document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        
+        // Exposer la fonction globalement
+        window.togglePassword = togglePassword;
+    </script>
 </body>
 </html>
+

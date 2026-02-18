@@ -1,119 +1,485 @@
 
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import dotenv from 'dotenv';
-import { testerConnexion } from './bakend/config/database.js';
+// import express from 'express';
+// import cors from 'cors';
+// import helmet from 'helmet';
+// import morgan from 'morgan';
+// import dotenv from 'dotenv';
+// import { testerConnexion } from './bakend/config/database.js';
 
-// Import des routes
-import authRoutes from './backend/routes/authRoute.js';
-import declarationRoutes from './backend/routes/declarationRoute.js';
-import dashboardRoutes from './backend/routes/dashboardRoutes.js';
-import profileRoutes from './backend/routes/profileRoutes.js';
-import collecteurRoutes from './backend/routes/collecteurRoute.js';
-import gestionnaireRoutes from './backend/routes/gestionnaireRoute.js';
-import superviseurRoutes from './backend/routes/superviseurRoute.js';
-import { serveStatic } from './backend/middleware/uploads.js';
+// // Import des routes
+// import authRoutes from './backend/routes/authRoute.js';
+// import declarationRoutes from './backend/routes/declarationRoute.js';
+// import dashboardRoutes from './backend/routes/dashboardRoutes.js';
+// import profileRoutes from './backend/routes/profileRoutes.js';
+// import collecteurRoutes from './backend/routes/collecteurRoute.js';
+// import gestionnaireRoutes from './backend/routes/gestionnaireRoute.js';
+// import superviseurRoutes from './backend/routes/superviseurRoute.js';
+// import { serveStatic } from './backend/middleware/uploads.js';
 
-// Configuration
-dotenv.config();
+// // Configuration
+// dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+// const app = express();
+// const PORT = process.env.PORT || 3000;
 
-// Middleware de base
-app.use(helmet());
+// // Middleware de base
+// app.use(helmet());
 
-// Configuration CORS simplifiée (sans FRONTEND_URL pour l'instant)
-app.use(cors({
-    origin: '*', // À modifier plus tard quand tu auras le frontend
-    credentials: true
-}));
+// // Configuration CORS simplifiée (sans FRONTEND_URL pour l'instant)
+// app.use(cors({
+//     origin: '*', // À modifier plus tard quand tu auras le frontend
+//     credentials: true
+// }));
 
-app.use(morgan('dev'));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// app.use(morgan('dev'));
+// app.use(express.json({ limit: '50mb' }));
+// app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Servir les fichiers statiques si nécessaire
-serveStatic(app);
+// // Servir les fichiers statiques si nécessaire
+// serveStatic(app);
 
-// Route de base
-app.get('/', (req, res) => {
-    res.json({
-        message: 'API EcoCollect - Gestion des déchets',
-        version: '1.0.0',
-        status: 'online',
-        environment: process.env.NODE_ENV || 'development',
-        endpoints: {
-            auth: '/api/auth',
-            declarations: '/api/declarations',
-            dashboard: '/api/dashboard',
-            profile: '/api/profile',
-            collecteurs: '/api/collecteurs',
-            gestionnaires: '/api/gestionnaires',
-            superviseurs: '/api/superviseurs'
+// // Route de base
+// app.get('/', (req, res) => {
+//     res.json({
+//         message: 'API EcoCollect - Gestion des déchets',
+//         version: '1.0.0',
+//         status: 'online',
+//         environment: process.env.NODE_ENV || 'development',
+//         endpoints: {
+//             auth: '/api/auth',
+//             declarations: '/api/declarations',
+//             dashboard: '/api/dashboard',
+//             profile: '/api/profile',
+//             collecteurs: '/api/collecteurs',
+//             gestionnaires: '/api/gestionnaires',
+//             superviseurs: '/api/superviseurs'
+//         }
+//     });
+// });
+
+// // Routes API
+// app.use('/api/auth', authRoutes);
+// app.use('/api', declarationRoutes);
+// app.use('/api', dashboardRoutes);
+// app.use('/api', profileRoutes);
+// app.use('/api/collecteurs', collecteurRoutes);
+// app.use('/api/gestionnaires', gestionnaireRoutes);
+// app.use('/api/superviseurs', superviseurRoutes);
+
+// // Route 404
+// app.use('*', (req, res) => {
+//     res.status(404).json({
+//         message: 'Route non trouvée',
+//         path: req.originalUrl
+//     });
+// });
+
+// // Gestion des erreurs globales
+// app.use((err, req, res, next) => {
+//     console.error('❌ Erreur globale:', err);
+    
+//     const status = err.status || 500;
+//     const response = {
+//         message: err.message || 'Erreur interne du serveur'
+//     };
+    
+//     // Ajouter le stack seulement en développement
+//     if (process.env.NODE_ENV === 'development') {
+//         response.stack = err.stack;
+//     }
+    
+//     res.status(status).json(response);
+// });
+
+// // Démarrer le serveur UNIQUEMENT en local
+// // Pour Vercel, on n'écoute PAS sur un port (c'est géré par Vercel)
+// if (process.env.NODE_ENV !== 'production') {
+//     const demarrerServeur = async () => {
+//         try {
+//             await testerConnexion();
+//             app.listen(PORT, () => {
+//                 console.log(`✅ Serveur démarré sur http://localhost:${PORT}`);
+//                 console.log(`📊 Environnement: ${process.env.NODE_ENV || 'development'}`);
+//             });
+//         } catch (erreur) {
+//             console.error('❌ Impossible de démarrer le serveur:', erreur);
+//             process.exit(1);
+//         }
+//     };
+    
+//     demarrerServeur();
+// } else {
+//     // En production (Vercel), on teste juste la connexion sans bloquer
+//     testerConnexion().then(() => {
+//         console.log('✅ API prête pour Vercel');
+//     });
+// }
+
+// // Export pour Vercel
+// export default app;
+
+
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoCollect - Connexion</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="config.js"></script>
+    <style>
+        /* Vos styles existants restent identiques */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-    });
-});
 
-// Routes API
-app.use('/api/auth', authRoutes);
-app.use('/api', declarationRoutes);
-app.use('/api', dashboardRoutes);
-app.use('/api', profileRoutes);
-app.use('/api/collecteurs', collecteurRoutes);
-app.use('/api/gestionnaires', gestionnaireRoutes);
-app.use('/api/superviseurs', superviseurRoutes);
-
-// Route 404
-app.use('*', (req, res) => {
-    res.status(404).json({
-        message: 'Route non trouvée',
-        path: req.originalUrl
-    });
-});
-
-// Gestion des erreurs globales
-app.use((err, req, res, next) => {
-    console.error('❌ Erreur globale:', err);
-    
-    const status = err.status || 500;
-    const response = {
-        message: err.message || 'Erreur interne du serveur'
-    };
-    
-    // Ajouter le stack seulement en développement
-    if (process.env.NODE_ENV === 'development') {
-        response.stack = err.stack;
-    }
-    
-    res.status(status).json(response);
-});
-
-// Démarrer le serveur UNIQUEMENT en local
-// Pour Vercel, on n'écoute PAS sur un port (c'est géré par Vercel)
-if (process.env.NODE_ENV !== 'production') {
-    const demarrerServeur = async () => {
-        try {
-            await testerConnexion();
-            app.listen(PORT, () => {
-                console.log(`✅ Serveur démarré sur http://localhost:${PORT}`);
-                console.log(`📊 Environnement: ${process.env.NODE_ENV || 'development'}`);
-            });
-        } catch (erreur) {
-            console.error('❌ Impossible de démarrer le serveur:', erreur);
-            process.exit(1);
+        :root {
+            --background: #f8faf8;
+            --foreground: #1a1e1a;
+            --card: #ffffff;
+            --primary: #2d8a5e;
+            --primary-foreground: #ffffff;
+            --secondary: #e8f3e8;
+            --secondary-foreground: #1a5c3a;
+            --muted: #f0f3f0;
+            --muted-foreground: #5a655a;
+            --destructive: #dc2626;
+            --border: #d9e0d9;
+            --ring: #2d8a5e;
+            --radius: 0.75rem;
+            --shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05);
         }
-    };
-    
-    demarrerServeur();
-} else {
-    // En production (Vercel), on teste juste la connexion sans bloquer
-    testerConnexion().then(() => {
-        console.log('✅ API prête pour Vercel');
-    });
-}
 
-// Export pour Vercel
-export default app;
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--background);
+            color: var(--foreground);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            height: 50px;
+            width: auto;
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--foreground);
+        }
+
+        .logo-text span {
+            color: var(--primary);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--foreground);
+        }
+
+        label i {
+            color: var(--primary);
+            margin-right: 0.5rem;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border-radius: var(--radius);
+            background: var(--muted);
+            border: 1px solid var(--border);
+            color: var(--foreground);
+            font-size: 1rem;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--ring);
+            box-shadow: 0 0 0 3px rgba(45, 138, 94, 0.1);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted-foreground);
+            font-size: 1.1rem;
+        }
+
+        .toggle-password:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            transition: all 0.2s;
+            background: var(--primary);
+            color: white;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(45, 138, 94, 0.2);
+        }
+
+        .message {
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: var(--radius);
+            display: none;
+        }
+
+        .message.success {
+            background: var(--secondary);
+            color: var(--secondary-foreground);
+            border: 1px solid var(--primary);
+            display: block;
+        }
+
+        .message.error {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--destructive);
+            border: 1px solid var(--destructive);
+            display: block;
+        }
+
+        .links {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            color: var(--muted-foreground);
+        }
+
+        .links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <a href="in.html" class="logo">
+            <img src="logo.jpeg" alt="EcoCollect" class="logo-img">
+           
+        </a>
+
+        <h1><i class="fas fa-sign-in-alt" style="color: var(--primary); margin-right: 0.5rem;"></i>Connexion</h1>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label><i class="fas fa-envelope"></i> Email ou Téléphone</label>
+                <input type="text" id="identifiant" placeholder="exemple@email.com ou 612345678" required>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i> Mot de passe</label>
+                <div class="input-wrap">
+                    <input type="password" id="password" placeholder="Votre mot de passe" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('password', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn">
+                <i class="fas fa-sign-in-alt"></i> Se connecter
+            </button>
+
+            <div id="message" class="message"></div>
+        </form>
+
+        <div class="links">
+            <p>Pas encore de compte ? <a href="login.html">S'inscrire</a></p>
+            <p><a href="in.html">← Retour à l'accueil</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Utiliser la configuration globale
+        const API_URL = window.APP_CONFIG ? window.APP_CONFIG.API_URL : 'https://ecobackend-eopk.vercel.app';
+
+        function togglePassword(inputId, btn) {
+            const inp = document.getElementById(inputId);
+            if (!inp) return;
+            
+            inp.type = inp.type === 'password' ? 'text' : 'password';
+            btn.innerHTML = inp.type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const identifiant = document.getElementById('identifiant').value;
+            const motDePasse = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                messageDiv.className = 'message info';
+                messageDiv.textContent = 'Connexion en cours...';
+                messageDiv.style.display = 'block';
+                
+                console.log('🔍 Tentative de connexion à:', API_URL);
+                
+                // Essayer d'abord la connexion producteur
+                const producteurResponse = await fetch(`${API_URL}/api/auth/connexion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifiant, motDePasse })
+                });
+                
+                const producteurData = await producteurResponse.json();
+                
+                if (producteurResponse.ok && producteurData.token) {
+                    // Connexion producteur réussie
+                    const userData = producteurData.producteur || producteurData.user || producteurData.utilisateur;
+                    
+                    // Sauvegarder les données
+                    localStorage.setItem(window.APP_CONFIG.TOKEN_KEY, producteurData.token);
+                    localStorage.setItem(window.APP_CONFIG.USER_KEY, JSON.stringify(userData));
+                    localStorage.setItem(window.APP_CONFIG.ROLE_KEY, 'producteur');
+                    
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = 'Connexion producteur réussie ! Redirection...';
+                    
+                    setTimeout(() => {
+                        window.location.href = 'producteur.html';
+                    }, 1500);
+                    
+                    return;
+                }
+                
+                // Si échec producteur, essayer la connexion collecteur
+                const collecteurResponse = await fetch(`${API_URL}/api/collecteurs/connexion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifiant, motDePasse })
+                });
+                
+                const collecteurData = await collecteurResponse.json();
+                
+                if (collecteurResponse.ok && collecteurData.success && collecteurData.token) {
+                    // Connexion collecteur réussie
+                    const userData = collecteurData.collecteur;
+                    
+                    // Sauvegarder les données
+                    localStorage.setItem(window.APP_CONFIG.TOKEN_KEY, collecteurData.token);
+                    localStorage.setItem(window.APP_CONFIG.USER_KEY, JSON.stringify(userData));
+                    localStorage.setItem(window.APP_CONFIG.ROLE_KEY, 'collecteur');
+                    
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = 'Connexion collecteur réussie ! Redirection...';
+                    
+                    setTimeout(() => {
+                        window.location.href = 'collecteur.html';
+                    }, 1500);
+                    
+                    return;
+                }
+                
+                // Si les deux échouent
+                throw new Error('Identifiants incorrects');
+                
+            } catch (error) {
+                console.error('❌ Erreur connexion:', error);
+                messageDiv.className = 'message error';
+                messageDiv.textContent = error.message || 'Erreur de connexion au serveur';
+            }
+        }
+
+        // Vérifier si déjà connecté
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem(window.APP_CONFIG?.TOKEN_KEY);
+            const role = localStorage.getItem(window.APP_CONFIG?.ROLE_KEY);
+            
+            if (token && role) {
+                if (role === 'producteur') {
+                    window.location.href = 'producteur.html';
+                } else if (role === 'collecteur') {
+                    window.location.href = 'collecteur.html';
+                }
+            }
+        });
+
+        // Attacher l'événement au formulaire
+        document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        
+        // Exposer la fonction globalement
+        window.togglePassword = togglePassword;
+    </script>
+</body>
+</html>
