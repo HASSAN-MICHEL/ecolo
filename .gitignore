@@ -44,10 +44,6 @@ src/
 reports/
 public/
 
-# Environment
-.env
-.env.local
-*.env
 
 # Logs
 logs

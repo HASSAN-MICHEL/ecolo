@@ -93,148 +93,51 @@
 // export { pool, testerConnexion };
 
 
-// database.js - Configuration complète pour Supabase + Vercel
-import pkg from 'pg';
+// database.js — Version PRODUCTION STABLE pour Vercel + Supabase
+
+import pkg from "pg";
 const { Pool } = pkg;
 
-const isProduction = process.env.NODE_ENV === 'production';
+console.log("🚀 Initialisation connexion Supabase (Vercel Ready)");
 
-console.log('🚀 Initialisation de la connexion DB');
-console.log('📊 Environnement:', isProduction ? 'PRODUCTION' : 'DÉVELOPPEMENT');
-console.log('📡 DATABASE_URL définie:', !!process.env.DATABASE_URL);
-console.log('🔑 SUPABASE_URL définie:', !!process.env.SUPABASE_URL);
+// 🔥 OBLIGATOIRE : utiliser uniquement DATABASE_URL
+const connectionString = process.env.DATABASE_URL;
 
-let poolConfig;
-
-// Configuration pour Vercel (production)
-if (isProduction) {
-    // OPTION 1: Utiliser DATABASE_URL si disponible (recommandé)
-    if (process.env.DATABASE_URL) {
-        poolConfig = {
-            connectionString: process.env.DATABASE_URL,
-            ssl: {
-                rejectUnauthorized: false // Essentiel pour Supabase
-            },
-            max: 20,
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 10000,
-        };
-        console.log('🔧 Configuration PRODUCTION avec DATABASE_URL');
-    } 
-    // OPTION 2: Configuration manuelle avec variables d'environnement
-    else {
-        poolConfig = {
-            host: process.env.SUPABASE_DB_HOST || 'db.cyjgsbdchsarsyrobbal.supabase.co',
-            port: parseInt(process.env.SUPABASE_DB_PORT || '5432'),
-            database: process.env.SUPABASE_DB_NAME || 'postgres',
-            user: process.env.SUPABASE_DB_USER || 'postgres',
-            password: process.env.SUPABASE_DB_PASSWORD || '',
-            ssl: {
-                rejectUnauthorized: false
-            },
-            max: 20,
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 10000,
-        };
-        console.log('🔧 Configuration PRODUCTION manuelle');
-    }
-} 
-// Configuration pour développement local
-else {
-    poolConfig = {
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '5432'),
-        database: process.env.DB_NAME || 'ecocollect_db',
-        user: process.env.DB_USER || 'postgres',
-        password: process.env.DB_PASSWORD || '',
-        max: 20,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 20000,
-        ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
-    };
-    console.log('💻 Configuration DÉVELOPPEMENT LOCAL');
+if (!connectionString) {
+    console.error("❌ DATABASE_URL non définie dans Vercel !");
+    throw new Error("DATABASE_URL manquante");
 }
 
-// Log sécurisé de la configuration (sans le mot de passe)
-console.log('📋 Configuration DB:', {
-    host: poolConfig.host || (poolConfig.connectionString ? 'Utilise connectionString' : 'N/A'),
-    port: poolConfig.port || 'via connectionString',
-    database: poolConfig.database || 'via connectionString',
-    user: poolConfig.user || 'via connectionString',
-    ssl: !!poolConfig.ssl,
-    max: poolConfig.max
+console.log("📡 Utilisation DATABASE_URL :", connectionString.includes("supabase") ? "Supabase détecté" : "Autre DB");
+
+const pool = new Pool({
+    connectionString,
+    ssl: {
+        rejectUnauthorized: false, // OBLIGATOIRE pour Supabase
+    },
+    max: 5, // Important en serverless
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 10000,
 });
 
-const pool = new Pool(poolConfig);
-
-// Gestionnaire d'erreurs de la pool
-pool.on('error', (err, client) => {
-    console.error('❌ Erreur inattendue sur la pool:', err.message);
+// Gestion erreurs globales
+pool.on("error", (err) => {
+    console.error("❌ Erreur Pool PostgreSQL:", err.message);
 });
 
-// Fonction de test de connexion améliorée
+// Test connexion
 const testerConnexion = async () => {
-    let client;
     try {
-        console.log('🔄 Test de connexion à la base de données...');
-        
-        // Tentative de connexion avec timeout
-        const connectPromise = pool.connect();
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout de connexion')), 15000)
-        );
-        
-        client = await Promise.race([connectPromise, timeoutPromise]);
-        
-        console.log('✅ Connexion établie, test de requête...');
-        
-        // Tester une requête simple
-        const result = await client.query('SELECT NOW() as time, current_database() as db, current_user as user');
-        
-        console.log('✅ Requête réussie:');
-        console.log('   ⏰ Heure DB:', result.rows[0].time);
-        console.log('   📚 Base:', result.rows[0].db);
-        console.log('   👤 Utilisateur:', result.rows[0].user);
-        
+        console.log("🔄 Test connexion DB...");
+        const client = await pool.connect();
+        const result = await client.query("SELECT NOW()");
+        console.log("✅ Connexion DB OK - Heure:", result.rows[0].now);
         client.release();
-        console.log('✅ Connexion à la base de données opérationnelle');
         return true;
-        
-    } catch (erreur) {
-        console.error('❌ Erreur de connexion à la base de données:', erreur.message);
-        
-        // Diagnostic détaillé
-        if (erreur.message.includes('ENOTFOUND')) {
-            console.error('💡 Problème DNS - Vérifiez le hostname');
-        } else if (erreur.message.includes('ECONNREFUSED')) {
-            console.error('💡 Connexion refusée - Vérifiez le port et si Supabase est accessible');
-        } else if (erreur.message.includes('timeout')) {
-            console.error('💡 Timeout - Le serveur ne répond pas');
-        } else if (erreur.message.includes('password')) {
-            console.error('💡 Erreur d\'authentification - Vérifiez le mot de passe');
-        } else if (erreur.message.includes('SSL')) {
-            console.error('💡 Erreur SSL - Vérifiez la configuration SSL');
-        }
-        
-        if (client) {
-            try { client.release(); } catch (e) {}
-        }
-        
-        // En développement, on peut vouloir arrêter l'application
-        if (!isProduction) {
-            console.error('❌ Arrêt en développement dû à une erreur DB');
-            process.exit(1);
-        }
-        
+    } catch (error) {
+        console.error("❌ Erreur connexion DB:", error.message);
         return false;
     }
 };
 
-// Exporter aussi les informations Supabase pour d'autres usages
-const supabaseConfig = {
-    url: process.env.SUPABASE_URL || 'https://cyjgsbdchsarsyrobbal.supabase.co',
-    anonKey: process.env.SUPABASE_ANON_KEY || '',
-    serviceKey: process.env.SUPABASE_SERVICE_KEY || ''
-};
-
-export { pool, testerConnexion, supabaseConfig };
+export { pool, testerConnexion };

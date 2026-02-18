@@ -1,15 +1,32 @@
+
+
 // // ============================================
 // // login.js - Gestion unifiée de l'authentification EcoCollect
-// // Version 1.0 - Thème clair
+// // Version corrigée avec redirection vers les bons dashboards
 // // ============================================
 
-// // Configuration
+
+
+
 // const CONFIG = {
-//     API_URL: localStorage.getItem('ecocollect_api_url') || 'http://localhost:3000',
+//     API_URL: window.API_BASE_URL || 'https://ecobackend-eopk.vercel.app', // URL de production par défaut
 //     TOKEN_KEY: 'ecocollect_token',
 //     USER_KEY: 'ecocollect_user',
-//     USER_ROLE_KEY: 'ecocollect_role'
+//     ROLE_KEY: 'ecocollect_role'
 // };
+
+// console.log('🚀 Collecteur.js chargé');
+// console.log('📡 API URL utilisée:', CONFIG.API_URL);
+
+// // // Configuration
+// // const CONFIG = {
+// //     API_URL: localStorage.getItem('api_url') || 'http://localhost:3000',
+// //     TOKEN_KEY: 'ecocollect_token',
+// //     USER_KEY: 'ecocollect_user',
+// //     USER_ROLE_KEY: 'ecocollect_role'
+// // };
+
+
 
 // // État de l'application
 // let currentUser = null;
@@ -29,11 +46,14 @@
 //     // Initialiser les écouteurs d'événements
 //     initEventListeners();
     
-//     // Vérifier si l'utilisateur est déjà connecté
-//     loadUserFromStorage();
+//     // Vérifier si l'utilisateur est déjà connecté (mais NE PAS rediriger automatiquement)
+//     checkExistingSession();
     
-//     // Afficher l'URL de l'API
-//     updateApiUrlDisplay();
+//     // Tester la connexion à l'API
+//     testConnection();
+    
+//     // Initialiser la gestion des photos
+//     initPhotoUploads();
 // });
 
 // function initEventListeners() {
@@ -68,20 +88,113 @@
 //     // Formulaire collecteur
 //     initCollecteurForm();
     
-//     // Lien "Se connecter"
-//     document.querySelectorAll('.auth-link a').forEach(link => {
-//         link.addEventListener('click', (e) => {
-//             e.preventDefault();
-//             window.location.href = 'index.html';
-//         });
-//     });
-    
 //     // Nettoyage des erreurs
 //     document.querySelectorAll('input, select, textarea').forEach(el => {
 //         el.addEventListener('input', () => {
 //             el.closest('.field')?.classList.remove('has-error');
 //         });
 //     });
+    
+//     // Gestion des CGU
+//     const pCguRow = document.getElementById('pCguRow');
+//     if (pCguRow) {
+//         pCguRow.addEventListener('click', function(e) {
+//             e.preventDefault();
+//             this.classList.toggle('checked');
+//         });
+//     }
+    
+//     const cCguRow = document.getElementById('cCguRow');
+//     if (cCguRow) {
+//         cCguRow.addEventListener('click', function(e) {
+//             e.preventDefault();
+//             this.classList.toggle('checked');
+//         });
+//     }
+// }
+
+// function initPhotoUploads() {
+//     // Photo de profil
+//     const photoPreview = document.getElementById('photoPreview');
+//     const photoFile = document.getElementById('c-photo-file');
+    
+//     if (photoPreview && photoFile) {
+//         photoPreview.addEventListener('click', () => {
+//             photoFile.click();
+//         });
+        
+//         photoFile.addEventListener('change', previewPhoto);
+//     }
+    
+//     // Photos CNI - RECTO
+//     const cniRectoZone = document.getElementById('cni-recto-zone');
+//     const cniRectoFile = document.getElementById('collecteur-cni-recto-file');
+    
+//     if (cniRectoZone && cniRectoFile) {
+//         cniRectoZone.addEventListener('click', () => {
+//             cniRectoFile.click();
+//         });
+        
+//         cniRectoFile.addEventListener('change', (e) => handleCniUpload(e, 'recto'));
+//     }
+    
+//     // Photos CNI - VERSO
+//     const cniVersoZone = document.getElementById('cni-verso-zone');
+//     const cniVersoFile = document.getElementById('collecteur-cni-verso-file');
+    
+//     if (cniVersoZone && cniVersoFile) {
+//         cniVersoZone.addEventListener('click', () => {
+//             cniVersoFile.click();
+//         });
+        
+//         cniVersoFile.addEventListener('change', (e) => handleCniUpload(e, 'verso'));
+//     }
+// }
+
+// // Gestion upload photos CNI
+// function handleCniUpload(e, type) {
+//     const file = e.target.files[0];
+//     if (!file) return;
+    
+//     const reader = new FileReader();
+//     reader.onload = function(event) {
+//         const previewId = type === 'recto' ? 'cni-recto-preview' : 'cni-verso-preview';
+//         const inputId = type === 'recto' ? 'collecteur-cni-recto' : 'collecteur-cni-verso';
+//         const preview = document.getElementById(previewId);
+        
+//         if (preview) {
+//             preview.innerHTML = '';
+//             const img = document.createElement('img');
+//             img.src = event.target.result;
+//             img.style.width = '100%';
+//             img.style.height = '100%';
+//             img.style.objectFit = 'cover';
+//             img.style.borderRadius = '5px';
+//             preview.appendChild(img);
+//             preview.classList.add('has-image');
+            
+//             // Mettre à jour le champ caché
+//             const hiddenInput = document.getElementById(inputId);
+//             if (hiddenInput) {
+//                 hiddenInput.value = event.target.result;
+//             }
+            
+//             // Mettre à jour le texte
+//             const hint = preview.nextElementSibling;
+//             if (hint) hint.innerHTML = `<i class="fas fa-check-circle" style="color: #4CAF50;"></i> ${type === 'recto' ? 'Recto' : 'Verso'} chargé`;
+//         }
+//     };
+//     reader.readAsDataURL(file);
+// }
+
+// async function testConnection() {
+//     try {
+//         const response = await fetch(`${CONFIG.API_URL}/`);
+//         console.log('✅ Connexion API établie');
+//     } catch (error) {
+//         console.error('❌ Impossible de se connecter à l\'API:', error);
+//         showMsg('pMsg', 'Impossible de se connecter au serveur. Vérifiez l\'URL.', 'error');
+//     }
 // }
 
 // function initProducteurForm() {
@@ -90,17 +203,15 @@
 //         if (btn.closest('#screen2p')) {
 //             btn.addEventListener('click', (e) => {
 //                 e.preventDefault();
-//                 if (btn.textContent.includes('Retour')) {
-//                     const step = btn.closest('.form-step');
-//                     if (step.id === 'pStep1') {
-//                         goBack();
-//                     } else if (step.id === 'pStep2') {
-//                         pPrev(1);
-//                     } else if (step.id === 'pStep3') {
-//                         pPrev(2);
-//                     } else if (step.id === 'pStep4') {
-//                         pPrev(3);
-//                     }
+//                 const step = btn.closest('.form-step');
+//                 if (step && step.id === 'pStep1') {
+//                     goBack();
+//                 } else if (step && step.id === 'pStep2') {
+//                     pPrev(1);
+//                 } else if (step && step.id === 'pStep3') {
+//                     pPrev(2);
+//                 } else if (step && step.id === 'pStep4') {
+//                     pPrev(3);
 //                 }
 //             });
 //         }
@@ -112,11 +223,11 @@
 //             btn.addEventListener('click', (e) => {
 //                 e.preventDefault();
 //                 const step = btn.closest('.form-step');
-//                 if (step.id === 'pStep1') {
+//                 if (step && step.id === 'pStep1') {
 //                     pNext(1);
-//                 } else if (step.id === 'pStep2') {
+//                 } else if (step && step.id === 'pStep2') {
 //                     pNext(2);
-//                 } else if (step.id === 'pStep3') {
+//                 } else if (step && step.id === 'pStep3') {
 //                     pNext(3);
 //                 }
 //             });
@@ -140,13 +251,13 @@
 //             btn.addEventListener('click', (e) => {
 //                 e.preventDefault();
 //                 const step = btn.closest('.form-step');
-//                 if (step.id === 'cStep1') {
+//                 if (step && step.id === 'cStep1') {
 //                     goBack();
-//                 } else if (step.id === 'cStep2') {
+//                 } else if (step && step.id === 'cStep2') {
 //                     cPrev(1);
-//                 } else if (step.id === 'cStep3') {
+//                 } else if (step && step.id === 'cStep3') {
 //                     cPrev(2);
-//                 } else if (step.id === 'cStep4') {
+//                 } else if (step && step.id === 'cStep4') {
 //                     cPrev(3);
 //                 }
 //             });
@@ -159,11 +270,11 @@
 //             btn.addEventListener('click', (e) => {
 //                 e.preventDefault();
 //                 const step = btn.closest('.form-step');
-//                 if (step.id === 'cStep1') {
+//                 if (step && step.id === 'cStep1') {
 //                     cNext(1);
-//                 } else if (step.id === 'cStep2') {
+//                 } else if (step && step.id === 'cStep2') {
 //                     cNext(2);
-//                 } else if (step.id === 'cStep3') {
+//                 } else if (step && step.id === 'cStep3') {
 //                     cNext(3);
 //                 }
 //             });
@@ -178,26 +289,13 @@
 //             submitCollecteur();
 //         });
 //     }
-    
-//     // Upload photo
-//     const photoUpload = document.getElementById('photoUploadZone');
-//     if (photoUpload) {
-//         photoUpload.addEventListener('click', () => {
-//             document.getElementById('c-photo-file').click();
-//         });
-//     }
-    
-//     const photoFile = document.getElementById('c-photo-file');
-//     if (photoFile) {
-//         photoFile.addEventListener('change', previewPhoto);
-//     }
 // }
 
 // // ============================================
 // // GESTION DE LA SESSION
 // // ============================================
 
-// function loadUserFromStorage() {
+// function checkExistingSession() {
 //     try {
 //         const token = localStorage.getItem(CONFIG.TOKEN_KEY);
 //         const userJson = localStorage.getItem(CONFIG.USER_KEY);
@@ -209,10 +307,10 @@
 //             currentUser = user;
 //             currentRole = role;
             
-//             console.log('✅ Session restaurée:', { role: currentRole, user: currentUser.nomComplet });
+//             console.log('✅ Session existante:', { role: currentRole, user: currentUser?.nomComplet });
             
-//             // Rediriger vers l'application appropriée
-//             redirectToApp();
+//             // Rediriger vers le bon dashboard si on est sur la page de login
+//             redirectToDashboard();
 //         }
 //     } catch (error) {
 //         console.error('❌ Erreur lors du chargement de la session:', error);
@@ -228,8 +326,10 @@
 //     try {
 //         localStorage.setItem(CONFIG.TOKEN_KEY, token);
 //         localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(user));
-//         localStorage.setItem(CONFIG.USER_ROLE_KEY, role);
-//         console.log('✅ Données sauvegardées pour', role, user.nomComplet);
+//         if (role) {
+//             localStorage.setItem(CONFIG.USER_ROLE_KEY, role);
+//         }
+//         console.log('✅ Données sauvegardées pour', role, user?.nomComplet);
 //     } catch (error) {
 //         console.error('❌ Erreur sauvegarde localStorage:', error);
 //     }
@@ -245,13 +345,11 @@
 //     localStorage.removeItem(CONFIG.USER_ROLE_KEY);
 // }
 
-// function redirectToApp() {
+// function redirectToDashboard() {
 //     if (currentRole === 'producteur') {
-//         window.location.href = 'producteur-dashboard.html';
+//         window.location.href = 'producteur.html';
 //     } else if (currentRole === 'collecteur') {
-//         window.location.href = 'collecteur-dashboard.html';
-//     } else {
-//         window.location.href = 'index.html';
+//         window.location.href = 'collecteur.html';
 //     }
 // }
 
@@ -558,11 +656,12 @@
 // }
 
 // // ============================================
-// // SOUMISSION DES FORMULAIRES
+// // SOUMISSION DES FORMULAIRES - PRODUCTEUR
 // // ============================================
 
 // async function submitProducteur() {
 //     const cguRow = document.getElementById('pCguRow');
+    
 //     if (!cguRow || !cguRow.classList.contains('checked')) {
 //         showMsg('pMsg', 'Vous devez accepter les Conditions Générales d\'Utilisation', 'error');
 //         return;
@@ -579,15 +678,15 @@
 //     const payload = {
 //         email: document.getElementById('p-email')?.value || '',
 //         telephone: document.getElementById('p-phone')?.value || '',
-//         mot_de_passe: document.getElementById('p-pwd')?.value || '',
-//         nom_complet: document.getElementById('p-name')?.value || '',
-//         type_producteur: type ? type.value : '',
+//         motDePasse: document.getElementById('p-pwd')?.value || '',
+//         nomComplet: document.getElementById('p-name')?.value || '',
+//         typeProducteur: type ? type.value : '',
 //         adresse: document.getElementById('p-address')?.value || '',
 //         quartier: document.getElementById('p-neighborhood')?.value || '',
 //         commune: document.getElementById('p-municipality')?.value || '',
 //         latitude: parseFloat(document.getElementById('p-lat')?.value) || null,
 //         longitude: parseFloat(document.getElementById('p-lng')?.value) || null,
-//         cgu_acceptees: true 
+//         cguAcceptees: true
 //     };
     
 //     try {
@@ -601,15 +700,24 @@
         
 //         const data = await response.json();
         
-//         if (response.ok && data.success) {
+//         if (response.ok && (data.success || data.token)) {
 //             console.log('✅ Inscription producteur réussie');
             
-//             // Sauvegarder les données
-//             if (data.token && data.producteur) {
-//                 saveAuthData(data.token, data.producteur, 'producteur');
+//             // Récupérer le token et l'utilisateur
+//             const token = data.token || data.accessToken;
+//             const userData = data.producteur || data.user || data.utilisateur || data;
+            
+//             if (token && userData) {
+//                 saveAuthData(token, userData, 'producteur');
 //             }
             
 //             showSuccess('producteur', document.getElementById('p-name')?.value || '');
+            
+//             // Rediriger vers le dashboard producteur
+//             setTimeout(() => {
+//                 window.location.href = 'producteur.html';
+//             }, 2000);
+            
 //         } else {
 //             throw new Error(data.message || data.erreur || 'Erreur lors de l\'inscription');
 //         }
@@ -624,10 +732,29 @@
 //     }
 // }
 
+// // ============================================
+// // SOUMISSION DES FORMULAIRES - COLLECTEUR
+// // ============================================
+
 // async function submitCollecteur() {
 //     const cguRow = document.getElementById('cCguRow');
+    
 //     if (!cguRow || !cguRow.classList.contains('checked')) {
 //         showMsg('cMsg', 'Vous devez accepter les Conditions Générales d\'Utilisation', 'error');
+//         return;
+//     }
+    
+//     // Vérification des photos CNI
+//     const cniRectoInput = document.getElementById('collecteur-cni-recto');
+//     const cniVersoInput = document.getElementById('collecteur-cni-verso');
+    
+//     if (!cniRectoInput || !cniRectoInput.value) {
+//         showMsg('cMsg', 'Veuillez charger la photo recto de votre CNI', 'error');
+//         return;
+//     }
+    
+//     if (!cniVersoInput || !cniVersoInput.value) {
+//         showMsg('cMsg', 'Veuillez charger la photo verso de votre CNI', 'error');
 //         return;
 //     }
     
@@ -650,43 +777,43 @@
 //         .map(c => c.trim())
 //         .filter(c => c) || [];
     
-//     const payload = {
-//         email: document.getElementById('c-email')?.value || '',
-//         telephone: document.getElementById('c-phone')?.value || '',
-//         mot_de_passe: document.getElementById('c-pwd')?.value || '',
-//         nom_complet: document.getElementById('c-name')?.value || '',
-//         type_collecteur: type ? type.value : '',
-//         numero_identite: document.getElementById('c-identity')?.value || null,
-//         zone_intervention: {
-//             nom: document.getElementById('c-zone')?.value || '',
-//             quartiers: quartiers,
-//             communes: communes
-//         },
-//         cgu_acceptees: true
-//     };
+//     // Utiliser FormData pour gérer les fichiers
+//     const formData = new FormData();
     
-//     // Ajouter la photo si présente
+//     formData.append('email', document.getElementById('c-email')?.value || '');
+//     formData.append('telephone', document.getElementById('c-phone')?.value || '');
+//     formData.append('motDePasse', document.getElementById('c-pwd')?.value || '');
+//     formData.append('nomComplet', document.getElementById('c-name')?.value || '');
+//     formData.append('typeCollecteur', type ? type.value : '');
+//     formData.append('numeroIdentite', document.getElementById('c-identity')?.value || '');
+//     formData.append('zoneInterventionNom', document.getElementById('c-zone')?.value || '');
+//     formData.append('quartiersHabituels', JSON.stringify(quartiers));
+//     formData.append('communesIntervention', JSON.stringify(communes));
+//     formData.append('cguAcceptees', 'true');
+    
+//     // Ajouter la photo de profil
 //     const photoFile = document.getElementById('c-photo-file')?.files[0];
 //     if (photoFile) {
-//         const reader = new FileReader();
-//         reader.onload = async function(e) {
-//             payload.photo_profil = e.target.result;
-//             await sendCollecteurRequest(payload, btn);
-//         };
-//         reader.readAsDataURL(photoFile);
-//     } else {
-//         await sendCollecteurRequest(payload, btn);
+//         formData.append('photoProfil', photoFile);
 //     }
-// }
-
-// async function sendCollecteurRequest(payload, btn) {
+    
+//     // Ajouter les photos CNI (fichiers)
+//     const cniRectoFile = document.getElementById('collecteur-cni-recto-file')?.files[0];
+//     if (cniRectoFile) {
+//         formData.append('photoCniRecto', cniRectoFile);
+//     }
+    
+//     const cniVersoFile = document.getElementById('collecteur-cni-verso-file')?.files[0];
+//     if (cniVersoFile) {
+//         formData.append('photoCniVerso', cniVersoFile);
+//     }
+    
 //     try {
-//         console.log('📤 Inscription collecteur:', payload.email);
+//         console.log('📤 Inscription collecteur avec fichiers...');
         
 //         const response = await fetch(`${CONFIG.API_URL}/api/collecteurs/inscription`, {
 //             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify(payload)
+//             body: formData
 //         });
         
 //         const data = await response.json();
@@ -700,6 +827,12 @@
 //             }
             
 //             showSuccess('collecteur', document.getElementById('c-name')?.value || '');
+            
+//             // Rediriger vers le dashboard collecteur
+//             setTimeout(() => {
+//                 window.location.href = 'collecteur.html';
+//             }, 2000);
+            
 //         } else {
 //             throw new Error(data.message || data.erreur || 'Erreur lors de l\'inscription');
 //         }
@@ -736,15 +869,15 @@
 //     const sub = document.getElementById('successSub');
 //     if (sub) {
 //         sub.textContent = role === 'producteur'
-//             ? 'Votre compte Producteur a été créé avec succès. Vous pouvez maintenant déclarer vos déchets et suivre vos collectes.'
-//             : 'Votre compte Collecteur a été créé. Il sera validé par un superviseur. Vous serez notifié dès l\'activation.';
+//             ? 'Votre compte Producteur a été créé avec succès. Redirection vers votre espace...'
+//             : 'Votre compte Collecteur a été créé avec succès. Redirection vers votre espace...';
 //     }
     
 //     const actions = document.getElementById('successActions');
 //     if (actions) {
 //         actions.innerHTML = `
-//             <button class="btn-go primary" onclick="window.location.href='${role === 'producteur' ? 'producteur-dashboard.html' : 'collecteur-dashboard.html'}'">
-//                 Accéder à l'application →
+//             <button class="btn-go primary" onclick="window.location.href='${role === 'producteur' ? 'producteur.html' : 'collecteur.html'}'">
+//                 Accéder à mon espace →
 //             </button>
 //             <button class="btn-go ghost" onclick="window.location.href='in.html'">
 //                 Retour à l'accueil
@@ -777,13 +910,6 @@
 //     setTimeout(() => {
 //         el.style.display = 'none';
 //     }, 5000);
-// }
-
-// function toggleCgu(rowId, checkId) {
-//     const row = document.getElementById(rowId);
-//     if (row) {
-//         row.classList.toggle('checked');
-//     }
 // }
 
 // function togglePwd(inputId, btn) {
@@ -859,50 +985,26 @@
 //     reader.onload = (e) => {
 //         const img = document.getElementById('photoImg');
 //         const emoji = document.getElementById('photoEmoji');
-//         const zone = document.getElementById('photoUploadZone');
+//         const preview = document.getElementById('photoPreview');
         
 //         if (img) {
 //             img.src = e.target.result;
 //             img.style.display = 'block';
 //         }
-//         if (emoji) emoji.style.display = 'none';
-//         if (zone) zone.style.borderStyle = 'solid';
+//         if (emoji) {
+//             emoji.style.display = 'none';
+//         }
+//         if (preview) {
+//             preview.classList.add('has-image');
+//         }
 //     };
 //     reader.readAsDataURL(input.files[0]);
-// }
-
-// function updateApiUrlDisplay() {
-//     const apiDisplay = document.getElementById('apiUrl');
-//     if (apiDisplay) {
-//         apiDisplay.textContent = CONFIG.API_URL;
-//     }
-// }
-
-// // ============================================
-// // FONCTIONS DE TEST DE CONNEXION API
-// // ============================================
-
-// async function testApiConnection() {
-//     try {
-//         const response = await fetch(`${CONFIG.API_URL}/api/health`);
-//         if (response.ok) {
-//             console.log('✅ Connexion API établie');
-//             return true;
-//         } else {
-//             console.warn('⚠️ API répond mais avec erreur');
-//             return false;
-//         }
-//     } catch (error) {
-//         console.error('❌ Impossible de se connecter à l\'API:', error);
-//         return false;
-//     }
 // }
 
 // // Exposer les fonctions globalement
 // window.selectRole = selectRole;
 // window.goToForm = goToForm;
 // window.goBack = goBack;
-// window.toggleCgu = toggleCgu;
 // window.togglePwd = togglePwd;
 // window.checkPwd = checkPwd;
 // window.getGPS = getGPS;
@@ -913,22 +1015,21 @@
 // window.cPrev = cPrev;
 // window.submitProducteur = submitProducteur;
 // window.submitCollecteur = submitCollecteur;
-// window.testApiConnection = testApiConnection;
 
 
 
-// ============================================
-// login.js - Gestion unifiée de l'authentification EcoCollect
-// Version corrigée - Gestion des CGU
-// ============================================
+// login.js - Version corrigée
 
 // Configuration
 const CONFIG = {
-    API_URL: localStorage.getItem('ecocollect_api_url') || 'http://localhost:3000',
+    API_URL: window.API_BASE_URL || 'https://ecobackend-m3s8.vercel.app',
     TOKEN_KEY: 'ecocollect_token',
     USER_KEY: 'ecocollect_user',
-    USER_ROLE_KEY: 'ecocollect_role'
+    ROLE_KEY: 'ecocollect_role'
 };
+
+console.log('🚀 login.js chargé');
+console.log('📡 API URL utilisée:', CONFIG.API_URL);
 
 // État de l'application
 let currentUser = null;
@@ -949,14 +1050,54 @@ document.addEventListener('DOMContentLoaded', () => {
     initEventListeners();
     
     // Vérifier si l'utilisateur est déjà connecté
-    loadUserFromStorage();
+    checkExistingSession();
     
-    // Afficher l'URL de l'API
-    updateApiUrlDisplay();
+    // Tester la connexion à l'API
+    testConnection();
+    
+    // Initialiser la gestion des photos
+    initPhotoUploads();
+    
+    // Initialiser les CGU
+    initCguCheckboxes();
 });
 
+function initCguCheckboxes() {
+    // Pour le producteur
+    const pCguRow = document.getElementById('pCguRow');
+    const pCguCheck = document.getElementById('pCguCheck');
+    const pCguBox = document.getElementById('pCguBox');
+    
+    if (pCguRow && pCguCheck && pCguBox) {
+        pCguRow.addEventListener('click', (e) => {
+            e.preventDefault();
+            pCguCheck.checked = !pCguCheck.checked;
+            pCguRow.classList.toggle('checked', pCguCheck.checked);
+            if (pCguBox) {
+                pCguBox.textContent = pCguCheck.checked ? '✓' : '';
+            }
+        });
+    }
+    
+    // Pour le collecteur
+    const cCguRow = document.getElementById('cCguRow');
+    const cCguCheck = document.getElementById('cCguCheck');
+    const cCguBox = document.getElementById('cCguBox');
+    
+    if (cCguRow && cCguCheck && cCguBox) {
+        cCguRow.addEventListener('click', (e) => {
+            e.preventDefault();
+            cCguCheck.checked = !cCguCheck.checked;
+            cCguRow.classList.toggle('checked', cCguCheck.checked);
+            if (cCguBox) {
+                cCguBox.textContent = cCguCheck.checked ? '✓' : '';
+            }
+        });
+    }
+}
+
 function initEventListeners() {
-    // Navigation
+    // Navigation retour
     document.querySelectorAll('.nav-back').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -986,37 +1127,119 @@ function initEventListeners() {
     
     // Formulaire collecteur
     initCollecteurForm();
+}
+
+function initPhotoUploads() {
+    // Photo de profil
+    const photoUploadZone = document.getElementById('photoUploadZone');
+    const photoPreview = document.getElementById('photoPreview');
+    const photoFile = document.getElementById('c-photo-file');
     
-    // Lien "Se connecter"
-    document.querySelectorAll('.auth-link a').forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.href = 'index.html';
+    if (photoUploadZone && photoFile) {
+        photoUploadZone.addEventListener('click', () => {
+            photoFile.click();
         });
-    });
-    
-    // Nettoyage des erreurs
-    document.querySelectorAll('input, select, textarea').forEach(el => {
-        el.addEventListener('input', () => {
-            el.closest('.field')?.classList.remove('has-error');
-        });
-    });
-    
-    // Ajouter des écouteurs pour les cases CGU
-    const pCguRow = document.getElementById('pCguRow');
-    if (pCguRow) {
-        pCguRow.addEventListener('click', function(e) {
-            e.preventDefault();
-            this.classList.toggle('checked');
+        
+        photoFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = document.getElementById('photoImg');
+                const emoji = document.getElementById('photoEmoji');
+                
+                if (img) {
+                    img.src = event.target.result;
+                    img.style.display = 'block';
+                }
+                if (emoji) {
+                    emoji.style.display = 'none';
+                }
+                if (photoPreview) {
+                    photoPreview.classList.add('has-image');
+                }
+            };
+            reader.readAsDataURL(file);
         });
     }
     
-    const cCguRow = document.getElementById('cCguRow');
-    if (cCguRow) {
-        cCguRow.addEventListener('click', function(e) {
-            e.preventDefault();
-            this.classList.toggle('checked');
+    // CNI Recto
+    const cniRectoZone = document.getElementById('cni-recto-zone');
+    const cniRectoFile = document.getElementById('collecteur-cni-recto-file');
+    
+    if (cniRectoZone && cniRectoFile) {
+        cniRectoZone.addEventListener('click', () => {
+            cniRectoFile.click();
         });
+        
+        cniRectoFile.addEventListener('change', (e) => {
+            handleCniUpload(e, 'recto');
+        });
+    }
+    
+    // CNI Verso
+    const cniVersoZone = document.getElementById('cni-verso-zone');
+    const cniVersoFile = document.getElementById('collecteur-cni-verso-file');
+    
+    if (cniVersoZone && cniVersoFile) {
+        cniVersoZone.addEventListener('click', () => {
+            cniVersoFile.click();
+        });
+        
+        cniVersoFile.addEventListener('change', (e) => {
+            handleCniUpload(e, 'verso');
+        });
+    }
+}
+
+function handleCniUpload(e, type) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const previewId = type === 'recto' ? 'cni-recto-preview' : 'cni-verso-preview';
+        const inputId = type === 'recto' ? 'collecteur-cni-recto' : 'collecteur-cni-verso';
+        const preview = document.getElementById(previewId);
+        
+        if (preview) {
+            preview.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '5px';
+            preview.appendChild(img);
+            preview.classList.add('has-image');
+            
+            // Mettre à jour le champ caché avec la data URL
+            const hiddenInput = document.getElementById(inputId);
+            if (hiddenInput) {
+                hiddenInput.value = event.target.result;
+            }
+            
+            // Mettre à jour le texte
+            const hint = preview.nextElementSibling;
+            if (hint) {
+                hint.innerHTML = `<i class="fas fa-check-circle" style="color: #4CAF50;"></i> ${type === 'recto' ? 'Recto' : 'Verso'} chargé`;
+            }
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+async function testConnection() {
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/`);
+        if (response.ok) {
+            console.log('✅ Connexion API établie');
+        } else {
+            console.warn('⚠️ API répond avec statut:', response.status);
+        }
+    } catch (error) {
+        console.error('❌ Impossible de se connecter à l\'API:', error);
     }
 }
 
@@ -1026,17 +1249,15 @@ function initProducteurForm() {
         if (btn.closest('#screen2p')) {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                if (btn.textContent.includes('Retour')) {
-                    const step = btn.closest('.form-step');
-                    if (step && step.id === 'pStep1') {
-                        goBack();
-                    } else if (step && step.id === 'pStep2') {
-                        pPrev(1);
-                    } else if (step && step.id === 'pStep3') {
-                        pPrev(2);
-                    } else if (step && step.id === 'pStep4') {
-                        pPrev(3);
-                    }
+                const step = btn.closest('.form-step');
+                if (step && step.id === 'pStep1') {
+                    goBack();
+                } else if (step && step.id === 'pStep2') {
+                    pPrev(1);
+                } else if (step && step.id === 'pStep3') {
+                    pPrev(2);
+                } else if (step && step.id === 'pStep4') {
+                    pPrev(3);
                 }
             });
         }
@@ -1114,30 +1335,17 @@ function initCollecteurForm() {
             submitCollecteur();
         });
     }
-    
-    // Upload photo
-    const photoUpload = document.getElementById('photoUploadZone');
-    if (photoUpload) {
-        photoUpload.addEventListener('click', () => {
-            document.getElementById('c-photo-file').click();
-        });
-    }
-    
-    const photoFile = document.getElementById('c-photo-file');
-    if (photoFile) {
-        photoFile.addEventListener('change', previewPhoto);
-    }
 }
 
 // ============================================
 // GESTION DE LA SESSION
 // ============================================
 
-function loadUserFromStorage() {
+function checkExistingSession() {
     try {
         const token = localStorage.getItem(CONFIG.TOKEN_KEY);
         const userJson = localStorage.getItem(CONFIG.USER_KEY);
-        const role = localStorage.getItem(CONFIG.USER_ROLE_KEY);
+        const role = localStorage.getItem(CONFIG.ROLE_KEY);
         
         if (token && userJson && userJson !== 'undefined' && userJson !== 'null') {
             const user = JSON.parse(userJson);
@@ -1145,10 +1353,10 @@ function loadUserFromStorage() {
             currentUser = user;
             currentRole = role;
             
-            console.log('✅ Session restaurée:', { role: currentRole, user: currentUser?.nomComplet });
+            console.log('✅ Session existante:', { role: currentRole, user: currentUser?.nomComplet });
             
-            // Rediriger vers l'application appropriée
-            redirectToApp();
+            // Rediriger vers le bon dashboard
+            redirectToDashboard();
         }
     } catch (error) {
         console.error('❌ Erreur lors du chargement de la session:', error);
@@ -1165,7 +1373,7 @@ function saveAuthData(token, user, role) {
         localStorage.setItem(CONFIG.TOKEN_KEY, token);
         localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(user));
         if (role) {
-            localStorage.setItem(CONFIG.USER_ROLE_KEY, role);
+            localStorage.setItem(CONFIG.ROLE_KEY, role);
         }
         console.log('✅ Données sauvegardées pour', role, user?.nomComplet);
     } catch (error) {
@@ -1180,16 +1388,14 @@ function clearSession() {
     
     localStorage.removeItem(CONFIG.TOKEN_KEY);
     localStorage.removeItem(CONFIG.USER_KEY);
-    localStorage.removeItem(CONFIG.USER_ROLE_KEY);
+    localStorage.removeItem(CONFIG.ROLE_KEY);
 }
 
-function redirectToApp() {
+function redirectToDashboard() {
     if (currentRole === 'producteur') {
-        window.location.href = 'producteur-dashboard.html';
+        window.location.href = 'producteur.html';
     } else if (currentRole === 'collecteur') {
-        window.location.href = 'collecteur-dashboard.html';
-    } else {
-        window.location.href = 'index.html';
+        window.location.href = 'collecteur.html';
     }
 }
 
@@ -1202,19 +1408,21 @@ function selectRole(role) {
     
     const cardProducteur = document.getElementById('cardProducteur');
     const cardCollecteur = document.getElementById('cardCollecteur');
+    const checkProducteur = document.getElementById('checkProducteur');
+    const checkCollecteur = document.getElementById('checkCollecteur');
     const btnContinue = document.getElementById('btnContinueRole');
     
-    if (cardProducteur) {
-        cardProducteur.classList.remove('selected');
-    }
-    if (cardCollecteur) {
-        cardCollecteur.classList.remove('selected');
-    }
+    if (cardProducteur) cardProducteur.classList.remove('selected');
+    if (cardCollecteur) cardCollecteur.classList.remove('selected');
+    if (checkProducteur) checkProducteur.style.display = 'none';
+    if (checkCollecteur) checkCollecteur.style.display = 'none';
     
     if (role === 'producteur') {
         cardProducteur?.classList.add('selected');
+        if (checkProducteur) checkProducteur.style.display = 'flex';
     } else {
         cardCollecteur?.classList.add('selected');
+        if (checkCollecteur) checkCollecteur.style.display = 'flex';
     }
     
     if (btnContinue) {
@@ -1268,6 +1476,7 @@ function updateProgress(step) {
     for (let i = 1; i <= 4; i++) {
         const dot = document.getElementById('dot' + i);
         const lbl = document.getElementById('lbl' + i);
+        const line = document.getElementById('line' + i);
         
         if (!dot || !lbl) continue;
         
@@ -1285,11 +1494,8 @@ function updateProgress(step) {
             dot.textContent = i === 4 ? '✓' : i.toString();
         }
         
-        if (i < 4) {
-            const line = document.getElementById('line' + i);
-            if (line) {
-                line.classList.toggle('done', i < step);
-            }
+        if (line) {
+            line.classList.toggle('done', i < step);
         }
     }
 }
@@ -1496,14 +1702,13 @@ function buildCRecap() {
 }
 
 // ============================================
-// SOUMISSION DES FORMULAIRES
+// SOUMISSION DES FORMULAIRES - PRODUCTEUR
 // ============================================
 
 async function submitProducteur() {
-    const cguRow = document.getElementById('pCguRow');
+    const cguCheck = document.getElementById('pCguCheck');
     
-    // Vérifier si la case CGU est cochée
-    if (!cguRow || !cguRow.classList.contains('checked')) {
+    if (!cguCheck || !cguCheck.checked) {
         showMsg('pMsg', 'Vous devez accepter les Conditions Générales d\'Utilisation', 'error');
         return;
     }
@@ -1519,19 +1724,20 @@ async function submitProducteur() {
     const payload = {
         email: document.getElementById('p-email')?.value || '',
         telephone: document.getElementById('p-phone')?.value || '',
-        mot_de_passe: document.getElementById('p-pwd')?.value || '',
-        nom_complet: document.getElementById('p-name')?.value || '',
-        type_producteur: type ? type.value : '',
+        motDePasse: document.getElementById('p-pwd')?.value || '',
+        nomComplet: document.getElementById('p-name')?.value || '',
+        typeProducteur: type ? type.value : '',
         adresse: document.getElementById('p-address')?.value || '',
         quartier: document.getElementById('p-neighborhood')?.value || '',
         commune: document.getElementById('p-municipality')?.value || '',
         latitude: parseFloat(document.getElementById('p-lat')?.value) || null,
         longitude: parseFloat(document.getElementById('p-lng')?.value) || null,
-        cgu_acceptees: true
+        cguAcceptees: true
     };
     
     try {
         console.log('📤 Inscription producteur:', payload.email);
+        console.log('📡 Envoi vers:', `${CONFIG.API_URL}/api/auth/inscription`);
         
         const response = await fetch(`${CONFIG.API_URL}/api/auth/inscription`, {
             method: 'POST',
@@ -1540,16 +1746,26 @@ async function submitProducteur() {
         });
         
         const data = await response.json();
+        console.log('📥 Réponse:', data);
         
-        if (response.ok && data.success) {
+        if (response.ok && (data.success || data.token || data.producteur)) {
             console.log('✅ Inscription producteur réussie');
             
-            // Sauvegarder les données
-            if (data.token && data.producteur) {
-                saveAuthData(data.token, data.producteur, 'producteur');
+            // Récupérer le token et l'utilisateur
+            const token = data.token || data.accessToken;
+            const userData = data.producteur || data.user || data.utilisateur || data;
+            
+            if (token && userData) {
+                saveAuthData(token, userData, 'producteur');
             }
             
             showSuccess('producteur', document.getElementById('p-name')?.value || '');
+            
+            // Rediriger vers le dashboard producteur
+            setTimeout(() => {
+                window.location.href = 'producteur.html';
+            }, 2000);
+            
         } else {
             throw new Error(data.message || data.erreur || 'Erreur lors de l\'inscription');
         }
@@ -1564,12 +1780,29 @@ async function submitProducteur() {
     }
 }
 
+// ============================================
+// SOUMISSION DES FORMULAIRES - COLLECTEUR
+// ============================================
+
 async function submitCollecteur() {
-    const cguRow = document.getElementById('cCguRow');
+    const cguCheck = document.getElementById('cCguCheck');
     
-    // Vérifier si la case CGU est cochée
-    if (!cguRow || !cguRow.classList.contains('checked')) {
+    if (!cguCheck || !cguCheck.checked) {
         showMsg('cMsg', 'Vous devez accepter les Conditions Générales d\'Utilisation', 'error');
+        return;
+    }
+    
+    // Vérification des photos CNI
+    const cniRectoFile = document.getElementById('collecteur-cni-recto-file')?.files[0];
+    const cniVersoFile = document.getElementById('collecteur-cni-verso-file')?.files[0];
+    
+    if (!cniRectoFile) {
+        showMsg('cMsg', 'Veuillez charger la photo recto de votre CNI', 'error');
+        return;
+    }
+    
+    if (!cniVersoFile) {
+        showMsg('cMsg', 'Veuillez charger la photo verso de votre CNI', 'error');
         return;
     }
     
@@ -1592,46 +1825,46 @@ async function submitCollecteur() {
         .map(c => c.trim())
         .filter(c => c) || [];
     
-    const payload = {
-        email: document.getElementById('c-email')?.value || '',
-        telephone: document.getElementById('c-phone')?.value || '',
-        mot_de_passe: document.getElementById('c-pwd')?.value || '',
-        nom_complet: document.getElementById('c-name')?.value || '',
-        type_collecteur: type ? type.value : '',
-        numero_identite: document.getElementById('c-identity')?.value || null,
-        zone_intervention: {
-            nom: document.getElementById('c-zone')?.value || '',
-            quartiers: quartiers,
-            communes: communes
-        },
-        cgu_acceptees: true
-    };
+    // Utiliser FormData pour gérer les fichiers
+    const formData = new FormData();
     
-    // Ajouter la photo si présente
+    formData.append('email', document.getElementById('c-email')?.value || '');
+    formData.append('telephone', document.getElementById('c-phone')?.value || '');
+    formData.append('motDePasse', document.getElementById('c-pwd')?.value || '');
+    formData.append('nomComplet', document.getElementById('c-name')?.value || '');
+    formData.append('typeCollecteur', type ? type.value : '');
+    formData.append('numeroIdentite', document.getElementById('c-identity')?.value || '');
+    formData.append('zoneInterventionNom', document.getElementById('c-zone')?.value || '');
+    formData.append('quartiersHabituels', JSON.stringify(quartiers));
+    formData.append('communesIntervention', JSON.stringify(communes));
+    formData.append('cguAcceptees', 'true');
+    
+    // Ajouter la photo de profil
     const photoFile = document.getElementById('c-photo-file')?.files[0];
     if (photoFile) {
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            payload.photo_profil = e.target.result;
-            await sendCollecteurRequest(payload, btn);
-        };
-        reader.readAsDataURL(photoFile);
-    } else {
-        await sendCollecteurRequest(payload, btn);
+        formData.append('photoProfil', photoFile);
     }
-}
-
-async function sendCollecteurRequest(payload, btn) {
+    
+    // Ajouter les photos CNI
+    if (cniRectoFile) {
+        formData.append('photoCniRecto', cniRectoFile);
+    }
+    
+    if (cniVersoFile) {
+        formData.append('photoCniVerso', cniVersoFile);
+    }
+    
     try {
-        console.log('📤 Inscription collecteur:', payload.email);
+        console.log('📤 Inscription collecteur avec fichiers...');
         
         const response = await fetch(`${CONFIG.API_URL}/api/collecteurs/inscription`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: formData
+            // ⚠️ Ne PAS mettre 'Content-Type' header, le navigateur le fera automatiquement avec la boundary
         });
         
         const data = await response.json();
+        console.log('📥 Réponse:', data);
         
         if (response.ok && data.success) {
             console.log('✅ Inscription collecteur réussie');
@@ -1642,6 +1875,12 @@ async function sendCollecteurRequest(payload, btn) {
             }
             
             showSuccess('collecteur', document.getElementById('c-name')?.value || '');
+            
+            // Rediriger vers le dashboard collecteur
+            setTimeout(() => {
+                window.location.href = 'collecteur.html';
+            }, 2000);
+            
         } else {
             throw new Error(data.message || data.erreur || 'Erreur lors de l\'inscription');
         }
@@ -1678,15 +1917,15 @@ function showSuccess(role, name) {
     const sub = document.getElementById('successSub');
     if (sub) {
         sub.textContent = role === 'producteur'
-            ? 'Votre compte Producteur a été créé avec succès. Vous pouvez maintenant déclarer vos déchets et suivre vos collectes.'
-            : 'Votre compte Collecteur a été créé. Il sera validé par un superviseur. Vous serez notifié dès l\'activation.';
+            ? 'Votre compte Producteur a été créé avec succès. Redirection vers votre espace...'
+            : 'Votre compte Collecteur a été créé avec succès. Redirection vers votre espace...';
     }
     
     const actions = document.getElementById('successActions');
     if (actions) {
         actions.innerHTML = `
-            <button class="btn-go primary" onclick="window.location.href='${role === 'producteur' ? 'producteur-dashboard.html' : 'collecteur-dashboard.html'}'">
-                Accéder à l'application →
+            <button class="btn-go primary" onclick="window.location.href='${role === 'producteur' ? 'producteur.html' : 'collecteur.html'}'">
+                Accéder à mon espace →
             </button>
             <button class="btn-go ghost" onclick="window.location.href='in.html'">
                 Retour à l'accueil
@@ -1719,13 +1958,6 @@ function showMsg(id, msg, type) {
     setTimeout(() => {
         el.style.display = 'none';
     }, 5000);
-}
-
-function toggleCgu(rowId) {
-    const row = document.getElementById(rowId);
-    if (row) {
-        row.classList.toggle('checked');
-    }
 }
 
 function togglePwd(inputId, btn) {
@@ -1794,65 +2026,16 @@ function getGPS() {
     );
 }
 
-function previewPhoto(input) {
-    if (!input || !input.files || !input.files[0]) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const img = document.getElementById('photoImg');
-        const emoji = document.getElementById('photoEmoji');
-        const zone = document.getElementById('photoUploadZone');
-        
-        if (img) {
-            img.src = e.target.result;
-            img.style.display = 'block';
-        }
-        if (emoji) emoji.style.display = 'none';
-        if (zone) zone.style.borderStyle = 'solid';
-    };
-    reader.readAsDataURL(input.files[0]);
-}
-
-function updateApiUrlDisplay() {
-    const apiDisplay = document.getElementById('apiUrl');
-    if (apiDisplay) {
-        apiDisplay.textContent = CONFIG.API_URL;
-    }
-}
-
-// ============================================
-// FONCTIONS DE TEST DE CONNEXION API
-// ============================================
-
-async function testApiConnection() {
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/api/health`);
-        if (response.ok) {
-            console.log('✅ Connexion API établie');
-            return true;
-        } else {
-            console.warn('⚠️ API répond mais avec erreur');
-            return false;
-        }
-    } catch (error) {
-        console.error('❌ Impossible de se connecter à l\'API:', error);
-        return false;
-    }
-}
-
 // Exposer les fonctions globalement
 window.selectRole = selectRole;
 window.goToForm = goToForm;
 window.goBack = goBack;
-window.toggleCgu = toggleCgu;
 window.togglePwd = togglePwd;
 window.checkPwd = checkPwd;
 window.getGPS = getGPS;
-window.previewPhoto = previewPhoto;
 window.pNext = pNext;
 window.pPrev = pPrev;
 window.cNext = cNext;
 window.cPrev = cPrev;
 window.submitProducteur = submitProducteur;
 window.submitCollecteur = submitCollecteur;
-window.testApiConnection = testApiConnection;

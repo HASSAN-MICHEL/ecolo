@@ -58,49 +58,49 @@
   </div>
 
   <!-- SCREEN 1 — CHOIX DU RÔLE -->
-  <div class="screen active" id="screen1">
-    <h1 class="screen-title">Quel est <em>votre rôle</em> ?</h1>
-    <p class="screen-sub">Choisissez votre profil pour accéder au formulaire d'inscription adapté à vos besoins.</p>
+ <div class="screen active" id="screen1">
+  <h1 class="screen-title">Quel est <em>votre rôle</em> ?</h1>
+  <p class="screen-sub">Choisissez votre profil pour accéder au formulaire d'inscription adapté à vos besoins.</p>
 
-    <div class="roles-grid">
-      <!-- PRODUCTEUR -->
-      <div class="role-card producteur" id="cardProducteur" onclick="selectRole('producteur')">
-        <div class="role-check" id="checkProducteur">✓</div>
-        <div class="role-icon">🏠</div>
-        <h2 class="role-name">Producteur</h2>
-        <p class="role-desc">Vous générez des déchets chez vous, dans votre commerce ou entreprise, et souhaitez les faire collecter ou les déposer dans un point de regroupement.</p>
-        <div class="role-tags">
-          <span class="role-tag">Ménage</span>
-          <span class="role-tag">Commerce</span>
-          <span class="role-tag">Entreprise</span>
-          <span class="role-tag">Administration</span>
-        </div>
-      </div>
-
-      <!-- COLLECTEUR -->
-      <div class="role-card collecteur" id="cardCollecteur" onclick="selectRole('collecteur')">
-        <div class="role-check" id="checkCollecteur">✓</div>
-        <div class="role-icon">🚛</div>
-        <h2 class="role-name">Collecteur</h2>
-        <p class="role-desc">Vous collectez les déchets chez les producteurs ou récupérez les dépôts dans les points de regroupement. Vous êtes rémunéré par mission validée.</p>
-        <div class="role-tags">
-          <span class="role-tag">Indépendant</span>
-          <span class="role-tag">Coopérative</span>
-        </div>
+  <div class="roles-grid">
+    <!-- PRODUCTEUR -->
+    <div class="role-card producteur" id="cardProducteur" onclick="selectRole('producteur')">
+      <div class="role-check" id="checkProducteur">✓</div>
+      <div class="role-icon">🏠</div>
+      <h2 class="role-name">Producteur</h2>
+      <p class="role-desc">Vous générez des déchets chez vous, dans votre commerce ou entreprise, et souhaitez les faire collecter ou les déposer dans un point de regroupement.</p>
+      <div class="role-tags">
+        <span class="role-tag">Ménage</span>
+        <span class="role-tag">Commerce</span>
+        <span class="role-tag">Entreprise</span>
+        <span class="role-tag">Administration</span>
       </div>
     </div>
 
-    <button class="btn-continue" id="btnContinueRole" onclick="goToForm()">
-      Continuer avec ce rôle
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M12 5l7 7-7 7"/>
-      </svg>
-    </button>
-
-    <div class="auth-link">
-      Vous avez déjà un compte ? <a href="index.html">Se connecter</a>
+    <!-- COLLECTEUR -->
+    <div class="role-card collecteur" id="cardCollecteur" onclick="selectRole('collecteur')">
+      <div class="role-check" id="checkCollecteur">✓</div>
+      <div class="role-icon">🚛</div>
+      <h2 class="role-name">Collecteur</h2>
+      <p class="role-desc">Vous collectez les déchets chez les producteurs ou récupérez les dépôts dans les points de regroupement. Vous êtes rémunéré par mission validée.</p>
+      <div class="role-tags">
+        <span class="role-tag">Indépendant</span>
+        <span class="role-tag">Coopérative</span>
+      </div>
     </div>
   </div>
+
+  <button class="btn-continue" id="btnContinueRole" onclick="goToForm()">
+    Continuer avec ce rôle
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </button>
+
+  <div class="auth-link">
+    Vous avez déjà un compte ? <a href="index.html">Se connecter</a>
+  </div>
+</div>
 
   <!-- SCREEN 2A — FORMULAIRE PRODUCTEUR -->
   <div class="screen" id="screen2p">
@@ -302,202 +302,235 @@
     </div>
 
     <div class="auth-link">
-      Vous avez déjà un compte ? <a href="index.html">Se connecter</a>
+      Vous avez déjà un compte ? <a href="producteur.html">Se connecter</a>
     </div>
   </div>
 
   <!-- SCREEN 2B — FORMULAIRE COLLECTEUR -->
-  <div class="screen" id="screen2c">
-    <div class="form-card">
-      <div class="form-role-badge">🚛 Inscription Collecteur</div>
+ <!-- SCREEN 2B — FORMULAIRE COLLECTEUR (CORRIGÉ AVEC PHOTOS CNI) -->
+<div class="screen" id="screen2c">
+  <div class="form-card">
+    <div class="form-role-badge">🚛 Inscription Collecteur</div>
 
-      <!-- Step A: Identifiants -->
-      <div class="form-step active" id="cStep1">
-        <h3 class="step-heading">
-          <span class="step-heading-num">1</span>
-          Informations de connexion
-        </h3>
+    <!-- Step A: Identifiants -->
+    <div class="form-step active" id="cStep1">
+      <h3 class="step-heading">
+        <span class="step-heading-num">1</span>
+        Informations de connexion
+      </h3>
 
-        <div class="field-row">
-          <div class="field" id="f-c-email">
-            <label><span class="lbl-icon">✉️</span> Email <span class="req">*</span></label>
-            <input type="email" id="c-email" placeholder="votre@email.com"/>
-            <span class="field-error">Email invalide</span>
-          </div>
-          <div class="field" id="f-c-phone">
-            <label><span class="lbl-icon">📱</span> Téléphone <span class="req">*</span></label>
-            <input type="tel" id="c-phone" placeholder="+237 6XX XXX XXX"/>
-            <span class="field-error">Téléphone invalide</span>
-          </div>
+      <div class="field-row">
+        <div class="field" id="f-c-email">
+          <label><span class="lbl-icon">✉️</span> Email <span class="req">*</span></label>
+          <input type="email" id="c-email" placeholder="votre@email.com"/>
+          <span class="field-error">Email invalide</span>
         </div>
-
-        <div class="field-row">
-          <div class="field" id="f-c-pwd">
-            <label><span class="lbl-icon">🔒</span> Mot de passe <span class="req">*</span></label>
-            <div class="input-wrap">
-              <input type="password" id="c-pwd" placeholder="Min. 8 caractères" oninput="checkPwd(this,'c-pwdStr','c-pwdLbl')"/>
-              <button type="button" class="input-toggle" onclick="togglePwd('c-pwd',this)">👁</button>
-            </div>
-            <div class="pwd-strength">
-              <div class="pwd-bar-wrap"><div class="pwd-bar" id="c-pwdStr"></div></div>
-              <span class="pwd-label" id="c-pwdLbl">–</span>
-            </div>
-            <span class="field-error">Min. 8 caractères</span>
-          </div>
-          <div class="field" id="f-c-pwdConfirm">
-            <label><span class="lbl-icon">🔒</span> Confirmer <span class="req">*</span></label>
-            <div class="input-wrap">
-              <input type="password" id="c-pwdConfirm" placeholder="Répétez le mot de passe"/>
-              <button type="button" class="input-toggle" onclick="togglePwd('c-pwdConfirm',this)">👁</button>
-            </div>
-            <span class="field-error">Les mots de passe ne correspondent pas</span>
-          </div>
-        </div>
-
-        <div class="form-nav">
-          <button type="button" class="btn-back" onclick="goBack()">← Retour</button>
-          <button type="button" class="btn-next" onclick="cNext(1)">
-            Étape suivante
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
+        <div class="field" id="f-c-phone">
+          <label><span class="lbl-icon">📱</span> Téléphone <span class="req">*</span></label>
+          <input type="tel" id="c-phone" placeholder="+237 6XX XXX XXX"/>
+          <span class="field-error">Téléphone invalide</span>
         </div>
       </div>
 
-      <!-- Step B: Identité -->
-      <div class="form-step" id="cStep2">
-        <h3 class="step-heading">
-          <span class="step-heading-num">2</span>
-          Identité & Type
-        </h3>
-
-        <div class="field" id="f-c-name">
-          <label><span class="lbl-icon">👤</span> Nom complet <span class="req">*</span></label>
-          <input type="text" id="c-name" placeholder="Jean Dupont"/>
-          <span class="field-error">Champ requis</span>
-        </div>
-
-        <div class="field">
-          <label><span class="lbl-icon">🔖</span> Type de collecteur <span class="req">*</span></label>
-          <div class="col-type-grid">
-            <label class="col-type-opt">
-              <input type="radio" name="c-type" value="independant"/>
-              <div class="col-type-inner">
-                <div class="col-type-emoji">🧑‍💼</div>
-                <div class="col-type-name">Indépendant</div>
-                <div class="col-type-desc">Vous travaillez seul et êtes directement rémunéré par mission</div>
-              </div>
-            </label>
-            <label class="col-type-opt">
-              <input type="radio" name="c-type" value="cooperative"/>
-              <div class="col-type-inner">
-                <div class="col-type-emoji">🤝</div>
-                <div class="col-type-name">Coopérative</div>
-                <div class="col-type-desc">Vous faites partie d'une structure collective de collecte</div>
-              </div>
-            </label>
+      <div class="field-row">
+        <div class="field" id="f-c-pwd">
+          <label><span class="lbl-icon">🔒</span> Mot de passe <span class="req">*</span></label>
+          <div class="input-wrap">
+            <input type="password" id="c-pwd" placeholder="Min. 8 caractères" oninput="checkPwd(this,'c-pwdStr','c-pwdLbl')"/>
+            <button type="button" class="input-toggle" onclick="togglePwd('c-pwd',this)">👁</button>
           </div>
-          <span class="field-error" id="c-type-err" style="display:none">Sélectionnez un type</span>
+          <div class="pwd-strength">
+            <div class="pwd-bar-wrap"><div class="pwd-bar" id="c-pwdStr"></div></div>
+            <span class="pwd-label" id="c-pwdLbl">–</span>
+          </div>
+          <span class="field-error">Min. 8 caractères</span>
         </div>
-
-        <div class="field" id="f-c-identity">
-          <label><span class="lbl-icon">🪪</span> Numéro d'identité <span style="font-weight:400;color:var(--muted-foreground)">(indépendant)</span></label>
-          <input type="text" id="c-identity" placeholder="CNI, Passeport..."/>
-          <span class="field-hint">Requis pour les collecteurs indépendants</span>
-        </div>
-
-        <div class="form-nav">
-          <button type="button" class="btn-back" onclick="cPrev(1)">← Retour</button>
-          <button type="button" class="btn-next" onclick="cNext(2)">
-            Étape suivante
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
+        <div class="field" id="f-c-pwdConfirm">
+          <label><span class="lbl-icon">🔒</span> Confirmer <span class="req">*</span></label>
+          <div class="input-wrap">
+            <input type="password" id="c-pwdConfirm" placeholder="Répétez le mot de passe"/>
+            <button type="button" class="input-toggle" onclick="togglePwd('c-pwdConfirm',this)">👁</button>
+          </div>
+          <span class="field-error">Les mots de passe ne correspondent pas</span>
         </div>
       </div>
 
-      <!-- Step C: Zone d'intervention -->
-      <div class="form-step" id="cStep3">
-        <h3 class="step-heading">
-          <span class="step-heading-num">3</span>
-          Zone d'intervention
-        </h3>
-
-        <div class="field" id="f-c-zone">
-          <label><span class="lbl-icon">🗺️</span> Nom de la zone <span class="req">*</span></label>
-          <input type="text" id="c-zone" placeholder="Ex: Zone Centre-ville"/>
-          <span class="field-error">Champ requis</span>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label><span class="lbl-icon">📌</span> Quartiers habituels</label>
-            <input type="text" id="c-quarters" placeholder="Akwa, Bonanjo..."/>
-            <span class="field-hint">Séparés par des virgules</span>
-          </div>
-          <div class="field">
-            <label><span class="lbl-icon">🏙️</span> Communes</label>
-            <input type="text" id="c-communes" placeholder="Douala 1, Douala 3..."/>
-            <span class="field-hint">Séparées par des virgules</span>
-          </div>
-        </div>
-
-        <!-- Photo upload -->
-        <div class="field">
-          <label><span class="lbl-icon">📸</span> Photo de profil</label>
-          <div class="photo-upload" id="photoUploadZone" onclick="document.getElementById('c-photo-file').click()">
-            <div class="photo-preview" id="photoPreview">
-              <img id="photoImg" src="" alt=""/>
-              <span id="photoEmoji">📷</span>
-            </div>
-            <div class="photo-upload-text">
-              <strong>Cliquez pour choisir une photo</strong>
-              <span>JPG, PNG — Max. 5 Mo</span>
-            </div>
-          </div>
-          <input type="file" id="c-photo-file" accept="image/*" style="display:none" onchange="previewPhoto(this)"/>
-        </div>
-
-        <div class="form-nav">
-          <button type="button" class="btn-back" onclick="cPrev(2)">← Retour</button>
-          <button type="button" class="btn-next" onclick="cNext(3)">
-            Étape suivante
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Step D: Confirmation -->
-      <div class="form-step" id="cStep4">
-        <h3 class="step-heading">
-          <span class="step-heading-num">4</span>
-          Vérification & Confirmation
-        </h3>
-
-        <div class="recap-grid" id="cRecap"></div>
-
-        <label class="cgu-row" id="cCguRow" onclick="toggleCgu('cCguRow','cCguCheck')">
-          <input type="checkbox" id="cCguCheck"/>
-          <div class="cgu-box" id="cCguBox"></div>
-          <div class="cgu-text">
-            J'accepte les <a href="#" onclick="return false">Conditions Générales d'Utilisation</a> et la <a href="#" onclick="return false">Politique de Confidentialité</a> d'EcoCollect. <span class="req" style="color:var(--primary)">*</span>
-          </div>
-        </label>
-
-        <div id="cMsg" class="msg-box"></div>
-
-        <div class="form-nav">
-          <button type="button" class="btn-back" onclick="cPrev(3)">← Retour</button>
-          <button type="button" class="btn-next" onclick="submitCollecteur()" id="cSubmitBtn">
-            🚀 Créer mon compte
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
-        </div>
+      <div class="form-nav">
+        <button type="button" class="btn-back" onclick="goBack()">← Retour</button>
+        <button type="button" class="btn-next" onclick="cNext(1)">
+          Étape suivante
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
       </div>
     </div>
 
-    <div class="auth-link">
-      Vous avez déjà un compte ? <a href="index.html">Se connecter</a>
+    <!-- Step B: Identité -->
+    <div class="form-step" id="cStep2">
+      <h3 class="step-heading">
+        <span class="step-heading-num">2</span>
+        Identité & Type
+      </h3>
+
+      <div class="field" id="f-c-name">
+        <label><span class="lbl-icon">👤</span> Nom complet <span class="req">*</span></label>
+        <input type="text" id="c-name" placeholder="Jean Dupont"/>
+        <span class="field-error">Champ requis</span>
+      </div>
+
+      <div class="field">
+        <label><span class="lbl-icon">🔖</span> Type de collecteur <span class="req">*</span></label>
+        <div class="col-type-grid">
+          <label class="col-type-opt">
+            <input type="radio" name="c-type" value="independant"/>
+            <div class="col-type-inner">
+              <div class="col-type-emoji">🧑‍💼</div>
+              <div class="col-type-name">Indépendant</div>
+              <div class="col-type-desc">Vous travaillez seul et êtes directement rémunéré par mission</div>
+            </div>
+          </label>
+          <label class="col-type-opt">
+            <input type="radio" name="c-type" value="cooperative"/>
+            <div class="col-type-inner">
+              <div class="col-type-emoji">🤝</div>
+              <div class="col-type-name">Coopérative</div>
+              <div class="col-type-desc">Vous faites partie d'une structure collective de collecte</div>
+            </div>
+          </label>
+        </div>
+        <span class="field-error" id="c-type-err" style="display:none">Sélectionnez un type</span>
+      </div>
+
+      <div class="field" id="f-c-identity">
+        <label><span class="lbl-icon">🪪</span> Numéro d'identité <span style="font-weight:400;color:var(--muted-foreground)">(indépendant)</span></label>
+        <input type="text" id="c-identity" placeholder="CNI, Passeport..."/>
+        <span class="field-hint">Requis pour les collecteurs indépendants</span>
+      </div>
+
+      <div class="form-nav">
+        <button type="button" class="btn-back" onclick="cPrev(1)">← Retour</button>
+        <button type="button" class="btn-next" onclick="cNext(2)">
+          Étape suivante
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step C: Zone d'intervention & Photos -->
+    <div class="form-step" id="cStep3">
+      <h3 class="step-heading">
+        <span class="step-heading-num">3</span>
+        Zone d'intervention & Documents
+      </h3>
+
+      <div class="field" id="f-c-zone">
+        <label><span class="lbl-icon">🗺️</span> Nom de la zone <span class="req">*</span></label>
+        <input type="text" id="c-zone" placeholder="Ex: Zone Centre-ville"/>
+        <span class="field-error">Champ requis</span>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label><span class="lbl-icon">📌</span> Quartiers habituels</label>
+          <input type="text" id="c-quarters" placeholder="Akwa, Bonanjo..."/>
+          <span class="field-hint">Séparés par des virgules</span>
+        </div>
+        <div class="field">
+          <label><span class="lbl-icon">🏙️</span> Communes</label>
+          <input type="text" id="c-communes" placeholder="Douala 1, Douala 3..."/>
+          <span class="field-hint">Séparées par des virgules</span>
+        </div>
+      </div>
+
+      <!-- Photo de profil -->
+      <div class="field">
+        <label><span class="lbl-icon">📸</span> Photo de profil <span class="req">*</span></label>
+        <div class="photo-upload" id="photoUploadZone">
+          <div class="photo-preview" id="photoPreview">
+            <img id="photoImg" src="" alt="" style="display: none;"/>
+            <span id="photoEmoji">📷</span>
+          </div>
+          <div class="photo-upload-text">
+            <strong>Cliquez pour choisir une photo</strong>
+            <span>JPG, PNG — Max. 5 Mo</span>
+          </div>
+        </div>
+        <input type="file" id="c-photo-file" accept="image/*" style="display:none"/>
+      </div>
+
+      <!-- NOUVEAU : Photo CNI Recto -->
+      <div class="field">
+        <label><span class="lbl-icon">🪪</span> Photo CNI Recto <span class="req">*</span></label>
+        <div class="photo-upload" id="cni-recto-zone">
+          <div class="photo-preview recto" id="cni-recto-preview">
+            <span>📄 Recto</span>
+          </div>
+          <div class="photo-upload-text">
+            <strong>Cliquez pour charger le recto de votre CNI</strong>
+            <span>JPG, PNG — Max. 5 Mo</span>
+          </div>
+        </div>
+        <input type="file" id="collecteur-cni-recto-file" accept="image/*" style="display:none"/>
+        <input type="hidden" id="collecteur-cni-recto" name="photoCniRectoUrl">
+      </div>
+
+      <!-- NOUVEAU : Photo CNI Verso -->
+      <div class="field">
+        <label><span class="lbl-icon">🪪</span> Photo CNI Verso <span class="req">*</span></label>
+        <div class="photo-upload" id="cni-verso-zone">
+          <div class="photo-preview verso" id="cni-verso-preview">
+            <span>📄 Verso</span>
+          </div>
+          <div class="photo-upload-text">
+            <strong>Cliquez pour charger le verso de votre CNI</strong>
+            <span>JPG, PNG — Max. 5 Mo</span>
+          </div>
+        </div>
+        <input type="file" id="collecteur-cni-verso-file" accept="image/*" style="display:none"/>
+        <input type="hidden" id="collecteur-cni-verso" name="photoCniVersoUrl">
+      </div>
+
+      <div class="form-nav">
+        <button type="button" class="btn-back" onclick="cPrev(2)">← Retour</button>
+        <button type="button" class="btn-next" onclick="cNext(3)">
+          Étape suivante
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step D: Confirmation -->
+    <div class="form-step" id="cStep4">
+      <h3 class="step-heading">
+        <span class="step-heading-num">4</span>
+        Vérification & Confirmation
+      </h3>
+
+      <div class="recap-grid" id="cRecap"></div>
+
+      <label class="cgu-row" id="cCguRow" onclick="toggleCgu('cCguRow','cCguCheck')">
+        <input type="checkbox" id="cCguCheck"/>
+        <div class="cgu-box" id="cCguBox"></div>
+        <div class="cgu-text">
+          J'accepte les <a href="#" onclick="return false">Conditions Générales d'Utilisation</a> et la <a href="#" onclick="return false">Politique de Confidentialité</a> d'EcoCollect. <span class="req" style="color:var(--primary)">*</span>
+        </div>
+      </label>
+
+      <div id="cMsg" class="msg-box"></div>
+
+      <div class="form-nav">
+        <button type="button" class="btn-back" onclick="cPrev(3)">← Retour</button>
+        <button type="button" class="btn-next" onclick="submitCollecteur()" id="cSubmitBtn">
+          🚀 Créer mon compte
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
     </div>
   </div>
+
+  <div class="auth-link">
+    Vous avez déjà un compte ? <a href="index.html">Se connecter</a>
+  </div>
+</div>
 
   <!-- SCREEN 3 — SUCCÈS -->
   <div class="screen" id="screen3">

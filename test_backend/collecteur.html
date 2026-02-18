@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoCollect - Espace Collecteur</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: #f8faf8;
+            --foreground: #1a1e1a;
+            --card: #ffffff;
+            --primary: #2196F3;
+            --primary-foreground: #ffffff;
+            --secondary: #e8f3e8;
+            --secondary-foreground: #1a5c3a;
+            --muted: #f0f3f0;
+            --muted-foreground: #5a655a;
+            --destructive: #dc2626;
+            --warning: #ff9800;
+            --success: #4caf50;
+            --border: #d9e0d9;
+            --ring: #2196F3;
+            --radius: 0.75rem;
+            --shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 40px -8px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--background);
+            color: var(--foreground);
+            min-height: 100vh;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* ========== HEADER ========== */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 72px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            height: 42px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--foreground);
+            letter-spacing: -0.02em;
+        }
+
+        .logo-text span {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: var(--muted-foreground);
+            text-decoration: none;
+        }
+
+        .nav-link:hover {
+            color: var(--foreground);
+            background: var(--secondary);
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-link.logout {
+            color: var(--destructive);
+        }
+
+        .nav-link.logout:hover {
+            background: rgba(220, 38, 38, 0.1);
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 1rem 0.25rem 0.5rem;
+            background: var(--secondary);
+            border-radius: 100px;
+            border: 1px solid var(--border);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .user-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* ========== SECTIONS ========== */
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+            padding: 2rem 0;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--foreground);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        /* ========== STATUT EN ATTENTE ========== */
+        .pending-activation {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+            border-left: 4px solid var(--warning);
+            padding: 2rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .pending-icon {
+            font-size: 3rem;
+            color: var(--warning);
+        }
+
+        .pending-content h2 {
+            color: #856404;
+            margin-bottom: 0.5rem;
+        }
+
+        .pending-content p {
+            color: #856404;
+            opacity: 0.9;
+        }
+
+        /* ========== TABS ========== */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--muted);
+            padding: 4px;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border-radius: calc(var(--radius) - 2px);
+            font-size: 0.95rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: var(--muted-foreground);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .tab-btn:hover {
+            color: var(--foreground);
+        }
+
+        .tab-btn.active {
+            background: var(--card);
+            color: var(--foreground);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* ========== GRILLES ========== */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        /* ========== CARTES ========== */
+        .card {
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--foreground);
+            font-size: 1.1rem;
+        }
+
+        .card-header h3 i {
+            color: var(--primary);
+        }
+
+        /* ========== STATISTIQUES ========== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            color: var(--muted-foreground);
+            font-size: 0.95rem;
+        }
+
+        /* ========== FORMULAIRES ========== */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--foreground);
+        }
+
+        label i {
+            color: var(--primary);
+            margin-right: 0.25rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            background: var(--muted);
+            border: 1px solid var(--border);
+            color: var(--foreground);
+            font-size: 0.95rem;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--ring);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        /* ========== BOUTONS ========== */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--destructive);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--secondary-foreground);
+            border: 1px solid var(--border);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        /* ========== BADGES ========== */
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .badge-secondary {
+            background: var(--muted);
+            color: var(--muted-foreground);
+        }
+
+        /* ========== LISTES ========== */
+        .items-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .item:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .item-body {
+            font-size: 0.9rem;
+            color: var(--muted-foreground);
+        }
+
+        .item-body p {
+            margin: 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .item-body i {
+            color: var(--primary);
+            width: 16px;
+        }
+
+        /* ========== MESSAGES ========== */
+        .message {
+            padding: 1rem;
+            border-radius: var(--radius);
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .message.success {
+            background: var(--secondary);
+            color: var(--secondary-foreground);
+            border: 1px solid var(--success);
+            display: block;
+        }
+
+        .message.error {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--destructive);
+            border: 1px solid var(--destructive);
+            display: block;
+        }
+
+        .message.info {
+            background: rgba(33, 150, 243, 0.1);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            display: block;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 2rem;
+            color: var(--muted-foreground);
+            font-style: italic;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .header-inner {
+                flex-direction: column;
+                height: auto;
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .pending-activation {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-inner">
+            <a href="#" class="logo" onclick="showSection('dashboard'); return false;">
+                <img src="logo.jpeg" alt="EcoCollect" class="logo-img">
+             
+            </a>
+
+            <div class="nav-links" id="navLinks">
+                <a href="#dashboard" class="nav-link active" onclick="showSection('dashboard'); return false;">
+                    <i class="fas fa-tachometer-alt"></i> Tableau de bord
+                </a>
+                <a href="#missions" class="nav-link" onclick="showSection('missions'); return false;">
+                    <i class="fas fa-tasks"></i> Missions
+                </a>
+                <a href="#gains" class="nav-link" onclick="showSection('gains'); return false;">
+                    <i class="fas fa-coins"></i> Gains
+                </a>
+                <a href="#profil" class="nav-link" onclick="showSection('profil'); return false;">
+                    <i class="fas fa-user"></i> Profil
+                </a>
+                <a href="#" class="nav-link logout" onclick="handleLogout(); return false;">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </a>
+            </div>
+
+            <div class="user-badge" id="userBadge">
+                <div class="user-avatar" id="userAvatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <span class="user-name" id="userName">Non connecté</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Bannière compte en attente -->
+        <div id="pendingActivationBanner" class="pending-activation hidden">
+            <div class="pending-icon">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="pending-content">
+                <h2><i class="fas fa-clock"></i> Compte en attente d'activation</h2>
+                <p>Votre inscription est en cours de validation par un superviseur. Vous pourrez accéder aux missions dès que votre compte sera activé.</p>
+                <p style="margin-top: 0.5rem; font-size: 0.9rem;">Cette vérification peut prendre 24-48h.</p>
+            </div>
+        </div>
+
+        <!-- Section Tableau de bord -->
+        <section id="dashboard" class="section active">
+            <h2 class="section-title">
+                <i class="fas fa-tachometer-alt"></i> Tableau de bord
+            </h2>
+            
+            <div class="stats-grid" id="dashboardStats">
+                <div class="stat-card">
+                    <div class="stat-value" id="dashboardTotalMissions">0</div>
+                    <div class="stat-label">Missions totales</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="dashboardMissionsValidees">0</div>
+                    <div class="stat-label">Missions validées</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="dashboardMissionsEnCours">0</div>
+                    <div class="stat-label">En cours</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="dashboardDechets">0</div>
+                    <div class="stat-label">Kg collectés</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-truck"></i> Mission en cours</h3>
+                    </div>
+                    <div id="missionEnCours">
+                        <p class="empty-message">Aucune mission en cours</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-history"></i> Dernières missions</h3>
+                    </div>
+                    <div id="dernieresMissions" class="items-list">
+                        <p class="empty-message">Aucune mission récente</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Missions -->
+        <section id="missions" class="section">
+            <h2 class="section-title">
+                <i class="fas fa-tasks"></i> Missions
+            </h2>
+            
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="missions-disponibles">Disponibles</button>
+                <button class="tab-btn" data-tab="missions-acceptees">Acceptées</button>
+                <button class="tab-btn" data-tab="missions-terminees">Terminées</button>
+            </div>
+
+            <!-- Missions disponibles -->
+            <div id="missions-disponibles" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-clock"></i> Missions disponibles</h3>
+                        <button class="btn btn-sm btn-primary" onclick="loadMissionsDisponibles()">
+                            <i class="fas fa-sync"></i>
+                        </button>
+                    </div>
+                    <div id="missionsDisponiblesList" class="items-list">
+                        <p class="empty-message">Aucune mission disponible</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Missions acceptées -->
+            <div id="missions-acceptees" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-check-circle"></i> Mes missions acceptées</h3>
+                        <select id="filterMissionsAcceptees" onchange="loadMesMissions()">
+                            <option value="tous">Tous</option>
+                            <option value="acceptee">Acceptée</option>
+                            <option value="en_cours">En cours</option>
+                            <option value="deposee">Déposée</option>
+                        </select>
+                    </div>
+                    <div id="missionsAccepteesList" class="items-list">
+                        <p class="empty-message">Aucune mission acceptée</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Missions terminées -->
+            <div id="missions-terminees" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-flag-checkered"></i> Missions terminées</h3>
+                    </div>
+                    <div id="missionsTermineesList" class="items-list">
+                        <p class="empty-message">Aucune mission terminée</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions sur mission -->
+            <div id="missionActions" class="card hidden" style="margin-top: 1.5rem;">
+                <div class="card-header">
+                    <h3><i class="fas fa-truck"></i> Actions sur la mission</h3>
+                    <span id="missionSelectedId" class="badge badge-info"></span>
+                </div>
+                <div class="grid-3">
+                    <button class="btn btn-success" onclick="handleMissionAction('accepter')">
+                        <i class="fas fa-check"></i> Accepter
+                    </button>
+                    <button class="btn btn-primary" onclick="handleMissionAction('demarrer')">
+                        <i class="fas fa-play"></i> Démarrer
+                    </button>
+                    <button class="btn btn-warning" onclick="handleMissionAction('terminer')">
+                        <i class="fas fa-flag-checkered"></i> Terminer
+                    </button>
+                </div>
+                <div class="grid-2" style="margin-top: 1rem;">
+                    <div class="form-group">
+                        <label>Photo preuve (URL)</label>
+                        <input type="url" id="missionPhotoUrl" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label>Code confirmation</label>
+                        <input type="text" id="missionCode" placeholder="Code reçu">
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="missionNotes" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Conformité tri</label>
+                        <select id="missionConformite">
+                            <option value="true">Conforme</option>
+                            <option value="false">Non conforme</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid-2" style="margin-top: 0.5rem;">
+                    <div class="form-group">
+                        <label>Point de dépôt</label>
+                        <select id="missionPointDepot">
+                            <option value="">Sélectionnez...</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="handleChoisirDepot()" style="margin-top: 1.7rem;">
+                        <i class="fas fa-map-marker-alt"></i> Choisir dépôt
+                    </button>
+                </div>
+                <div id="missionActionMessage" class="message"></div>
+            </div>
+        </section>
+
+        <!-- Section Gains -->
+        <section id="gains" class="section">
+            <h2 class="section-title">
+                <i class="fas fa-coins"></i> Gains
+            </h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="gainsTotal">0</div>
+                    <div class="stat-label">Gains totaux (FCFA)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="gainsValides">0</div>
+                    <div class="stat-label">Gains validés</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="gainsEnAttente">0</div>
+                    <div class="stat-label">En attente</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-list"></i> Historique des gains</h3>
+                </div>
+                <div id="gainsList" class="items-list">
+                    <p class="empty-message">Aucun gain pour le moment</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Profil -->
+        <section id="profil" class="section">
+            <h2 class="section-title">
+                <i class="fas fa-user"></i> Mon Profil
+            </h2>
+            
+            <div class="grid-2">
+                <!-- Informations personnelles -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-id-card"></i> Informations personnelles</h3>
+                    </div>
+                    <div id="profilInfo">
+                        <p><strong>Nom:</strong> <span id="profilNom"></span></p>
+                        <p><strong>Email:</strong> <span id="profilEmail"></span></p>
+                        <p><strong>Téléphone:</strong> <span id="profilTelephone"></span></p>
+                        <p><strong>Type:</strong> <span id="profilType"></span></p>
+                        <p><strong>Zone:</strong> <span id="profilZone"></span></p>
+                        <p><strong>Quartiers:</strong> <span id="profilQuartiers"></span></p>
+                        <p><strong>Communes:</strong> <span id="profilCommunes"></span></p>
+                        <p><strong>Statut:</strong> <span id="profilStatut" class="badge badge-warning">En attente</span></p>
+                    </div>
+                    
+                    <!-- Photo de profil -->
+                    <div id="profilPhotoContainer" class="text-center" style="margin-top: 1rem;">
+                        <img id="profilPhoto" src="" alt="Photo de profil" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none;">
+                    </div>
+                    
+                    <!-- Photos CNI -->
+                    <div class="grid-2" style="margin-top: 1rem;">
+                        <div id="profilCniRectoContainer" class="hidden">
+                            <h4>CNI Recto</h4>
+                            <img id="profilCniRecto" src="" alt="CNI Recto" style="width: 100%; border-radius: 5px; display: none;">
+                        </div>
+                        <div id="profilCniVersoContainer" class="hidden">
+                            <h4>CNI Verso</h4>
+                            <img id="profilCniVerso" src="" alt="CNI Verso" style="width: 100%; border-radius: 5px; display: none;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions sur le profil -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-edit"></i> Modifier le profil</h3>
+                    </div>
+                    <form id="modifierProfilForm">
+                        <div class="form-group">
+                            <label>Nom complet</label>
+                            <input type="text" id="modifNom">
+                        </div>
+                        <div class="form-group">
+                            <label>Téléphone</label>
+                            <input type="tel" id="modifTelephone">
+                        </div>
+                        <div class="form-group">
+                            <label>Zone d'intervention</label>
+                            <input type="text" id="modifZone">
+                        </div>
+                        <div class="form-group">
+                            <label>Quartiers (séparés par des virgules)</label>
+                            <input type="text" id="modifQuartiers" placeholder="Akwa, Bonanjo...">
+                        </div>
+                        <div class="form-group">
+                            <label>Communes (séparées par des virgules)</label>
+                            <input type="text" id="modifCommunes" placeholder="Douala 1, Douala 3...">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Mettre à jour
+                        </button>
+                        <div id="modifProfilMessage" class="message"></div>
+                    </form>
+
+                    <h3 style="margin-top: 2rem;"><i class="fas fa-key"></i> Changer mot de passe</h3>
+                    <form id="changerMotDePasseForm">
+                        <div class="form-group">
+                            <label>Ancien mot de passe</label>
+                            <input type="password" id="ancienMdp" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nouveau mot de passe</label>
+                            <input type="password" id="nouveauMdp" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Confirmer</label>
+                            <input type="password" id="confirmMdp" required>
+                        </div>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-lock"></i> Changer
+                        </button>
+                        <div id="mdpMessage" class="message"></div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="collecteur.js"></script>
+</body>
+</html>

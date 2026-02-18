@@ -94,3 +94,164 @@
     "wait-on": "^9.0.1"
   }
 }
+
+
+
+
+Feb 18 12:51:46.36
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.png
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:43.96
+GET
+500
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.png
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:42.88
+GET
+500
+ecobackend-tau.vercel.app
+/favicon.ico
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:42.49
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.png
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:42.12
+GET
+500
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.ico
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:39.65
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.ico
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:38.68
+GET
+500
+ecobackend-tau.vercel.app
+/
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:38.23
+GET
+500
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.ico
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:37.81
+GET
+500
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.png
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:37.76
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:36.31
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:35.43
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.png
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:34.03
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.png
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:33.65
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.ico
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:31.19
+GET
+500
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.ico
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:29.81
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.ico
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:29.34
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:51:27.86
+GET
+500
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:50:33.90
+GET
+500
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.ico
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:50:33.87
+GET
+500
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/favicon.ico
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:50:33.50
+GET
+500
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:50:33.47
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:50:32.41
+GET
+500
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:50:32.37
+GET
+500
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue. Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:50:32.33
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue. Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Feb 18 12:50:32.24
+GET
+---
+ecobackend-a0tyryo6l-michels-projects-1a4b6ff4.vercel.app
+/
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue. Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'multer' imported from /var/task/backend/middleware/uploads.js at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9) at packageResolve (node:internal/modules/esm/resolve:773:81) at moduleResolve (node:internal/modules/esm/resolve:859:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:989:14) at defaultResolve (node:internal/modules/esm/resolve:1032:79) at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20) at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38) at ModuleJob._link (node:internal/modules/esm/module_job:182:49) at process.processTicksAndRejections (node:internal/process/task_queues:105:5) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+No more logs to show within selected timeline
