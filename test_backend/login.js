@@ -1784,6 +1784,119 @@ async function submitProducteur() {
 // SOUMISSION DES FORMULAIRES - COLLECTEUR
 // ============================================
 
+// async function submitCollecteur() {
+//     const cguCheck = document.getElementById('cCguCheck');
+    
+//     if (!cguCheck || !cguCheck.checked) {
+//         showMsg('cMsg', 'Vous devez accepter les Conditions Générales d\'Utilisation', 'error');
+//         return;
+//     }
+    
+//     // Vérification des photos CNI
+//     const cniRectoFile = document.getElementById('collecteur-cni-recto-file')?.files[0];
+//     const cniVersoFile = document.getElementById('collecteur-cni-verso-file')?.files[0];
+    
+//     if (!cniRectoFile) {
+//         showMsg('cMsg', 'Veuillez charger la photo recto de votre CNI', 'error');
+//         return;
+//     }
+    
+//     if (!cniVersoFile) {
+//         showMsg('cMsg', 'Veuillez charger la photo verso de votre CNI', 'error');
+//         return;
+//     }
+    
+//     const btn = document.getElementById('cSubmitBtn');
+//     if (btn) {
+//         btn.disabled = true;
+//         btn.innerHTML = '⏳ Envoi en cours...';
+//     }
+    
+//     const type = document.querySelector('input[name="c-type"]:checked');
+    
+//     // Construction de l'objet zone d'intervention
+//     const quartiers = document.getElementById('c-quarters')?.value
+//         .split(',')
+//         .map(q => q.trim())
+//         .filter(q => q) || [];
+    
+//     const communes = document.getElementById('c-communes')?.value
+//         .split(',')
+//         .map(c => c.trim())
+//         .filter(c => c) || [];
+    
+//     // Utiliser FormData pour gérer les fichiers
+//     const formData = new FormData();
+    
+//     formData.append('email', document.getElementById('c-email')?.value || '');
+//     formData.append('telephone', document.getElementById('c-phone')?.value || '');
+//     formData.append('motDePasse', document.getElementById('c-pwd')?.value || '');
+//     formData.append('nomComplet', document.getElementById('c-name')?.value || '');
+//     formData.append('typeCollecteur', type ? type.value : '');
+//     formData.append('numeroIdentite', document.getElementById('c-identity')?.value || '');
+//     formData.append('zoneInterventionNom', document.getElementById('c-zone')?.value || '');
+//     formData.append('quartiersHabituels', JSON.stringify(quartiers));
+//     formData.append('communesIntervention', JSON.stringify(communes));
+//     formData.append('cguAcceptees', 'true');
+    
+//     // Ajouter la photo de profil
+//     const photoFile = document.getElementById('c-photo-file')?.files[0];
+//     if (photoFile) {
+//         formData.append('photoProfil', photoFile);
+//     }
+    
+//     // Ajouter les photos CNI
+//     if (cniRectoFile) {
+//         formData.append('photoCniRecto', cniRectoFile);
+//     }
+    
+//     if (cniVersoFile) {
+//         formData.append('photoCniVerso', cniVersoFile);
+//     }
+    
+//     try {
+//         console.log('📤 Inscription collecteur avec fichiers...');
+        
+//         const response = await fetch(`${CONFIG.API_URL}/api/collecteurs/inscription`, {
+//             method: 'POST',
+//             body: formData
+//             // ⚠️ Ne PAS mettre 'Content-Type' header, le navigateur le fera automatiquement avec la boundary
+//         });
+        
+//         const data = await response.json();
+//         console.log('📥 Réponse:', data);
+        
+//         if (response.ok && data.success) {
+//             console.log('✅ Inscription collecteur réussie');
+            
+//             // Sauvegarder les données
+//             if (data.token && data.collecteur) {
+//                 saveAuthData(data.token, data.collecteur, 'collecteur');
+//             }
+            
+//             showSuccess('collecteur', document.getElementById('c-name')?.value || '');
+            
+//             // Rediriger vers le dashboard collecteur
+//             setTimeout(() => {
+//                 window.location.href = 'collecteur.html';
+//             }, 2000);
+            
+//         } else {
+//             throw new Error(data.message || data.erreur || 'Erreur lors de l\'inscription');
+//         }
+//     } catch (error) {
+//         console.error('❌ Erreur inscription collecteur:', error);
+//         showMsg('cMsg', error.message, 'error');
+        
+//         if (btn) {
+//             btn.disabled = false;
+//             btn.innerHTML = '🚀 Créer mon compte <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+//         }
+//     }
+// }
+
+// Dans login.js, remplacez la fonction submitCollecteur par :
+
 async function submitCollecteur() {
     const cguCheck = document.getElementById('cCguCheck');
     
@@ -1795,14 +1908,15 @@ async function submitCollecteur() {
     // Vérification des photos CNI
     const cniRectoFile = document.getElementById('collecteur-cni-recto-file')?.files[0];
     const cniVersoFile = document.getElementById('collecteur-cni-verso-file')?.files[0];
+    const photoFile = document.getElementById('c-photo-file')?.files[0];
     
-    if (!cniRectoFile) {
-        showMsg('cMsg', 'Veuillez charger la photo recto de votre CNI', 'error');
+    if (!cniRectoFile || !cniVersoFile) {
+        showMsg('cMsg', 'Les deux faces de votre CNI sont requises', 'error');
         return;
     }
     
-    if (!cniVersoFile) {
-        showMsg('cMsg', 'Veuillez charger la photo verso de votre CNI', 'error');
+    if (!photoFile) {
+        showMsg('cMsg', 'La photo de profil est requise', 'error');
         return;
     }
     
@@ -1813,6 +1927,14 @@ async function submitCollecteur() {
     }
     
     const type = document.querySelector('input[name="c-type"]:checked');
+    if (!type) {
+        showMsg('cMsg', 'Veuillez sélectionner un type de collecteur', 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Créer mon compte';
+        }
+        return;
+    }
     
     // Construction de l'objet zone d'intervention
     const quartiers = document.getElementById('c-quarters')?.value
@@ -1832,35 +1954,27 @@ async function submitCollecteur() {
     formData.append('telephone', document.getElementById('c-phone')?.value || '');
     formData.append('motDePasse', document.getElementById('c-pwd')?.value || '');
     formData.append('nomComplet', document.getElementById('c-name')?.value || '');
-    formData.append('typeCollecteur', type ? type.value : '');
+    formData.append('typeCollecteur', type.value);
     formData.append('numeroIdentite', document.getElementById('c-identity')?.value || '');
     formData.append('zoneInterventionNom', document.getElementById('c-zone')?.value || '');
     formData.append('quartiersHabituels', JSON.stringify(quartiers));
     formData.append('communesIntervention', JSON.stringify(communes));
     formData.append('cguAcceptees', 'true');
     
-    // Ajouter la photo de profil
-    const photoFile = document.getElementById('c-photo-file')?.files[0];
-    if (photoFile) {
-        formData.append('photoProfil', photoFile);
-    }
-    
-    // Ajouter les photos CNI
-    if (cniRectoFile) {
-        formData.append('photoCniRecto', cniRectoFile);
-    }
-    
-    if (cniVersoFile) {
-        formData.append('photoCniVerso', cniVersoFile);
-    }
+    // Ajouter les fichiers
+    formData.append('photoProfil', photoFile);
+    formData.append('photoCniRecto', cniRectoFile);
+    formData.append('photoCniVerso', cniVersoFile);
     
     try {
-        console.log('📤 Inscription collecteur avec fichiers...');
+        console.log('📤 Envoi inscription collecteur...');
         
+        // NE PAS METTRE DE HEADERS CONTENT-TYPE !
         const response = await fetch(`${CONFIG.API_URL}/api/collecteurs/inscription`, {
             method: 'POST',
-            body: formData
-            // ⚠️ Ne PAS mettre 'Content-Type' header, le navigateur le fera automatiquement avec la boundary
+            body: formData,
+            mode: 'cors', // Important pour CORS
+            credentials: 'omit' // Pas de cookies
         });
         
         const data = await response.json();
@@ -1869,14 +1983,12 @@ async function submitCollecteur() {
         if (response.ok && data.success) {
             console.log('✅ Inscription collecteur réussie');
             
-            // Sauvegarder les données
             if (data.token && data.collecteur) {
                 saveAuthData(data.token, data.collecteur, 'collecteur');
             }
             
             showSuccess('collecteur', document.getElementById('c-name')?.value || '');
             
-            // Rediriger vers le dashboard collecteur
             setTimeout(() => {
                 window.location.href = 'collecteur.html';
             }, 2000);
@@ -1890,7 +2002,7 @@ async function submitCollecteur() {
         
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '🚀 Créer mon compte <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+            btn.innerHTML = '🚀 Créer mon compte';
         }
     }
 }
