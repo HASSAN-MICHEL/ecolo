@@ -7,9 +7,6 @@ import Notification from '../models/Notification.js';
 import { pool } from '../config/database.js';
 
 
-
-
-
 class CollecteurController {
     // Inscription d'un collecteur avec upload de fichiers
     static async inscription(req, res) {
