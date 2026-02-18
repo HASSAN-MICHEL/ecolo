@@ -18,7 +18,7 @@
 
     // Configuration
 const CONFIG = {
-    API_URL: window.API_BASE_URL || 'https://ecobackend-m3s8.vercel.app',
+    API_URL: window.API_BASE_URL || 'https://ecobackend-three.vercel.app',
     TOKEN_KEY: 'ecocollect_token',
     USER_KEY: 'ecocollect_user',
     ROLE_KEY: 'ecocollect_role'
