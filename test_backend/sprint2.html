@@ -245,6 +245,60 @@
             gap: 10px;
         }
 
+        /* Styles pour le téléchargement de photo */
+        .photo-upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .photo-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px solid var(--collecteur-color);
+            object-fit: cover;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .photo-preview:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
+        .photo-preview.has-image {
+            border-color: var(--success-color);
+        }
+
+        .photo-preview.recto, .photo-preview.verso {
+            border-radius: 5px;
+            width: 150px;
+            height: 100px;
+        }
+
+        .photo-input {
+            display: none;
+        }
+
+        .photo-hint {
+            font-size: 12px;
+            color: var(--gray-color);
+            text-align: center;
+        }
+
+        .photo-hint i {
+            margin-right: 5px;
+        }
+
         /* Boutons */
         .btn {
             padding: 10px 20px;
@@ -547,7 +601,7 @@
             <!-- Onglet Authentification Collecteur -->
             <div id="collecteur-auth" class="tab-content active">
                 <div class="grid-2">
-                    <!-- Inscription -->
+                    <!-- Inscription avec téléchargement de photo -->
                     <div class="card">
                         <div class="card-header">
                             <h3><i class="fas fa-user-plus"></i> Inscription Collecteur</h3>
@@ -593,10 +647,56 @@
                                 <label>Communes (séparées par des virgules)</label>
                                 <input type="text" id="collecteur-communes" placeholder="Paris, Dakar">
                             </div>
+                            
+                            <!-- Photo de profil -->
                             <div class="form-group">
-                                <label>Photo profil URL</label>
-                                <input type="url" id="collecteur-photo">
+                                <label>Photo de profil</label>
+                                <div class="photo-upload-container">
+                                    <div class="photo-preview" id="photo-preview" onclick="document.getElementById('collecteur-photo-file').click()">
+                                        <i class="fas fa-camera"></i>
+                                    </div>
+                                    <input type="file" id="collecteur-photo-file" class="photo-input" accept="image/*">
+                                    <input type="hidden" id="collecteur-photo" name="photoProfilUrl">
+                                    <div class="photo-hint">
+                                        <i class="fas fa-info-circle"></i>
+                                        Cliquez sur l'icône pour choisir une photo
+                                    </div>
+                                </div>
                             </div>
+
+                            <!-- NOUVEAU : Photos CNI Recto/Verso -->
+                            <div class="form-group">
+                                <label>Photo CNI Recto *</label>
+                                <div class="photo-upload-container">
+                                    <div class="photo-preview recto" id="cni-recto-preview" onclick="document.getElementById('collecteur-cni-recto-file').click()">
+                                        <i class="fas fa-id-card"></i>
+                                        <span>Recto</span>
+                                    </div>
+                                    <input type="file" id="collecteur-cni-recto-file" class="photo-input" accept="image/*" required>
+                                    <input type="hidden" id="collecteur-cni-recto" name="photoCniRectoUrl">
+                                    <div class="photo-hint">
+                                        <i class="fas fa-info-circle"></i>
+                                        Cliquez pour charger le recto de votre CNI
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Photo CNI Verso *</label>
+                                <div class="photo-upload-container">
+                                    <div class="photo-preview verso" id="cni-verso-preview" onclick="document.getElementById('collecteur-cni-verso-file').click()">
+                                        <i class="fas fa-id-card"></i>
+                                        <span>Verso</span>
+                                    </div>
+                                    <input type="file" id="collecteur-cni-verso-file" class="photo-input" accept="image/*" required>
+                                    <input type="hidden" id="collecteur-cni-verso" name="photoCniVersoUrl">
+                                    <div class="photo-hint">
+                                        <i class="fas fa-info-circle"></i>
+                                        Cliquez pour charger le verso de votre CNI
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-group">
                                 <label>
                                     <input type="checkbox" id="collecteur-cgu"> J'accepte les CGU
@@ -751,6 +851,7 @@
             <!-- Onglet Profil Collecteur -->
             <div id="collecteur-profil" class="tab-content">
                 <div class="grid-2">
+                    <!-- Affichage du profil -->
                     <div class="card">
                         <div class="card-header">
                             <h3><i class="fas fa-id-card"></i> Mon profil</h3>
@@ -761,9 +862,30 @@
                             <p><strong>Téléphone:</strong> <span id="profil-telephone"></span></p>
                             <p><strong>Type:</strong> <span id="profil-type"></span></p>
                             <p><strong>Zone:</strong> <span id="profil-zone"></span></p>
+                            <p><strong>Quartiers:</strong> <span id="profil-quartiers"></span></p>
+                            <p><strong>Communes:</strong> <span id="profil-communes"></span></p>
                             <p><strong>Statut:</strong> <span id="profil-statut"></span></p>
+                            
+                            <!-- Photo de profil -->
+                            <div id="profil-photo-container" class="mt-20 text-center">
+                                <img id="profil-photo" src="" alt="Photo de profil" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none;">
+                            </div>
+                            
+                            <!-- NOUVEAU : Photos CNI -->
+                            <div class="grid-2 mt-20">
+                                <div id="profil-cni-recto-container" class="hidden">
+                                    <h4>CNI Recto</h4>
+                                    <img id="profil-cni-recto" src="" alt="CNI Recto" style="width: 100%; max-width: 200px; border-radius: 5px; display: none;">
+                                </div>
+                                <div id="profil-cni-verso-container" class="hidden">
+                                    <h4>CNI Verso</h4>
+                                    <img id="profil-cni-verso" src="" alt="CNI Verso" style="width: 100%; max-width: 200px; border-radius: 5px; display: none;">
+                                </div>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Formulaire de modification -->
                     <div class="card">
                         <div class="card-header">
                             <h3><i class="fas fa-edit"></i> Modifier profil</h3>
@@ -781,12 +903,45 @@
                                 <label>Zone intervention</label>
                                 <input type="text" id="modif-zone">
                             </div>
+                            <div class="form-group">
+                                <label>Quartiers habituels (séparés par des virgules)</label>
+                                <input type="text" id="modif-quartiers" placeholder="Centre-ville, République">
+                            </div>
+                            <div class="form-group">
+                                <label>Communes (séparées par des virgules)</label>
+                                <input type="text" id="modif-communes" placeholder="Paris, Dakar">
+                            </div>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Mettre à jour
                             </button>
                             <div id="modif-profil-message" class="message"></div>
                         </form>
                     </div>
+                </div>
+
+                <!-- NOUVEAU : Formulaire de changement de mot de passe -->
+                <div class="card mt-20">
+                    <div class="card-header">
+                        <h3><i class="fas fa-key"></i> Changer mot de passe</h3>
+                    </div>
+                    <form id="changer-mot-de-passe-form">
+                        <div class="form-group">
+                            <label>Ancien mot de passe</label>
+                            <input type="password" id="collecteur-ancien-mdp" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nouveau mot de passe</label>
+                            <input type="password" id="collecteur-nouveau-mdp" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Confirmer</label>
+                            <input type="password" id="collecteur-confirm-mdp" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Changer le mot de passe
+                        </button>
+                        <div id="collecteur-mdp-message" class="message"></div>
+                    </form>
                 </div>
             </div>
 
@@ -930,23 +1085,41 @@
 
             <!-- Onglet Tableau de bord Gestionnaire -->
             <div id="gestionnaire-dashboard" class="tab-content">
-                <div class="stats-grid">
+                <div class="stats-grid" id="gestionnaire-stats">
                     <div class="stat-card">
-                        <div class="stat-value" id="gest-total-receptions">0</div>
-                        <div class="stat-label">Total réceptions</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">En attente</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="gest-poids-total">0</div>
-                        <div class="stat-label">Poids total (kg)</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Validées</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="gest-receptions-ajd">0</div>
-                        <div class="stat-label">Aujourd'hui</div>
+                        <div class="stat-value">0 kg</div>
+                        <div class="stat-label">Poids total</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">0 FCFA</div>
+                        <div class="stat-label">Gains distribués</div>
                     </div>
                 </div>
+                
                 <div class="card">
-                    <h4>Activités récentes</h4>
-                    <div id="activites-recentes"></div>
+                    <div class="card-header">
+                        <h3><i class="fas fa-history"></i> Missions récentes</h3>
+                    </div>
+                    <div id="missions-recentes" class="items-list">
+                        <p class="text-center">Aucune mission récente</p>
+                    </div>
+                </div>
+                
+                <div class="card mt-20">
+                    <div class="card-header">
+                        <h3><i class="fas fa-trophy"></i> Top collecteurs</h3>
+                    </div>
+                    <div id="top-collecteurs" class="items-list">
+                        <p class="text-center">Aucune donnée</p>
+                    </div>
                 </div>
             </div>
 
@@ -1180,921 +1353,6 @@
         </div>
     </div>
 
-    <script>
-        // Configuration
-        let API_URL = localStorage.getItem('api_url') || 'http://localhost:3000';
-        let currentToken = null;
-        let currentUser = null;
-        let currentRole = 'collecteur';
-
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('apiUrl').value = API_URL;
-            setupEventListeners();
-        });
-
-        function setupEventListeners() {
-            // Navigation des rôles
-            document.querySelectorAll('.role-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const role = btn.dataset.role;
-                    switchRole(role);
-                });
-            });
-
-            // Tabs
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const panel = btn.closest('.panel');
-                    const tabId = btn.dataset.tab;
-                    switchTab(panel, tabId);
-                });
-            });
-
-            // Sauvegarde URL API
-            document.getElementById('saveApiUrl').addEventListener('click', () => {
-                API_URL = document.getElementById('apiUrl').value;
-                localStorage.setItem('api_url', API_URL);
-                showMessage(null, 'URL API sauvegardée', 'success');
-            });
-
-            // ========== COLLECTEUR ==========
-            document.getElementById('collecteur-inscription-form').addEventListener('submit', handleCollecteurInscription);
-            document.getElementById('collecteur-connexion-form').addEventListener('submit', handleCollecteurConnexion);
-            document.getElementById('collecteur-deconnexion').addEventListener('click', handleDeconnexion);
-            document.getElementById('refresh-missions-dispo').addEventListener('click', loadMissionsDisponibles);
-            document.getElementById('filter-mes-missions').addEventListener('change', loadMesMissions);
-            document.getElementById('mission-accepter').addEventListener('click', () => handleMissionAction('accepter'));
-            document.getElementById('mission-demarrer').addEventListener('click', () => handleMissionAction('demarrer'));
-            document.getElementById('mission-terminer').addEventListener('click', () => handleMissionAction('terminer'));
-            document.getElementById('mission-choisir-depot').addEventListener('click', handleChoisirDepot);
-            document.getElementById('modifier-profil-form').addEventListener('submit', handleModifierProfil);
-
-            // ========== GESTIONNAIRE ==========
-            document.getElementById('gestionnaire-connexion-form').addEventListener('submit', handleGestionnaireConnexion);
-            document.getElementById('refresh-missions-attente').addEventListener('click', loadMissionsEnAttente);
-            document.getElementById('valider-mission-form').addEventListener('submit', handleValiderMission);
-            document.getElementById('attribuer-credits-form').addEventListener('submit', handleAttribuerCredits);
-            document.getElementById('gestionnaire-changer-mdp').addEventListener('submit', handleChangerMotDePasse);
-
-            // ========== SUPERVISEUR ==========
-            document.getElementById('superviseur-connexion-form').addEventListener('submit', handleSuperviseurConnexion);
-            document.getElementById('refresh-collecteurs-attente').addEventListener('click', loadCollecteursEnAttente);
-            document.getElementById('valider-collecteur-form').addEventListener('submit', handleValiderCollecteur);
-            document.getElementById('refresh-gestionnaires').addEventListener('click', loadGestionnaires);
-            document.getElementById('creer-gestionnaire-form').addEventListener('submit', handleCreerGestionnaire);
-            document.getElementById('attribuer-mission-form').addEventListener('submit', handleAttribuerMission);
-        }
-
-        function switchRole(role) {
-            currentRole = role;
-            
-            // Mettre à jour les boutons
-            document.querySelectorAll('.role-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.role === role) {
-                    btn.classList.add('active');
-                }
-            });
-
-            // Afficher le bon panel
-            document.querySelectorAll('.panel').forEach(panel => {
-                panel.classList.remove('active');
-            });
-            document.getElementById(`panel-${role}`).classList.add('active');
-
-            // Charger les données si connecté
-            if (currentToken && role === 'collecteur') {
-                loadCollecteurData();
-            }
-        }
-
-        function switchTab(panel, tabId) {
-            const tabs = panel.querySelectorAll('.tab-btn');
-            const contents = panel.querySelectorAll('.tab-content');
-            
-            tabs.forEach(tab => tab.classList.remove('active'));
-            contents.forEach(content => content.classList.remove('active'));
-            
-            panel.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-            panel.querySelector(`#${tabId}`).classList.add('active');
-        }
-
-        function showMessage(element, message, type = 'info') {
-            if (!element) {
-                alert(message);
-                return;
-            }
-            element.className = `message ${type}`;
-            element.textContent = message;
-            element.style.display = 'block';
-            setTimeout(() => {
-                element.style.display = 'none';
-            }, 3000);
-        }
-
-        // ========== COLLECTEUR ==========
-        async function handleCollecteurInscription(e) {
-            e.preventDefault();
-            
-            const data = {
-                email: document.getElementById('collecteur-email').value,
-                telephone: document.getElementById('collecteur-telephone').value,
-                motDePasse: document.getElementById('collecteur-password').value,
-                nomComplet: document.getElementById('collecteur-nom').value,
-                typeCollecteur: document.getElementById('collecteur-type').value,
-                numeroIdentite: document.getElementById('collecteur-numero-identite').value || undefined,
-                zoneInterventionNom: document.getElementById('collecteur-zone-nom').value,
-                quartiersHabituels: document.getElementById('collecteur-quartiers').value.split(',').map(q => q.trim()).filter(q => q),
-                communesIntervention: document.getElementById('collecteur-communes').value.split(',').map(c => c.trim()).filter(c => c),
-                photoProfilUrl: document.getElementById('collecteur-photo').value || undefined,
-                cguAcceptees: document.getElementById('collecteur-cgu').checked
-            };
-
-            const messageDiv = document.getElementById('collecteur-inscription-message');
-
-            try {
-                const response = await fetch(`${API_URL}/api/collecteurs/inscription`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    showMessage(messageDiv, result.message, 'success');
-                    document.getElementById('collecteur-inscription-form').reset();
-                } else {
-                    throw new Error(result.message || 'Erreur inscription');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        async function handleCollecteurConnexion(e) {
-            e.preventDefault();
-            
-            const data = {
-                identifiant: document.getElementById('collecteur-login-identifiant').value,
-                motDePasse: document.getElementById('collecteur-login-password').value
-            };
-
-            const messageDiv = document.getElementById('collecteur-connexion-message');
-
-            try {
-                const response = await fetch(`${API_URL}/api/collecteurs/connexion`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    currentToken = result.token;
-                    currentUser = result.collecteur;
-                    
-                    document.getElementById('collecteur-connected-name').textContent = currentUser.nomComplet;
-                    document.getElementById('collecteur-connected-state').classList.remove('hidden');
-                    
-                    showMessage(messageDiv, 'Connexion réussie', 'success');
-                    loadCollecteurData();
-                } else {
-                    throw new Error(result.message || 'Erreur connexion');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        async function loadCollecteurData() {
-            if (!currentToken) return;
-            
-            loadMissionsDisponibles();
-            loadMesMissions();
-            loadGains();
-            loadProfil();
-            loadDashboard();
-        }
-
-        async function loadMissionsDisponibles() {
-            try {
-                const response = await fetch(`${API_URL}/api/collecteurs/missions/disponibles`, {
-                    headers: { 'Authorization': `Bearer ${currentToken}` }
-                });
-
-                const result = await response.json();
-                const container = document.getElementById('missions-disponibles');
-
-                if (result.success) {
-                    if (result.missions.length === 0) {
-                        container.innerHTML = '<p class="text-center">Aucune mission disponible</p>';
-                    } else {
-                        container.innerHTML = result.missions.map(m => `
-                            <div class="item" onclick="selectMission('${m.id}')">
-                                <div class="item-header">
-                                    <span class="item-title">Mission #${m.id.substring(0,8)}</span>
-                                    <span class="badge badge-info">${m.type_dechet}</span>
-                                </div>
-                                <div class="item-body">
-                                    <p><i class="fas fa-user"></i> ${m.producteur_nom}</p>
-                                    <p><i class="fas fa-map-marker"></i> ${m.adresse}</p>
-                                    <p><i class="fas fa-weight"></i> ${m.quantite} ${m.unite}</p>
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-            }
-        }
-
-        async function loadMesMissions() {
-            const filter = document.getElementById('filter-mes-missions').value;
-            
-            try {
-                const url = filter !== 'tous' 
-                    ? `${API_URL}/api/collecteurs/missions?statut=${filter}`
-                    : `${API_URL}/api/collecteurs/missions`;
-                    
-                const response = await fetch(url, {
-                    headers: { 'Authorization': `Bearer ${currentToken}` }
-                });
-
-                const result = await response.json();
-                const container = document.getElementById('mes-missions');
-
-                if (result.success) {
-                    if (result.missions.length === 0) {
-                        container.innerHTML = '<p class="text-center">Aucune mission</p>';
-                    } else {
-                        container.innerHTML = result.missions.map(m => `
-                            <div class="item" onclick="selectMission('${m.id}')">
-                                <div class="item-header">
-                                    <span class="item-title">Mission #${m.id.substring(0,8)}</span>
-                                    <span class="badge ${getStatusBadgeClass(m.statut)}">${m.statut}</span>
-                                </div>
-                                <div class="item-body">
-                                    <p><i class="fas fa-user"></i> ${m.producteur_nom}</p>
-                                    <p><i class="fas fa-weight"></i> ${m.quantite} ${m.unite}</p>
-                                    ${m.poids_depose ? `<p><i class="fas fa-weight"></i> Poids déposé: ${m.poids_depose} kg</p>` : ''}
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-            }
-        }
-
-        function getStatusBadgeClass(status) {
-            const classes = {
-                'disponible': 'badge-info',
-                'acceptee': 'badge-primary',
-                'en_cours': 'badge-warning',
-                'deposee': 'badge-secondary',
-                'validee': 'badge-success'
-            };
-            return classes[status] || 'badge-secondary';
-        }
-
-        window.selectMission = function(missionId) {
-            document.getElementById('mission-selected-id').textContent = missionId;
-            document.getElementById('mission-actions').classList.remove('hidden');
-            document.getElementById('valider-mission-id').value = missionId;
-        }
-
-        async function handleMissionAction(action) {
-            const missionId = document.getElementById('mission-selected-id').textContent;
-            const messageDiv = document.getElementById('mission-action-message');
-            
-            let url = '';
-            let method = 'POST';
-            let body = {};
-
-            switch(action) {
-                case 'accepter':
-                    url = `${API_URL}/api/collecteurs/missions/${missionId}/accepter`;
-                    break;
-                case 'demarrer':
-                    url = `${API_URL}/api/collecteurs/missions/${missionId}/demarrer`;
-                    break;
-                case 'terminer':
-                    url = `${API_URL}/api/collecteurs/missions/${missionId}/terminer`;
-                    body = {
-                        photoPreuveUrl: document.getElementById('mission-photo-url').value,
-                        codeConfirmation: document.getElementById('mission-code').value,
-                        notes: document.getElementById('mission-notes').value,
-                        conformiteTri: document.getElementById('mission-conformite').value === 'true'
-                    };
-                    break;
-            }
-
-            try {
-                const response = await fetch(url, {
-                    method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentToken}`
-                    },
-                    body: Object.keys(body).length ? JSON.stringify(body) : undefined
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(messageDiv, 'Action effectuée avec succès', 'success');
-                    loadMissionsDisponibles();
-                    loadMesMissions();
-                } else {
-                    throw new Error(result.message || 'Erreur');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        async function handleChoisirDepot() {
-            const missionId = document.getElementById('mission-selected-id').textContent;
-            const pointDepotId = document.getElementById('mission-point-depot').value;
-            const messageDiv = document.getElementById('mission-action-message');
-
-            if (!pointDepotId) {
-                showMessage(messageDiv, 'Veuillez sélectionner un point de dépôt', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/api/collecteurs/missions/${missionId}/depot`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentToken}`
-                    },
-                    body: JSON.stringify({ pointDepotId })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(messageDiv, 'Point de dépôt sélectionné', 'success');
-                    loadMesMissions();
-                } else {
-                    throw new Error(result.message || 'Erreur');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        async function loadGains() {
-            try {
-                const response = await fetch(`${API_URL}/api/collecteurs/gains`, {
-                    headers: { 'Authorization': `Bearer ${currentToken}` }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    document.getElementById('gains-total').textContent = result.resume.total;
-                    document.getElementById('gains-valides').textContent = result.resume.valides;
-                    document.getElementById('gains-en-attente').textContent = result.resume.enAttente;
-
-                    const container = document.getElementById('liste-gains');
-                    if (result.gains.length === 0) {
-                        container.innerHTML = '<p class="text-center">Aucun gain</p>';
-                    } else {
-                        container.innerHTML = result.gains.map(g => `
-                            <div class="item">
-                                <div class="item-header">
-                                    <span class="item-title">${g.montant} FCFA</span>
-                                    <span class="badge ${g.statut === 'valide' ? 'badge-success' : 'badge-warning'}">${g.statut}</span>
-                                </div>
-                                <div class="item-body">
-                                    <p>Type: ${g.type_gain}</p>
-                                    <p>Date: ${new Date(g.cree_le).toLocaleDateString()}</p>
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-            }
-        }
-
-        async function loadProfil() {
-            // Simuler le chargement du profil
-            if (currentUser) {
-                document.getElementById('profil-nom').textContent = currentUser.nomComplet;
-                document.getElementById('profil-email').textContent = currentUser.email;
-                document.getElementById('profil-telephone').textContent = currentUser.telephone;
-                document.getElementById('profil-type').textContent = currentUser.typeCollecteur;
-                document.getElementById('profil-zone').textContent = currentUser.zone_intervention_nom || 'Non spécifiée';
-                document.getElementById('profil-statut').textContent = currentUser.statut;
-                
-                document.getElementById('modif-nom').value = currentUser.nomComplet;
-                document.getElementById('modif-telephone').value = currentUser.telephone;
-                document.getElementById('modif-zone').value = currentUser.zone_intervention_nom || '';
-            }
-        }
-
-        async function loadDashboard() {
-            try {
-                const response = await fetch(`${API_URL}/api/collecteurs/tableau-bord`, {
-                    headers: { 'Authorization': `Bearer ${currentToken}` }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    const d = result.dashboard;
-                    document.getElementById('dashboard-total-missions').textContent = d.total_missions || 0;
-                    document.getElementById('dashboard-missions-validees').textContent = d.missions_validees || 0;
-                    document.getElementById('dashboard-missions-en-cours').textContent = d.missions_en_cours || 0;
-                    document.getElementById('dashboard-dechets').textContent = d.total_dechets_collectes || 0;
-
-                    if (result.missionEnCours) {
-                        const m = result.missionEnCours;
-                        document.getElementById('mission-en-cours').innerHTML = `
-                            <p><strong>Mission #${m.id.substring(0,8)}</strong></p>
-                            <p>Producteur: ${m.producteur_nom}</p>
-                            <p>Déchets: ${m.quantite} ${m.unite} de ${m.type_dechet}</p>
-                            <p>Adresse: ${m.producteur_adresse}</p>
-                        `;
-                    } else {
-                        document.getElementById('mission-en-cours').innerHTML = '<p>Aucune mission en cours</p>';
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-            }
-        }
-
-        async function handleModifierProfil(e) {
-            e.preventDefault();
-            
-            const data = {
-                nomComplet: document.getElementById('modif-nom').value,
-                telephone: document.getElementById('modif-telephone').value,
-                zoneInterventionNom: document.getElementById('modif-zone').value
-            };
-
-            const messageDiv = document.getElementById('modif-profil-message');
-
-            try {
-                const response = await fetch(`${API_URL}/api/collecteurs/profil`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentToken}`
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(messageDiv, 'Profil mis à jour', 'success');
-                    loadProfil();
-                } else {
-                    throw new Error(result.message || 'Erreur');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        // ========== GESTIONNAIRE ==========
-        async function handleGestionnaireConnexion(e) {
-            e.preventDefault();
-            
-            const data = {
-                identifiant: document.getElementById('gestionnaire-email').value,
-                motDePasse: document.getElementById('gestionnaire-password').value
-            };
-
-            const messageDiv = document.getElementById('gestionnaire-connexion-message');
-
-            try {
-                const response = await fetch(`${API_URL}/api/gestionnaires/connexion`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    currentToken = result.token;
-                    currentUser = result.gestionnaire;
-                    showMessage(messageDiv, 'Connexion réussie', 'success');
-                    loadMissionsEnAttente();
-                } else {
-                    throw new Error(result.message || 'Erreur connexion');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        async function loadMissionsEnAttente() {
-            try {
-                const response = await fetch(`${API_URL}/api/gestionnaires/missions/en-attente`, {
-                    headers: { 'Authorization': `Bearer ${currentToken}` }
-                });
-
-                const result = await response.json();
-                const container = document.getElementById('missions-en-attente');
-
-                if (result.success) {
-                    if (result.missions.length === 0) {
-                        container.innerHTML = '<p class="text-center">Aucune mission en attente</p>';
-                    } else {
-                        container.innerHTML = result.missions.map(m => `
-                            <div class="item" onclick="selectMission('${m.id}')">
-                                <div class="item-header">
-                                    <span class="item-title">Mission #${m.id.substring(0,8)}</span>
-                                    <span class="badge badge-warning">${m.statut}</span>
-                                </div>
-                                <div class="item-body">
-                                    <p><i class="fas fa-user"></i> Collecteur: ${m.collecteur_nom}</p>
-                                    <p><i class="fas fa-trash"></i> ${m.type_dechet}</p>
-                                    <p><i class="fas fa-calendar"></i> ${new Date(m.date_depot_point).toLocaleString()}</p>
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-            }
-        }
-
-        async function handleValiderMission(e) {
-            e.preventDefault();
-            
-            const missionId = document.getElementById('valider-mission-id').value;
-            const data = {
-                poidsDepose: document.getElementById('valider-poids').value,
-                qualiteDechets: document.getElementById('valider-qualite').value,
-                notes: document.getElementById('valider-notes').value
-            };
-
-            const messageDiv = document.getElementById('validation-message');
-
-            try {
-                const response = await fetch(`${API_URL}/api/gestionnaires/missions/${missionId}/valider`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentToken}`
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(messageDiv, 'Mission validée avec succès', 'success');
-                    document.getElementById('valider-mission-form').reset();
-                    loadMissionsEnAttente();
-                } else {
-                    throw new Error(result.message || 'Erreur');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        async function handleAttribuerCredits(e) {
-            e.preventDefault();
-            
-            const collecteurId = document.getElementById('credits-collecteur').value;
-            const missionId = document.getElementById('credits-mission').value;
-            const montant = document.getElementById('credits-montant').value;
-
-            const messageDiv = document.getElementById('credits-message');
-
-            try {
-                const response = await fetch(`${API_URL}/api/gestionnaires/collecteurs/${collecteurId}/missions/${missionId}/credits`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentToken}`
-                    },
-                    body: JSON.stringify({ montant })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(messageDiv, 'Crédits attribués avec succès', 'success');
-                    document.getElementById('attribuer-credits-form').reset();
-                } else {
-                    throw new Error(result.message || 'Erreur');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        async function handleChangerMotDePasse(e) {
-            e.preventDefault();
-            
-            const mdpActuel = document.getElementById('gest-mdp-actuel').value;
-            const nouveauMdp = document.getElementById('gest-nouveau-mdp').value;
-            const confirmMdp = document.getElementById('gest-confirm-mdp').value;
-
-            const messageDiv = document.getElementById('gest-mdp-message');
-
-            if (nouveauMdp !== confirmMdp) {
-                showMessage(messageDiv, 'Les mots de passe ne correspondent pas', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/api/gestionnaires/changer-mot-de-passe`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentToken}`
-                    },
-                    body: JSON.stringify({
-                        motDePasseActuel: mdpActuel,
-                        nouveauMotDePasse: nouveauMdp
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(messageDiv, 'Mot de passe modifié avec succès', 'success');
-                    document.getElementById('gestionnaire-changer-mdp').reset();
-                } else {
-                    throw new Error(result.message || 'Erreur');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        // ========== SUPERVISEUR ==========
-        async function handleSuperviseurConnexion(e) {
-            e.preventDefault();
-            
-            const data = {
-                identifiant: document.getElementById('superviseur-email').value,
-                motDePasse: document.getElementById('superviseur-password').value
-            };
-
-            const messageDiv = document.getElementById('superviseur-connexion-message');
-
-            try {
-                const response = await fetch(`${API_URL}/api/superviseurs/connexion`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    currentToken = result.token;
-                    currentUser = result.superviseur;
-                    showMessage(messageDiv, 'Connexion réussie', 'success');
-                    loadCollecteursEnAttente();
-                    loadGestionnaires();
-                    loadStats();
-                } else {
-                    throw new Error(result.message || 'Erreur connexion');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        async function loadCollecteursEnAttente() {
-            try {
-                const response = await fetch(`${API_URL}/api/superviseurs/collecteurs/en-attente`, {
-                    headers: { 'Authorization': `Bearer ${currentToken}` }
-                });
-
-                const result = await response.json();
-                const container = document.getElementById('collecteurs-attente');
-
-                if (result.success) {
-                    if (result.collecteurs.length === 0) {
-                        container.innerHTML = '<p class="text-center">Aucun collecteur en attente</p>';
-                    } else {
-                        container.innerHTML = result.collecteurs.map(c => `
-                            <div class="item" onclick="document.getElementById('valider-collecteur-id').value='${c.id}'">
-                                <div class="item-header">
-                                    <span class="item-title">${c.nom_complet}</span>
-                                    <span class="badge badge-warning">En attente</span>
-                                </div>
-                                <div class="item-body">
-                                    <p><i class="fas fa-envelope"></i> ${c.email}</p>
-                                    <p><i class="fas fa-phone"></i> ${c.telephone}</p>
-                                    <p><i class="fas fa-map"></i> ${c.zone_intervention_nom}</p>
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-            }
-        }
-
-        async function handleValiderCollecteur(e) {
-            e.preventDefault();
-            
-            const collecteurId = document.getElementById('valider-collecteur-id').value;
-            const notes = document.getElementById('valider-notes').value;
-
-            const messageDiv = document.getElementById('validation-collecteur-message');
-
-            if (!collecteurId) {
-                showMessage(messageDiv, 'Sélectionnez un collecteur', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/api/superviseurs/collecteurs/${collecteurId}/valider`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentToken}`
-                    },
-                    body: JSON.stringify({ notes })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(messageDiv, 'Collecteur validé avec succès', 'success');
-                    document.getElementById('valider-collecteur-id').value = '';
-                    document.getElementById('valider-notes').value = '';
-                    loadCollecteursEnAttente();
-                } else {
-                    throw new Error(result.message || 'Erreur');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        async function loadGestionnaires() {
-            try {
-                const response = await fetch(`${API_URL}/api/superviseurs/gestionnaires`, {
-                    headers: { 'Authorization': `Bearer ${currentToken}` }
-                });
-
-                const result = await response.json();
-                const container = document.getElementById('liste-gestionnaires');
-
-                if (result.success) {
-                    if (result.gestionnaires.length === 0) {
-                        container.innerHTML = '<p class="text-center">Aucun gestionnaire</p>';
-                    } else {
-                        container.innerHTML = result.gestionnaires.map(g => `
-                            <div class="item">
-                                <div class="item-header">
-                                    <span class="item-title">${g.nom_complet}</span>
-                                    <span class="badge ${g.est_actif ? 'badge-success' : 'badge-danger'}">
-                                        ${g.est_actif ? 'Actif' : 'Inactif'}
-                                    </span>
-                                </div>
-                                <div class="item-body">
-                                    <p><i class="fas fa-envelope"></i> ${g.email}</p>
-                                    <p><i class="fas fa-map-marker"></i> ${g.point_collecte_nom || 'Non assigné'}</p>
-                                    <p><i class="fas fa-briefcase"></i> ${g.fonction}</p>
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-            }
-        }
-
-        async function handleCreerGestionnaire(e) {
-            e.preventDefault();
-            
-            const data = {
-                email: document.getElementById('gest-email').value,
-                telephone: document.getElementById('gest-telephone').value,
-                motDePasse: document.getElementById('gest-password').value,
-                nomComplet: document.getElementById('gest-nom').value,
-                pointCollecteId: document.getElementById('gest-point').value || undefined,
-                fonction: document.getElementById('gest-fonction').value
-            };
-
-            const messageDiv = document.getElementById('creation-gestionnaire-message');
-
-            try {
-                const response = await fetch(`${API_URL}/api/superviseurs/gestionnaires`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentToken}`
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(messageDiv, 'Gestionnaire créé avec succès', 'success');
-                    document.getElementById('creer-gestionnaire-form').reset();
-                    loadGestionnaires();
-                } else {
-                    throw new Error(result.message || 'Erreur');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        async function handleAttribuerMission(e) {
-            e.preventDefault();
-            
-            const missionId = document.getElementById('attribuer-mission').value;
-            const collecteurId = document.getElementById('attribuer-collecteur').value;
-
-            const messageDiv = document.getElementById('attribution-mission-message');
-
-            try {
-                const response = await fetch(`${API_URL}/api/superviseurs/missions/${missionId}/attribuer/${collecteurId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${currentToken}`
-                    }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(messageDiv, 'Mission attribuée avec succès', 'success');
-                } else {
-                    throw new Error(result.message || 'Erreur');
-                }
-            } catch (error) {
-                showMessage(messageDiv, error.message, 'error');
-            }
-        }
-
-        async function loadStats() {
-            try {
-                const response = await fetch(`${API_URL}/api/superviseurs/statistiques`, {
-                    headers: { 'Authorization': `Bearer ${currentToken}` }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    const s = result.stats;
-                    document.getElementById('stats-total-collecteurs').textContent = s.total_collecteurs || 0;
-                    document.getElementById('stats-collecteurs-actifs').textContent = s.collecteurs_actifs || 0;
-                    document.getElementById('stats-total-gestionnaires').textContent = s.total_gestionnaires || 0;
-                    document.getElementById('stats-missions-validees').textContent = s.missions_validees || 0;
-                    document.getElementById('stats-dechets-collectes').textContent = s.total_dechets_collectes || 0;
-                    document.getElementById('stats-gains-distribues').textContent = s.total_gains_distribues || 0;
-
-                    if (result.evolution) {
-                        const evolutionContainer = document.getElementById('evolution-jours');
-                        evolutionContainer.innerHTML = result.evolution.map(j => `
-                            <div class="item">
-                                <div class="item-header">
-                                    <span class="item-title">${new Date(j.jour).toLocaleDateString()}</span>
-                                </div>
-                                <div class="item-body">
-                                    <p>Missions: ${j.missions_validees}</p>
-                                    <p>Poids: ${j.poids_total} kg</p>
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-            }
-        }
-
-        // ========== UTILITAIRES ==========
-        function handleDeconnexion() {
-            currentToken = null;
-            currentUser = null;
-            document.getElementById('collecteur-connected-state').classList.add('hidden');
-            document.getElementById('collecteur-connexion-form').reset();
-            showMessage(document.getElementById('collecteur-connexion-message'), 'Déconnexion réussie', 'success');
-        }
-    </script>
+    <script src="sprint2.js"></script>
 </body>
 </html>
