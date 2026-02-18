@@ -1,8 +1,6 @@
 [build]
-  # Supprimez "base" ou mettez-le à "."
-  base = "."                    # ← Changé de "test_backend" à "."
+  publish = "test_backend"
   command = "echo 'Pas de build nécessaire'"
-  publish = "test_backend"      # ← Le dossier qui contient vraiment vos fichiers
 
 [build.processing]
   skip_processing = false
@@ -21,4 +19,4 @@
 [[redirects]]
   from = "/*"
   to = "/in.html"
-  status = 200 
+  status = 200
