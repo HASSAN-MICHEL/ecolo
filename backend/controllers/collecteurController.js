@@ -5,20 +5,347 @@ import jwt from 'jsonwebtoken';
 import Notification from '../models/Notification.js';
 import { pool } from '../config/database.js';
 
-class CollecteurController {
+
     // Inscription d'un collecteur
+    // static async inscription(req, res) {
+    //     try {
+    //         const {
+    //             email, telephone, motDePasse, nomComplet,
+    //             typeCollecteur, numeroIdentite, zoneIntervention,
+    //             zoneInterventionNom, quartiersHabituels, communesIntervention,
+    //             photoProfilUrl, cguAcceptees
+    //         } = req.body;
+
+    //         // Vérifier si l'email existe déjà
+    //         const collecteurExistant = await Collecteur.trouverParEmail(email);
+    //         if (collecteurExistant) {
+    //             return res.status(400).json({
+    //                 success: false,
+    //                 message: 'Un compte avec cet email existe déjà'
+    //             });
+    //         }
+
+    //         // Vérifier le téléphone
+    //         const telephoneExistant = await Collecteur.trouverParTelephone(telephone);
+    //         if (telephoneExistant) {
+    //             return res.status(400).json({
+    //                 success: false,
+    //                 message: 'Un compte avec ce numéro existe déjà'
+    //             });
+    //         }
+
+    //         // Hasher le mot de passe
+    //         const salt = await bcrypt.genSalt(10);
+    //         const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+
+    //         // Créer le collecteur
+    //         const collecteurData = {
+    //             email,
+    //             telephone,
+    //             motDePasseHash,
+    //             nomComplet,
+    //             typeCollecteur,
+    //             numeroIdentite,
+    //             zoneIntervention: zoneIntervention || {
+    //                 type: "Polygon",
+    //                 coordinates: [[
+    //                     [2.3522, 48.8566],
+    //                     [2.3622, 48.8566],
+    //                     [2.3622, 48.8666],
+    //                     [2.3522, 48.8666],
+    //                     [2.3522, 48.8566]
+    //                 ]]
+    //             },
+    //             zoneInterventionNom,
+    //             quartiersHabituels,
+    //             communesIntervention,
+    //             photoProfilUrl,
+    //             cguAcceptees
+    //         };
+
+    //         const nouveauCollecteur = await Collecteur.creer(collecteurData);
+
+    //         // Créer une notification pour le superviseur
+    //         await pool.query(
+    //             `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification)
+    //              VALUES ((SELECT id FROM superviseurs LIMIT 1), 'superviseur', 
+    //                      'Nouveau collecteur en attente', 
+    //                      $1 || ' demande à rejoindre la plateforme.',
+    //                      'info')`,
+    //             [nomComplet]
+    //         );
+
+    //         res.status(201).json({
+    //             success: true,
+    //             message: 'Inscription réussie. En attente de validation par un superviseur.',
+    //             collecteur: {
+    //                 id: nouveauCollecteur.id,
+    //                 email: nouveauCollecteur.email,
+    //                 nomComplet: nouveauCollecteur.nom_complet,
+    //                 statut: nouveauCollecteur.statut
+    //             }
+    //         });
+    //     } catch (erreur) {
+    //         console.error('Erreur inscription collecteur:', erreur);
+    //         res.status(500).json({
+    //             success: false,
+    //             message: 'Erreur lors de l\'inscription',
+    //             erreur: erreur.message
+    //         });
+    //     }
+    // }
+
+
+//     // Modifier la méthode inscription pour inclure les photos CNI
+// static async inscription(req, res) {
+//     try {
+//         const {
+//             email, telephone, motDePasse, nomComplet,
+//             typeCollecteur, numeroIdentite, zoneIntervention,
+//             zoneInterventionNom, quartiersHabituels, communesIntervention,
+//             photoProfilUrl, photoCniRectoUrl, photoCniVersoUrl, // Ajout
+//             cguAcceptees
+//         } = req.body;
+
+//         // Vérifications existantes...
+//         const collecteurExistant = await Collecteur.trouverParEmail(email);
+//         if (collecteurExistant) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Un compte avec cet email existe déjà'
+//             });
+//         }
+
+//         const telephoneExistant = await Collecteur.trouverParTelephone(telephone);
+//         if (telephoneExistant) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Un compte avec ce numéro existe déjà'
+//             });
+//         }
+
+//         // Vérifier que les photos CNI sont fournies
+//         if (!photoCniRectoUrl || !photoCniVersoUrl) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Les photos recto et verso de la CNI sont requises'
+//             });
+//         }
+
+//         // Hasher le mot de passe
+//         const salt = await bcrypt.genSalt(10);
+//         const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+
+//         // Créer le collecteur avec les photos CNI
+//         const collecteurData = {
+//             email,
+//             telephone,
+//             motDePasseHash,
+//             nomComplet,
+//             typeCollecteur,
+//             numeroIdentite,
+//             zoneIntervention: zoneIntervention || {
+//                 type: "Polygon",
+//                 coordinates: [[
+//                     [2.3522, 48.8566],
+//                     [2.3622, 48.8566],
+//                     [2.3622, 48.8666],
+//                     [2.3522, 48.8666],
+//                     [2.3522, 48.8566]
+//                 ]]
+//             },
+//             zoneInterventionNom,
+//             quartiersHabituels,
+//             communesIntervention,
+//             photoProfilUrl,
+//             photoCniRectoUrl,   // Nouveau
+//             photoCniVersoUrl,   // Nouveau
+//             cguAcceptees
+//         };
+
+//         const nouveauCollecteur = await Collecteur.creer(collecteurData);
+
+//         // Notification pour le superviseur
+//         await pool.query(
+//             `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification)
+//              VALUES ((SELECT id FROM superviseurs LIMIT 1), 'superviseur', 
+//                      'Nouveau collecteur en attente', 
+//                      $1 || ' demande à rejoindre la plateforme. Documents CNI fournis.',
+//                      'info')`,
+//             [nomComplet]
+//         );
+
+//         res.status(201).json({
+//             success: true,
+//             message: 'Inscription réussie. En attente de validation par un superviseur.',
+//             collecteur: {
+//                 id: nouveauCollecteur.id,
+//                 email: nouveauCollecteur.email,
+//                 nomComplet: nouveauCollecteur.nom_complet,
+//                 statut: nouveauCollecteur.statut
+//             }
+//         });
+//     } catch (erreur) {
+//         console.error('Erreur inscription collecteur:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de l\'inscription',
+//             erreur: erreur.message
+//         });
+//     }
+// }
+
+// // Nouvelle méthode pour mettre à jour les infos personnelles
+// static async mettreAJourInfosPersonnelles(req, res) {
+//     try {
+//         const collecteurId = req.utilisateurId;
+//         const {
+//             nomComplet,
+//             telephone,
+//             numeroIdentite,
+//             zoneInterventionNom,
+//             quartiersHabituels,
+//             communesIntervention,
+//             zoneIntervention,
+//             photoProfilUrl,
+//             photoCniRectoUrl,
+//             photoCniVersoUrl
+//         } = req.body;
+
+//         // Vérifier si le téléphone est déjà utilisé par un autre collecteur
+//         if (telephone) {
+//             const collecteurExistant = await Collecteur.trouverParTelephone(telephone);
+//             if (collecteurExistant && collecteurExistant.id !== collecteurId) {
+//                 return res.status(400).json({
+//                     success: false,
+//                     message: 'Ce numéro de téléphone est déjà utilisé'
+//                 });
+//             }
+//         }
+
+//         const donnees = {
+//             nomComplet,
+//             telephone,
+//             numeroIdentite,
+//             zoneInterventionNom,
+//             quartiersHabituels,
+//             communesIntervention,
+//             zoneIntervention,
+//             photoProfilUrl,
+//             photoCniRectoUrl,
+//             photoCniVersoUrl
+//         };
+
+//         const collecteur = await Collecteur.mettreAJourInfosPersonnelles(collecteurId, donnees);
+
+//         if (!collecteur) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Aucune donnée à mettre à jour'
+//             });
+//         }
+
+//         res.json({
+//             success: true,
+//             message: 'Informations personnelles mises à jour avec succès',
+//             collecteur
+//         });
+//     } catch (erreur) {
+//         console.error('Erreur mise à jour infos personnelles:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de la mise à jour des informations',
+//             erreur: erreur.message
+//         });
+//     }
+// }
+
+// // Nouvelle méthode pour changer le mot de passe
+// static async changerMotDePasse(req, res) {
+//     try {
+//         const collecteurId = req.utilisateurId;
+//         const { ancienMotDePasse, nouveauMotDePasse } = req.body;
+
+//         // Vérifier l'ancien mot de passe
+//         const ancienHash = await Collecteur.verifierMotDePasse(collecteurId);
+//         const motDePasseValide = await bcrypt.compare(ancienMotDePasse, ancienHash);
+
+//         if (!motDePasseValide) {
+//             return res.status(401).json({
+//                 success: false,
+//                 message: 'Ancien mot de passe incorrect'
+//             });
+//         }
+
+//         // Hasher le nouveau mot de passe
+//         const salt = await bcrypt.genSalt(10);
+//         const nouveauMotDePasseHash = await bcrypt.hash(nouveauMotDePasse, salt);
+
+//         // Mettre à jour
+//         await Collecteur.changerMotDePasse(collecteurId, nouveauMotDePasseHash);
+
+//         res.json({
+//             success: true,
+//             message: 'Mot de passe modifié avec succès'
+//         });
+//     } catch (erreur) {
+//         console.error('Erreur changement mot de passe:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors du changement de mot de passe',
+//             erreur: erreur.message
+//         });
+//     }
+// }
+
+
+class CollecteurController {
+    // Inscription d'un collecteur avec upload de fichiers
     static async inscription(req, res) {
         try {
+            // Les fichiers sont dans req.files
+            const files = req.files || {};
+            
+            // Construire les URLs des fichiers uploadés
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            
+            const photoProfilUrl = files.photoProfil ? 
+                `${baseUrl}/uploads/profils/${files.photoProfil[0].filename}` : null;
+            
+            const photoCniRectoUrl = files.photoCniRecto ? 
+                `${baseUrl}/uploads/cnis/${files.photoCniRecto[0].filename}` : null;
+            
+            const photoCniVersoUrl = files.photoCniVerso ? 
+                `${baseUrl}/uploads/cnis/${files.photoCniVerso[0].filename}` : null;
+
+            // Récupérer les données du formulaire (stringifiées)
             const {
                 email, telephone, motDePasse, nomComplet,
-                typeCollecteur, numeroIdentite, zoneIntervention,
-                zoneInterventionNom, quartiersHabituels, communesIntervention,
-                photoProfilUrl, cguAcceptees
+                typeCollecteur, numeroIdentite, zoneInterventionNom,
+                quartiersHabituels, communesIntervention, cguAcceptees
             } = req.body;
+
+            // Vérifications
+            if (!email || !telephone || !motDePasse || !nomComplet || !typeCollecteur || !zoneInterventionNom) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Tous les champs obligatoires doivent être remplis'
+                });
+            }
+
+            // Vérifier les photos CNI
+            if (!photoCniRectoUrl || !photoCniVersoUrl) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Les photos recto et verso de la CNI sont requises'
+                });
+            }
 
             // Vérifier si l'email existe déjà
             const collecteurExistant = await Collecteur.trouverParEmail(email);
             if (collecteurExistant) {
+                // Nettoyer les fichiers uploadés si erreur
+                CollecteurController.cleanupUploadedFiles(files);
                 return res.status(400).json({
                     success: false,
                     message: 'Un compte avec cet email existe déjà'
@@ -28,6 +355,7 @@ class CollecteurController {
             // Vérifier le téléphone
             const telephoneExistant = await Collecteur.trouverParTelephone(telephone);
             if (telephoneExistant) {
+                CollecteurController.cleanupUploadedFiles(files);
                 return res.status(400).json({
                     success: false,
                     message: 'Un compte avec ce numéro existe déjà'
@@ -38,15 +366,22 @@ class CollecteurController {
             const salt = await bcrypt.genSalt(10);
             const motDePasseHash = await bcrypt.hash(motDePasse, salt);
 
-            // Créer le collecteur
+            // Traiter les tableaux
+            const quartiersArray = quartiersHabituels ? 
+                quartiersHabituels.split(',').map(q => q.trim()).filter(q => q) : [];
+            
+            const communesArray = communesIntervention ? 
+                communesIntervention.split(',').map(c => c.trim()).filter(c => c) : [];
+
+            // Créer le collecteur avec les URLs des photos
             const collecteurData = {
                 email,
                 telephone,
                 motDePasseHash,
                 nomComplet,
                 typeCollecteur,
-                numeroIdentite,
-                zoneIntervention: zoneIntervention || {
+                numeroIdentite: numeroIdentite || null,
+                zoneIntervention: {
                     type: "Polygon",
                     coordinates: [[
                         [2.3522, 48.8566],
@@ -57,10 +392,12 @@ class CollecteurController {
                     ]]
                 },
                 zoneInterventionNom,
-                quartiersHabituels,
-                communesIntervention,
+                quartiersHabituels: quartiersArray,
+                communesIntervention: communesArray,
                 photoProfilUrl,
-                cguAcceptees
+                photoCniRectoUrl,
+                photoCniVersoUrl,
+                cguAcceptees: cguAcceptees === 'true' || cguAcceptees === true
             };
 
             const nouveauCollecteur = await Collecteur.creer(collecteurData);
@@ -70,7 +407,7 @@ class CollecteurController {
                 `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification)
                  VALUES ((SELECT id FROM superviseurs LIMIT 1), 'superviseur', 
                          'Nouveau collecteur en attente', 
-                         $1 || ' demande à rejoindre la plateforme.',
+                         $1 || ' demande à rejoindre la plateforme. Documents CNI fournis.',
                          'info')`,
                 [nomComplet]
             );
@@ -85,8 +422,15 @@ class CollecteurController {
                     statut: nouveauCollecteur.statut
                 }
             });
+
         } catch (erreur) {
-            console.error('Erreur inscription collecteur:', erreur);
+            console.error('❌ Erreur inscription collecteur:', erreur);
+            
+            // Nettoyer les fichiers uploadés en cas d'erreur
+            if (req.files) {
+                CollecteurController.cleanupUploadedFiles(req.files);
+            }
+            
             res.status(500).json({
                 success: false,
                 message: 'Erreur lors de l\'inscription',
@@ -94,6 +438,248 @@ class CollecteurController {
             });
         }
     }
+
+    // Helper pour nettoyer les fichiers uploadés en cas d'erreur
+    static cleanupUploadedFiles(files) {
+        if (!files) return;
+        
+        Object.values(files).forEach(fileArray => {
+            fileArray.forEach(file => {
+                try {
+                    fs.unlinkSync(file.path);
+                    console.log(`🧹 Fichier supprimé: ${file.path}`);
+                } catch (err) {
+                    console.error('❌ Erreur lors de la suppression du fichier:', err);
+                }
+            });
+        });
+    }
+
+    // Connexion
+    static async connexion(req, res) {
+        try {
+            const { identifiant, motDePasse } = req.body;
+
+            let collecteur = await Collecteur.trouverParEmail(identifiant);
+            if (!collecteur) {
+                collecteur = await Collecteur.trouverParTelephone(identifiant);
+            }
+
+            if (!collecteur) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Identifiants incorrects'
+                });
+            }
+
+            const motDePasseValide = await bcrypt.compare(motDePasse, collecteur.mot_de_passe_hash);
+            if (!motDePasseValide) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Identifiants incorrects'
+                });
+            }
+
+            if (collecteur.statut !== 'actif') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Votre compte est en attente de validation ou a été suspendu'
+                });
+            }
+
+            await Collecteur.mettreAJourConnexion(collecteur.id);
+
+            const token = jwt.sign(
+                { 
+                    id: collecteur.id, 
+                    email: collecteur.email, 
+                    type: 'collecteur' 
+                },
+                process.env.JWT_SECRET || 'votre_cle_secrete',
+                { expiresIn: process.env.JWT_EXPIRE || '7d' }
+            );
+
+            res.json({
+                success: true,
+                message: 'Connexion réussie',
+                token,
+                collecteur: {
+                    id: collecteur.id,
+                    email: collecteur.email,
+                    telephone: collecteur.telephone,
+                    nomComplet: collecteur.nom_complet,
+                    typeCollecteur: collecteur.type_collecteur,
+                    statut: collecteur.statut,
+                    points: collecteur.points_total,
+                    gains: collecteur.gains_total,
+                    photoProfilUrl: collecteur.photo_profil_url
+                }
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur connexion:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la connexion',
+                erreur: erreur.message
+            });
+        }
+    }
+
+    // Obtenir le profil complet
+    static async monProfil(req, res) {
+        try {
+            const collecteurId = req.utilisateurId;
+            const collecteur = await Collecteur.trouverParId(collecteurId);
+
+            if (!collecteur) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Collecteur non trouvé'
+                });
+            }
+
+            delete collecteur.mot_de_passe_hash;
+
+            res.json({
+                success: true,
+                collecteur
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur profil:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération du profil',
+                erreur: erreur.message
+            });
+        }
+    }
+
+    // Mettre à jour les infos personnelles
+    static async mettreAJourInfosPersonnelles(req, res) {
+        try {
+            const collecteurId = req.utilisateurId;
+            const {
+                nomComplet,
+                telephone,
+                numeroIdentite,
+                zoneInterventionNom,
+                quartiersHabituels,
+                communesIntervention,
+                zoneIntervention
+            } = req.body;
+
+            // Vérifier téléphone unique
+            if (telephone) {
+                const collecteurExistant = await Collecteur.trouverParTelephone(telephone);
+                if (collecteurExistant && collecteurExistant.id !== collecteurId) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Ce numéro de téléphone est déjà utilisé'
+                    });
+                }
+            }
+
+            const donnees = {
+                nomComplet,
+                telephone,
+                numeroIdentite,
+                zoneInterventionNom,
+                quartiersHabituels: quartiersHabituels ? 
+                    quartiersHabituels.split(',').map(q => q.trim()).filter(q => q) : undefined,
+                communesIntervention: communesIntervention ? 
+                    communesIntervention.split(',').map(c => c.trim()).filter(c => c) : undefined,
+                zoneIntervention
+            };
+
+            const collecteur = await Collecteur.mettreAJourInfosPersonnelles(collecteurId, donnees);
+
+            if (!collecteur) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Aucune donnée à mettre à jour'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Informations personnelles mises à jour avec succès',
+                collecteur
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur mise à jour:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la mise à jour',
+                erreur: erreur.message
+            });
+        }
+    }
+
+    // Changer mot de passe
+    static async changerMotDePasse(req, res) {
+        try {
+            const collecteurId = req.utilisateurId;
+            const { ancienMotDePasse, nouveauMotDePasse } = req.body;
+
+            const ancienHash = await Collecteur.verifierMotDePasse(collecteurId);
+            const motDePasseValide = await bcrypt.compare(ancienMotDePasse, ancienHash);
+
+            if (!motDePasseValide) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Ancien mot de passe incorrect'
+                });
+            }
+
+            const salt = await bcrypt.genSalt(10);
+            const nouveauMotDePasseHash = await bcrypt.hash(nouveauMotDePasse, salt);
+
+            await Collecteur.changerMotDePasse(collecteurId, nouveauMotDePasseHash);
+
+            res.json({
+                success: true,
+                message: 'Mot de passe modifié avec succès'
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur changement mot de passe:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors du changement de mot de passe',
+                erreur: erreur.message
+            });
+        }
+    }
+
+ 
+// Méthode pour obtenir le profil complet
+ static async monProfil(req, res) {
+    try {
+        const collecteurId = req.utilisateurId;
+        const collecteur = await Collecteur.trouverParId(collecteurId);
+
+        if (!collecteur) {
+            return res.status(404).json({
+                success: false,
+                message: 'Collecteur non trouvé'
+            });
+        }
+
+        // Ne pas renvoyer les informations sensibles
+        delete collecteur.mot_de_passe_hash;
+
+        res.json({
+            success: true,
+            collecteur
+        });
+    } catch (erreur) {
+        console.error('Erreur récupération profil:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération du profil',
+            erreur: erreur.message
+        });
+    }
+}
 
     // Connexion
    // Dans collecteurController.js - méthode connexion
@@ -502,48 +1088,82 @@ static async mesGains(req, res) {
     }
 }
 
-// ✅ Tableau de bord amélioré
+
+// Tableau de bord 
 static async tableauBord(req, res) {
     try {
         const collecteurId = req.utilisateurId;
         
         const dashboard = await Collecteur.tableauBord(collecteurId);
-        const missions = await Collecteur.missionsAvecDetails(collecteurId);
-        const statistiquesGains = await Collecteur.statistiquesGains(collecteurId);
-        const gains = await Collecteur.gainsAvecDetails(collecteurId);
-
-        // Compter par statut
-        const compteurs = {
-            disponibles: missions.filter(m => m.statut === 'disponible').length,
-            acceptees: missions.filter(m => m.statut === 'acceptee').length,
-            enCours: missions.filter(m => m.statut === 'en_cours').length,
-            deposees: missions.filter(m => m.statut === 'deposee').length,
-            validees: missions.filter(m => m.statut === 'validee').length
-        };
-
-        // Dernière mission validée
-        const derniereMission = missions
-            .filter(m => m.statut === 'validee')
-            .sort((a, b) => new Date(b.date_validation) - new Date(a.date_validation))[0];
-
-        // Dernier gain
-        const dernierGain = gains
-            .sort((a, b) => new Date(b.date_validation) - new Date(a.date_validation))[0];
+        
+        // Récupérer la mission en cours
+        const missionEnCours = await pool.query(`
+            SELECT m.*, 
+                   d.type_dechet, d.quantite, d.unite,
+                   p.nom_complet as producteur_nom,
+                   p.adresse as producteur_adresse,
+                   p.telephone as producteur_telephone
+            FROM missions m
+            JOIN declarations_dechets d ON m.declaration_id = d.id
+            JOIN producteurs p ON d.producteur_id = p.id
+            WHERE m.collecteur_id = $1 AND m.statut = 'en_cours'
+            LIMIT 1
+        `, [collecteurId]);
 
         res.json({
             success: true,
-            dashboard,
-            compteurs,
-            derniereMission,
-            dernierGain,
-            statistiquesGains,
-            missionEnCours: missions.find(m => m.statut === 'en_cours') || null
+            dashboard: dashboard.statistiques || {},
+            gains: dashboard.gains || {},
+            historique: dashboard.historique || [],
+            missionEnCours: missionEnCours.rows[0] || null
         });
+        
     } catch (erreur) {
         console.error('❌ Erreur tableau bord:', erreur);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Erreur lors de la récupération du tableau de bord' 
+        });
+    }
+}
+
+
+static async mesGains(req, res) {
+    try {
+        const collecteurId = req.utilisateurId;
+        
+        const gains = await Collecteur.gainsAvecDetails(collecteurId);
+        
+        // Statistiques
+        const totalCollecte = gains
+            .filter(g => g.type_gain === 'collecte')
+            .reduce((sum, g) => sum + parseFloat(g.montant), 0);
+            
+        const totalBonus = gains
+            .filter(g => g.type_gain === 'bonus')
+            .reduce((sum, g) => sum + parseFloat(g.montant), 0);
+            
+        const totalValide = gains
+            .filter(g => g.statut === 'valide')
+            .reduce((sum, g) => sum + parseFloat(g.montant), 0);
+
+        res.json({
+            success: true,
+            gains,
+            resume: {
+                total: totalValide,
+                collecte: totalCollecte,
+                bonus: totalBonus,
+                enAttente: gains.filter(g => g.statut === 'en_attente').length
+            }
+        });
+        
+    } catch (erreur) {
+        console.error('❌ Erreur récupération gains:', erreur);
         res.status(500).json({ success: false, message: 'Erreur serveur' });
     }
 }
+
 }
 
 export default CollecteurController;

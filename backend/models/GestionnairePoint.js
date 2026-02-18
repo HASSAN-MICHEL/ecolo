@@ -390,156 +390,300 @@ static async validerMission(missionId, gestionnaireId, donnees) {
     }
 }
 
-    // ✅ Attribuer des crédits supplémentaires (bonus)
-    static async attribuerCredits(collecteurId, missionId, montant, gestionnaireId) {
-        const client = await pool.connect();
+    // // ✅ Attribuer des crédits supplémentaires (bonus)
+    // static async attribuerCredits(collecteurId, missionId, montant, gestionnaireId) {
+    //     const client = await pool.connect();
         
-        try {
-            await client.query('BEGIN');
+    //     try {
+    //         await client.query('BEGIN');
 
-            // Vérifier que la mission a été validée par ce gestionnaire
-            const verification = await client.query(`
-                SELECT m.* FROM missions m
-                JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
-                JOIN gestionnaires_points g ON g.point_collecte_id = pdv.id
-                WHERE m.id = $1 
-                  AND m.valide_par = $2 
-                  AND m.statut = 'validee'
-                  AND g.id = $3
-            `, [missionId, gestionnaireId, gestionnaireId]);
+    //         // Vérifier que la mission a été validée par ce gestionnaire
+    //         const verification = await client.query(`
+    //             SELECT m.* FROM missions m
+    //             JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
+    //             JOIN gestionnaires_points g ON g.point_collecte_id = pdv.id
+    //             WHERE m.id = $1 
+    //               AND m.valide_par = $2 
+    //               AND m.statut = 'validee'
+    //               AND g.id = $3
+    //         `, [missionId, gestionnaireId, gestionnaireId]);
 
-            if (verification.rows.length === 0) {
-                throw new Error('Mission non trouvée ou non validée par vous');
-            }
+    //         if (verification.rows.length === 0) {
+    //             throw new Error('Mission non trouvée ou non validée par vous');
+    //         }
 
-            // Créer le gain bonus
-            const requeteGain = `
-                INSERT INTO gains_collecteurs (
-                    collecteur_id, 
-                    mission_id, 
-                    montant, 
-                    type_gain, 
-                    statut,
-                    date_validation
-                ) VALUES ($1, $2, $3, 'bonus', 'valide', CURRENT_TIMESTAMP)
-                RETURNING *
-            `;
+    //         // Créer le gain bonus
+    //         const requeteGain = `
+    //             INSERT INTO gains_collecteurs (
+    //                 collecteur_id, 
+    //                 mission_id, 
+    //                 montant, 
+    //                 type_gain, 
+    //                 statut,
+    //                 date_validation
+    //             ) VALUES ($1, $2, $3, 'bonus', 'valide', CURRENT_TIMESTAMP)
+    //             RETURNING *
+    //         `;
             
-            const resultatGain = await client.query(requeteGain, [
-                collecteurId,
-                missionId,
-                montant
-            ]);
+    //         const resultatGain = await client.query(requeteGain, [
+    //             collecteurId,
+    //             missionId,
+    //             montant
+    //         ]);
 
-            // Mettre à jour le total des gains du collecteur
-            await client.query(`
-                UPDATE collecteurs 
-                SET gains_total = gains_total + $1
-                WHERE id = $2
-            `, [montant, collecteurId]);
+    //         // Mettre à jour le total des gains du collecteur
+    //         await client.query(`
+    //             UPDATE collecteurs 
+    //             SET gains_total = gains_total + $1
+    //             WHERE id = $2
+    //         `, [montant, collecteurId]);
 
-            // Notification au collecteur
-            await client.query(`
-                INSERT INTO notifications (
-                    utilisateur_id, 
-                    type_utilisateur, 
-                    titre, 
-                    message, 
-                    type_notification,
-                    reference_id,
-                    reference_type
-                ) VALUES ($1, 'collecteur', $2, $3, 'paiement_recu', $4, 'gain')
-            `, [
-                collecteurId,
-                'Bonus reçu',
-                `Vous avez reçu un bonus de ${montant} FCFA pour la mission #${missionId.substring(0,8)}.`,
-                resultatGain.rows[0].id
-            ]);
+    //         // Notification au collecteur
+    //         await client.query(`
+    //             INSERT INTO notifications (
+    //                 utilisateur_id, 
+    //                 type_utilisateur, 
+    //                 titre, 
+    //                 message, 
+    //                 type_notification,
+    //                 reference_id,
+    //                 reference_type
+    //             ) VALUES ($1, 'collecteur', $2, $3, 'paiement_recu', $4, 'gain')
+    //         `, [
+    //             collecteurId,
+    //             'Bonus reçu',
+    //             `Vous avez reçu un bonus de ${montant} FCFA pour la mission #${missionId.substring(0,8)}.`,
+    //             resultatGain.rows[0].id
+    //         ]);
 
-            await client.query('COMMIT');
-            return resultatGain.rows[0];
+    //         await client.query('COMMIT');
+    //         return resultatGain.rows[0];
             
-        } catch (erreur) {
-            await client.query('ROLLBACK');
-            throw erreur;
-        } finally {
-            client.release();
+    //     } catch (erreur) {
+    //         await client.query('ROLLBACK');
+    //         throw erreur;
+    //     } finally {
+    //         client.release();
+    //     }
+    // }
+
+    // ✅ Attribuer des crédits supplémentaires (bonus) - VERSION CORRIGÉE
+static async attribuerCredits(collecteurId, missionId, montant, gestionnaireId) {
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+
+        // Vérifier que la mission existe et est validée
+        const verification = await client.query(`
+            SELECT m.* FROM missions m
+            WHERE m.id = $1 
+              AND m.statut = 'validee'
+        `, [missionId]);
+
+        if (verification.rows.length === 0) {
+            throw new Error('Mission non trouvée ou non validée');
         }
-    }
 
-    // ✅ Tableau de bord complet avec historique
-    static async tableauBord(gestionnaireId) {
-        const requete = `
-            WITH stats AS (
-                SELECT 
-                    COUNT(*) FILTER (WHERE m.statut = 'deposee') as en_attente,
-                    COUNT(*) FILTER (WHERE m.statut = 'validee') as validees,
-                    COUNT(*) FILTER (WHERE m.date_validation >= CURRENT_DATE) as aujourd_hui,
-                    COALESCE(SUM(m.poids_depose) FILTER (WHERE m.statut = 'validee'), 0) as poids_total,
-                    COALESCE(SUM(m.gains_attribues) FILTER (WHERE m.statut = 'validee'), 0) as gains_distribues,
-                    COALESCE(AVG(m.poids_depose) FILTER (WHERE m.statut = 'validee'), 0) as poids_moyen
-                FROM missions m
-                JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
-                JOIN gestionnaires_points g ON g.point_collecte_id = pdv.id
-                WHERE g.id = $1
-            ),
-            dernieres_activites AS (
-                SELECT 
-                    m.id,
-                    m.statut,
-                    m.date_validation,
-                    m.poids_depose,
-                    m.gains_attribues,
-                    c.nom_complet as collecteur_nom,
-                    d.type_dechet,
-                    gc.montant as bonus_attribue
-                FROM missions m
-                JOIN declarations_dechets d ON m.declaration_id = d.id
-                JOIN collecteurs c ON m.collecteur_id = c.id
-                LEFT JOIN gains_collecteurs gc ON m.id = gc.mission_id AND gc.type_gain = 'bonus'
-                JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
-                JOIN gestionnaires_points g ON g.point_collecte_id = pdv.id
-                WHERE g.id = $1 AND m.statut = 'validee'
-                ORDER BY m.date_validation DESC
-                LIMIT 20
-            ),
-            top_collecteurs AS (
-                SELECT 
-                    c.id,
-                    c.nom_complet,
-                    COUNT(m.id) as missions_validees,
-                    SUM(m.poids_depose) as total_poids,
-                    SUM(m.gains_attribues) as total_gains
-                FROM missions m
-                JOIN collecteurs c ON m.collecteur_id = c.id
-                JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
-                JOIN gestionnaires_points g ON g.point_collecte_id = pdv.id
-                WHERE g.id = $1 AND m.statut = 'validee'
-                GROUP BY c.id, c.nom_complet
-                ORDER BY total_gains DESC
-                LIMIT 5
-            )
-            SELECT 
-                (SELECT row_to_json(stats) FROM stats) as statistiques,
-                (SELECT json_agg(dernieres_activites) FROM dernieres_activites) as dernieres_activites,
-                (SELECT json_agg(top_collecteurs) FROM top_collecteurs) as top_collecteurs
+        // Vérifier que le collecteur existe
+        const collecteurCheck = await client.query(`
+            SELECT * FROM collecteurs WHERE id = $1
+        `, [collecteurId]);
+
+        if (collecteurCheck.rows.length === 0) {
+            throw new Error('Collecteur non trouvé');
+        }
+
+        // Créer le gain bonus
+        const requeteGain = `
+            INSERT INTO gains_collecteurs (
+                collecteur_id, 
+                mission_id, 
+                montant, 
+                type_gain, 
+                statut,
+                date_validation
+            ) VALUES ($1, $2, $3, 'bonus', 'valide', CURRENT_TIMESTAMP)
+            RETURNING *
         `;
         
-        const resultat = await pool.query(requete, [gestionnaireId]);
-        return resultat.rows[0] || {
-            statistiques: {
-                en_attente: 0,
-                validees: 0,
-                aujourd_hui: 0,
-                poids_total: 0,
-                gains_distribues: 0,
-                poids_moyen: 0
-            },
-            dernieres_activites: [],
-            top_collecteurs: []
-        };
-    }
+        const resultatGain = await client.query(requeteGain, [
+            collecteurId,
+            missionId,
+            montant
+        ]);
 
+        // Mettre à jour le total des gains du collecteur
+        await client.query(`
+            UPDATE collecteurs 
+            SET gains_total = COALESCE(gains_total, 0) + $1
+            WHERE id = $2
+        `, [montant, collecteurId]);
+
+        // Notification au collecteur
+        await client.query(`
+            INSERT INTO notifications (
+                utilisateur_id, 
+                type_utilisateur, 
+                titre, 
+                message, 
+                type_notification,
+                reference_id,
+                reference_type
+            ) VALUES ($1, 'collecteur', $2, $3, 'paiement_recu', $4, 'gain')
+        `, [
+            collecteurId,
+            'Bonus reçu',
+            `Vous avez reçu un bonus de ${montant} FCFA.`,
+            resultatGain.rows[0].id
+        ]);
+
+        await client.query('COMMIT');
+        return resultatGain.rows[0];
+        
+    } catch (erreur) {
+        await client.query('ROLLBACK');
+        console.error('❌ Erreur attribution crédits:', erreur);
+        throw erreur;
+    } finally {
+        client.release();
+    }
+  
+ }
+  
+
+
+//     // ✅ Tableau de bord complet avec historique - VERSION CORRIGÉE
+//   static async tableauBord(gestionnaireId) {
+//     const requete = `
+//         WITH stats AS (
+//             SELECT 
+//                 COUNT(*) FILTER (WHERE m.statut = 'deposee') as en_attente,
+//                 COUNT(*) FILTER (WHERE m.statut = 'validee') as validees,
+//                 COALESCE(SUM(m.poids_depose) FILTER (WHERE m.statut = 'validee'), 0) as poids_total,
+//                 COALESCE(SUM(m.gains_attribues) FILTER (WHERE m.statut = 'validee'), 0) as gains_distribues,
+//                 COUNT(DISTINCT m.collecteur_id) FILTER (WHERE m.statut = 'validee') as collecteurs_actifs
+//             FROM missions m
+//             -- SUPPRIMER la condition point_depot_id IS NOT NULL
+//             WHERE 1=1
+//         ),
+//         missions_recentes AS (
+//             SELECT 
+//                 m.id,
+//                 m.statut,
+//                 m.date_validation,
+//                 m.poids_depose,
+//                 m.gains_attribues,
+//                 c.nom_complet as collecteur_nom,
+//                 d.type_dechet
+//             FROM missions m
+//             JOIN declarations_dechets d ON m.declaration_id = d.id
+//             JOIN collecteurs c ON m.collecteur_id = c.id
+//             WHERE m.statut = 'validee'
+//             ORDER BY m.date_validation DESC
+//             LIMIT 10
+//         ),
+//         top_collecteurs AS (
+//             SELECT 
+//                 c.id,
+//                 c.nom_complet,
+//                 COUNT(m.id) as missions_validees,
+//                 COALESCE(SUM(m.poids_depose), 0) as total_poids,
+//                 COALESCE(SUM(m.gains_attribues), 0) as total_gains
+//             FROM missions m
+//             JOIN collecteurs c ON m.collecteur_id = c.id
+//             WHERE m.statut = 'validee'
+//             GROUP BY c.id, c.nom_complet
+//             ORDER BY total_gains DESC
+//             LIMIT 5
+//         )
+//         SELECT 
+//             (SELECT row_to_json(stats) FROM stats) as statistiques,
+//             (SELECT json_agg(missions_recentes) FROM missions_recentes) as missions_recentes,
+//             (SELECT json_agg(top_collecteurs) FROM top_collecteurs) as top_collecteurs
+//     `;
+    
+//     const resultat = await pool.query(requete);
+//     console.log('📊 Dashboard gestionnaire:', JSON.stringify(resultat.rows[0], null, 2));
+    
+//     return resultat.rows[0] || {
+//         statistiques: {
+//             en_attente: 0,
+//             validees: 0,
+//             poids_total: 0,
+//             gains_distribues: 0,
+//             collecteurs_actifs: 0
+//         },
+//         missions_recentes: [],
+//         top_collecteurs: []
+//     };
+//  }
+
+     // ✅ Tableau de bord complet avec historique - VERSION CORRIGÉE
+static async tableauBord(gestionnaireId) {
+    const requete = `
+        WITH stats AS (
+            SELECT 
+                COUNT(*) FILTER (WHERE m.statut = 'deposee') as en_attente,
+                COUNT(*) FILTER (WHERE m.statut = 'validee') as validees,
+                COALESCE(SUM(m.poids_depose) FILTER (WHERE m.statut = 'validee'), 0) as poids_total,
+                COALESCE(SUM(m.gains_attribues) FILTER (WHERE m.statut = 'validee'), 0) as gains_distribues,
+                COUNT(DISTINCT m.collecteur_id) FILTER (WHERE m.statut = 'validee') as collecteurs_actifs
+            FROM missions m
+            -- SUPPRIMER la condition point_depot_id IS NOT NULL
+            WHERE 1=1
+        ),
+        missions_recentes AS (
+            SELECT 
+                m.id,
+                m.statut,
+                m.date_validation,
+                m.poids_depose,
+                m.gains_attribues,
+                c.nom_complet as collecteur_nom,
+                d.type_dechet
+            FROM missions m
+            JOIN declarations_dechets d ON m.declaration_id = d.id
+            JOIN collecteurs c ON m.collecteur_id = c.id
+            WHERE m.statut = 'validee'
+            ORDER BY m.date_validation DESC
+            LIMIT 10
+        ),
+        top_collecteurs AS (
+            SELECT 
+                c.id,
+                c.nom_complet,
+                COUNT(m.id) as missions_validees,
+                COALESCE(SUM(m.poids_depose), 0) as total_poids,
+                COALESCE(SUM(m.gains_attribues), 0) as total_gains
+            FROM missions m
+            JOIN collecteurs c ON m.collecteur_id = c.id
+            WHERE m.statut = 'validee'
+            GROUP BY c.id, c.nom_complet
+            ORDER BY total_gains DESC
+            LIMIT 5
+        )
+        SELECT 
+            (SELECT row_to_json(stats) FROM stats) as statistiques,
+            (SELECT json_agg(missions_recentes) FROM missions_recentes) as missions_recentes,
+            (SELECT json_agg(top_collecteurs) FROM top_collecteurs) as top_collecteurs
+    `;
+    
+    const resultat = await pool.query(requete);
+    console.log('📊 Dashboard gestionnaire:', JSON.stringify(resultat.rows[0], null, 2));
+    
+    return resultat.rows[0] || {
+        statistiques: {
+            en_attente: 0,
+            validees: 0,
+            poids_total: 0,
+            gains_distribues: 0,
+            collecteurs_actifs: 0
+        },
+        missions_recentes: [],
+        top_collecteurs: []
+    };
+ }
     // ✅ Mettre à jour un gestionnaire
     static async mettreAJour(id, donnees) {
         const champs = [];

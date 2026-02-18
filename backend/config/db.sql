@@ -18,8 +18,7 @@ CREATE TYPE statut_collecteur AS ENUM ('en_attente', 'actif', 'suspendu', 'inact
 CREATE TYPE type_collecteur AS ENUM ('independant', 'cooperative');
 CREATE TYPE statut_mission AS ENUM ('disponible', 'acceptee', 'en_cours', 'deposee', 'validee', 'refusee', 'annulee');
 CREATE TYPE type_utilisateur AS ENUM ('collecteur', 'gestionnaire', 'superviseur' , 'producteur');
-CREATE TYPE type_utilisateur AS ENUM ('producteur');
--- Table des producteurs
+
 CREATE TABLE producteurs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -66,21 +65,6 @@ CREATE TABLE types_dechets_declaration (
     PRIMARY KEY (declaration_id, type_dechet)
 );
 
--- -- Table des collectes
--- CREATE TABLE collectes (
---     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
---     declaration_id UUID REFERENCES declarations_dechets(id) ON DELETE SET NULL,
---     collecteur_id UUID, -- À relier à la table des collecteurs (future implémentation)
---     date_programmee DATE NOT NULL,
---     heure_programmee VARCHAR(50),
---     date_reelle DATE,
---     poids_reel DECIMAL(10, 2),
---     statut VARCHAR(50) DEFAULT 'programmee',
---     notes TEXT,
---     points_attribues INTEGER DEFAULT 0,
---     terminee_le TIMESTAMP,
---     cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
--- );
 
 ALTER TABLE missions 
 ADD COLUMN IF NOT EXISTS date_programmee DATE,

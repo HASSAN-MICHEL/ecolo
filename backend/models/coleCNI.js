@@ -2,163 +2,158 @@ import { pool } from '../config/database.js';
 
 class Collecteur {
     // Créer un nouveau collecteur
-    static async creer(donnees) {
-        // Ne pas stocker les photos en base64 directement dans la requête
-        // On ne stocke que les chemins/URLs
-        const requete = `
-            INSERT INTO collecteurs (
-                email, telephone, mot_de_passe_hash, nom_complet,
-                type_collecteur, numero_identite, zone_intervention,
-                zone_intervention_nom, quartiers_habituels, communes_intervention,
-                photo_profil_url, photo_cni_recto_url, photo_cni_verso_url, cgu_acceptees
-            ) VALUES ($1, $2, $3, $4, $5, $6, 
-                ST_GeomFromGeoJSON($7), $8, $9, $10, $11, $12, $13, $14)
-            RETURNING id, email, telephone, nom_complet, type_collecteur, 
-                      statut, zone_intervention_nom, cree_le
-        `;
+    // static async creer(donnees) {
+    //     const requete = `
+    //         INSERT INTO collecteurs (
+    //             email, telephone, mot_de_passe_hash, nom_complet,
+    //             type_collecteur, numero_identite, zone_intervention,
+    //             zone_intervention_nom, quartiers_habituels, communes_intervention,
+    //             photo_profil_url, cgu_acceptees
+    //         ) VALUES ($1, $2, $3, $4, $5, $6, 
+    //             ST_GeomFromGeoJSON($7), $8, $9, $10, $11, $12)
+    //         RETURNING id, email, telephone, nom_complet, type_collecteur, 
+    //                   statut, zone_intervention_nom, cree_le
+    //     `;
         
-        const valeurs = [
-            donnees.email,
-            donnees.telephone,
-            donnees.motDePasseHash,
-            donnees.nomComplet,
-            donnees.typeCollecteur,
-            donnees.numeroIdentite || null,
-            donnees.zoneIntervention ? JSON.stringify(donnees.zoneIntervention) : null,
-            donnees.zoneInterventionNom || null,
-            donnees.quartiersHabituels || [],
-            donnees.communesIntervention || [],
-            donnees.photoProfilUrl || null,      // Attendre une URL, pas du base64
-            donnees.photoCniRectoUrl || null,    // Attendre une URL, pas du base64
-            donnees.photoCniVersoUrl || null,    // Attendre une URL, pas du base64
-            donnees.cguAcceptees || false
-        ];
+    //     const valeurs = [
+    //         donnees.email,
+    //         donnees.telephone,
+    //         donnees.motDePasseHash,
+    //         donnees.nomComplet,
+    //         donnees.typeCollecteur,
+    //         donnees.numeroIdentite,
+    //         JSON.stringify(donnees.zoneIntervention), // Polygone en GeoJSON
+    //         donnees.zoneInterventionNom,
+    //         donnees.quartiersHabituels || [],
+    //         donnees.communesIntervention || [],
+    //         donnees.photoProfilUrl || null,
+    //         donnees.cguAcceptees || false
+    //     ];
         
-        try {
-            const resultat = await pool.query(requete, valeurs);
-            return resultat.rows[0];
-        } catch (error) {
-            console.error('❌ Erreur création collecteur:', error);
-            throw error;
-        }
+    //     const resultat = await pool.query(requete, valeurs);
+    //     return resultat.rows[0];
+    // }
+
+      // Dans la méthode creer() - ajouter les photos CNI
+static async creer(donnees) {
+    const requete = `
+        INSERT INTO collecteurs (
+            email, telephone, mot_de_passe_hash, nom_complet,
+            type_collecteur, numero_identite, zone_intervention,
+            zone_intervention_nom, quartiers_habituels, communes_intervention,
+            photo_profil_url, photo_cni_recto_url, photo_cni_verso_url, cgu_acceptees
+        ) VALUES ($1, $2, $3, $4, $5, $6, 
+            ST_GeomFromGeoJSON($7), $8, $9, $10, $11, $12, $13, $14)
+        RETURNING id, email, telephone, nom_complet, type_collecteur, 
+                  statut, zone_intervention_nom, cree_le
+    `;
+    
+    const valeurs = [
+        donnees.email,
+        donnees.telephone,
+        donnees.motDePasseHash,
+        donnees.nomComplet,
+        donnees.typeCollecteur,
+        donnees.numeroIdentite,
+        JSON.stringify(donnees.zoneIntervention),
+        donnees.zoneInterventionNom,
+        donnees.quartiersHabituels || [],
+        donnees.communesIntervention || [],
+        donnees.photoProfilUrl || null,
+        donnees.photoCniRectoUrl || null, // Nouveau champ
+        donnees.photoCniVersoUrl || null, // Nouveau champ
+        donnees.cguAcceptees || false
+    ];
+    
+    const resultat = await pool.query(requete, valeurs);
+    return resultat.rows[0];
+}
+
+// Dans trouverParId() - ajouter les photos CNI
+static async trouverParId(id) {
+    const requete = `
+        SELECT id, email, telephone, nom_complet, type_collecteur,
+               numero_identite, zone_intervention_nom, quartiers_habituels,
+               communes_intervention, statut, est_actif, photo_profil_url,
+               photo_cni_recto_url, photo_cni_verso_url, -- Nouveaux champs
+               points_total, gains_total, cree_le, derniere_connexion,
+               ST_AsGeoJSON(zone_intervention) as zone_intervention_geojson
+        FROM collecteurs 
+        WHERE id = $1
+    `;
+    const resultat = await pool.query(requete, [id]);
+    return resultat.rows[0];
+}
+
+// Nouvelle méthode pour mettre à jour les infos personnelles uniquement
+static async mettreAJourInfosPersonnelles(id, donnees) {
+    const champs = [];
+    const valeurs = [];
+    let index = 1;
+
+    // Champs autorisés pour modification
+    if (donnees.nomComplet !== undefined) {
+        champs.push(`nom_complet = $${index++}`);
+        valeurs.push(donnees.nomComplet);
+    }
+    if (donnees.telephone !== undefined) {
+        champs.push(`telephone = $${index++}`);
+        valeurs.push(donnees.telephone);
+    }
+    if (donnees.numeroIdentite !== undefined) {
+        champs.push(`numero_identite = $${index++}`);
+        valeurs.push(donnees.numeroIdentite);
+    }
+    if (donnees.zoneInterventionNom !== undefined) {
+        champs.push(`zone_intervention_nom = $${index++}`);
+        valeurs.push(donnees.zoneInterventionNom);
+    }
+    if (donnees.quartiersHabituels !== undefined) {
+        champs.push(`quartiers_habituels = $${index++}`);
+        valeurs.push(donnees.quartiersHabituels);
+    }
+    if (donnees.communesIntervention !== undefined) {
+        champs.push(`communes_intervention = $${index++}`);
+        valeurs.push(donnees.communesIntervention);
+    }
+    if (donnees.photoProfilUrl !== undefined) {
+        champs.push(`photo_profil_url = $${index++}`);
+        valeurs.push(donnees.photoProfilUrl);
+    }
+    if (donnees.photoCniRectoUrl !== undefined) {
+        champs.push(`photo_cni_recto_url = $${index++}`);
+        valeurs.push(donnees.photoCniRectoUrl);
+    }
+    if (donnees.photoCniVersoUrl !== undefined) {
+        champs.push(`photo_cni_verso_url = $${index++}`);
+        valeurs.push(donnees.photoCniVersoUrl);
     }
 
-    // Trouver par email
-    static async trouverParEmail(email) {
-        const requete = 'SELECT * FROM collecteurs WHERE email = $1';
-        const resultat = await pool.query(requete, [email]);
-        return resultat.rows[0];
+    // Gestion spéciale pour zone_intervention
+    if (donnees.zoneIntervention) {
+        champs.push(`zone_intervention = ST_GeomFromGeoJSON($${index++})`);
+        valeurs.push(JSON.stringify(donnees.zoneIntervention));
     }
 
-    // Trouver par téléphone
-    static async trouverParTelephone(telephone) {
-        const requete = 'SELECT * FROM collecteurs WHERE telephone = $1';
-        const resultat = await pool.query(requete, [telephone]);
-        return resultat.rows[0];
+    if (champs.length === 0) {
+        return null;
     }
 
-    // Trouver par ID (version complète avec tous les champs)
-    static async trouverParId(id) {
-        const requete = `
-            SELECT id, email, telephone, nom_complet, type_collecteur,
-                   numero_identite, zone_intervention_nom, quartiers_habituels,
-                   communes_intervention, statut, est_actif, photo_profil_url,
-                   photo_cni_recto_url, photo_cni_verso_url,
-                   points_total, gains_total, cree_le, derniere_connexion,
-                   ST_AsGeoJSON(zone_intervention) as zone_intervention_geojson
-            FROM collecteurs 
-            WHERE id = $1
-        `;
-        const resultat = await pool.query(requete, [id]);
-        return resultat.rows[0];
-    }
+    valeurs.push(id);
+    const requete = `
+        UPDATE collecteurs 
+        SET ${champs.join(', ')}, modifie_le = CURRENT_TIMESTAMP
+        WHERE id = $${index}
+        RETURNING id, email, telephone, nom_complet, type_collecteur,
+                  numero_identite, zone_intervention_nom, quartiers_habituels,
+                  communes_intervention, photo_profil_url, 
+                  photo_cni_recto_url, photo_cni_verso_url,
+                  points_total, gains_total
+    `;
 
-    // Mettre à jour les informations personnelles
-    static async mettreAJourInfosPersonnelles(id, donnees) {
-        const champs = [];
-        const valeurs = [];
-        let index = 1;
-
-        // Champs autorisés pour modification
-        const champsModifiables = {
-            nomComplet: 'nom_complet',
-            telephone: 'telephone',
-            numeroIdentite: 'numero_identite',
-            zoneInterventionNom: 'zone_intervention_nom',
-            quartiersHabituels: 'quartiers_habituels',
-            communesIntervention: 'communes_intervention',
-            photoProfilUrl: 'photo_profil_url',
-            photoCniRectoUrl: 'photo_cni_recto_url',
-            photoCniVersoUrl: 'photo_cni_verso_url'
-        };
-
-        for (const [key, dbField] of Object.entries(champsModifiables)) {
-            if (donnees[key] !== undefined) {
-                champs.push(`${dbField} = $${index++}`);
-                valeurs.push(donnees[key]);
-            }
-        }
-
-        // Gestion spéciale pour zone_intervention
-        if (donnees.zoneIntervention) {
-            champs.push(`zone_intervention = ST_GeomFromGeoJSON($${index++})`);
-            valeurs.push(JSON.stringify(donnees.zoneIntervention));
-        }
-
-        if (champs.length === 0) {
-            return null;
-        }
-
-        valeurs.push(id);
-        const requete = `
-            UPDATE collecteurs 
-            SET ${champs.join(', ')}, modifie_le = CURRENT_TIMESTAMP
-            WHERE id = $${index}
-            RETURNING id, email, telephone, nom_complet, type_collecteur,
-                      numero_identite, zone_intervention_nom, quartiers_habituels,
-                      communes_intervention, photo_profil_url, 
-                      photo_cni_recto_url, photo_cni_verso_url,
-                      points_total, gains_total
-        `;
-
-        try {
-            const resultat = await pool.query(requete, valeurs);
-            return resultat.rows[0];
-        } catch (error) {
-            console.error('❌ Erreur mise à jour:', error);
-            throw error;
-        }
-    }
-
-    // Mettre à jour le statut (validation par superviseur)
-    static async valider(id, superviseurId, notes) {
-        const requete = `
-            UPDATE collecteurs 
-            SET statut = 'actif',
-                est_actif = true,
-                valide_par = $1,
-                valide_le = CURRENT_TIMESTAMP,
-                notes_validation = $2
-            WHERE id = $3
-            RETURNING id, nom_complet, statut
-        `;
-        const resultat = await pool.query(requete, [superviseurId, notes, id]);
-        return resultat.rows[0];
-    }
-
-    // Suspendre un collecteur
-    static async suspendre(id, raison) {
-        const requete = `
-            UPDATE collecteurs 
-            SET statut = 'suspendu',
-                est_actif = false,
-                notes_validation = $1
-            WHERE id = $2
-            RETURNING id, nom_complet, statut
-        `;
-        const resultat = await pool.query(requete, [raison, id]);
-        return resultat.rows[0];
-    }
+    const resultat = await pool.query(requete, valeurs);
+    return resultat.rows[0];
+}
 
 // Nouvelle méthode pour changer le mot de passe
 static async changerMotDePasse(id, nouveauMotDePasseHash) {

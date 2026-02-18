@@ -676,9 +676,9 @@ class AuthController {
     static async _verifierExistenceEmail(email) {
         const queries = [
             Producteur.trouverParEmail(email),
-            Collecteur.findByEmail(email),
-            Gestionnaire.findByEmail(email),
-            Superviseur.findByEmail(email)
+            Collecteur.trouverParEmail(email),
+            Gestionnaire.trouverParEmail(email),
+            Superviseur.trouverParEmail(email)
         ];
 
         const results = await Promise.all(queries);

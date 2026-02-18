@@ -1,10 +1,12 @@
 import express from 'express';
 import AuthController from '../controllers/AuthController.js';
 
+ import ProdutionController from '../controllers/ProdutionController.js';
+
 const router = express.Router();
 
 // Inscription
-router.post('/inscription', AuthController.inscrire);
+router.post('/inscription', ProdutionController.inscrire);
 
 // Connexion
 router.post('/connexion', AuthController.connecterProducteur);

@@ -12,6 +12,8 @@ dist
 dist-ssr
 dist-electron
 DRINK MANAGE
+uploads
+build
 src
 reports
 public
@@ -100,3 +102,5 @@ temp/
 
 
 # Frontend specific
+
+.vercel
