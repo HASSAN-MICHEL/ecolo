@@ -51,14 +51,14 @@
 
 import express from 'express';
 import CollecteurController from '../controllers/CollecteurController.js';
- import { uploadCollecteurFiles } from '../middleware/uploads.js';
+
 import { uploadCollecteurFiles, processUploads } from '../middleware/uploadToSupabase.js';
 import  AuthCollecteur  from '../controllers/AuthController.js';
 
 const router = express.Router();
 
 // Route d'inscription avec upload de fichiers
-// router.post('/inscription', uploadCollecteurFiles, CollecteurController.inscription);
+// router.post('/inscription', uploadCollecteurFiles, CollecteurController.inscription); // import { uploadCollecteurFiles } from '../middleware/uploads.js';
 
 router.post('/inscription', 
     uploadCollecteurFiles,    // Multer en mémoire
