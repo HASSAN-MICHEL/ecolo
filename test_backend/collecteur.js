@@ -1,14 +1,3 @@
-// ============================================
-// collecteur.js - Gestion de l'espace collecteur
-// ============================================
-
-// // Configuration
-// const CONFIG = {
-//     API_URL: localStorage.getItem('api_url') || 'http://localhost:3000',
-//     TOKEN_KEY: 'ecocollect_token',
-//     USER_KEY: 'ecocollect_user',
-//     ROLE_KEY: 'ecocollect_role'
-// };
 
 const CONFIG = {
     API_URL: window.API_BASE_URL || 'https://ecobackend-m3s8.vercel.app', // URL de production par défaut

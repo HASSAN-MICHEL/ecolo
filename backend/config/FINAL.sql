@@ -58,7 +58,7 @@ INSERT INTO superviseurs (
 (
     'superviseur.principal@ecocollect.com',
     '+221771234567',
-    '$2b$10$Zh4CzlgtC7ymDb/BUZlmyez5qjtXymCpUC4B5.9Y00qiCMXPeZ/jy',
+    '$2b$10$hY7tGtJGYK0kqkzEf1/cYeT.CSl3q.STvC3aB6k6mvuMaAC2JyE3m',
     'Mamadou Diop',
     'superviseur_principal'
 ),

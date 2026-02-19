@@ -1,3 +1,6 @@
+
+
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -6,9 +9,8 @@
     <title>EcoCollect - Connexion</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="config.js"></script>
+  
     <style>
-        /* Vos styles existants restent identiques */
         * {
             margin: 0;
             padding: 0;
@@ -30,6 +32,10 @@
             --ring: #2d8a5e;
             --radius: 0.75rem;
             --shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05);
+            --collecteur: #2196F3;
+            --gestionnaire: #4CAF50;
+            --superviseur: #9C27B0;
+            --admin: #FF9800;
         }
 
         body {
@@ -191,6 +197,13 @@
             display: block;
         }
 
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
         .links {
             text-align: center;
             margin-top: 1.5rem;
@@ -213,7 +226,6 @@
     <div class="login-container">
         <a href="in.html" class="logo">
             <img src="logo.jpeg" alt="EcoCollect" class="logo-img">
-           
         </a>
 
         <h1><i class="fas fa-sign-in-alt" style="color: var(--primary); margin-right: 0.5rem;"></i>Connexion</h1>
@@ -243,13 +255,27 @@
 
         <div class="links">
             <p>Pas encore de compte ? <a href="login.html">S'inscrire</a></p>
-            <p><a href="in.html">← Retour à l'accueil</a></p>
+            <p><a href="index.html">← Retour à l'accueil</a></p>
         </div>
     </div>
 
     <script>
-        // Utiliser la configuration globale
-        const API_URL = window.APP_CONFIG ? window.APP_CONFIG.API_URL : 'https://ecobackend-eopk.vercel.app';
+        // Configuration
+        const API_URL = window.APP_CONFIG ? window.APP_CONFIG.API_URL : 'https://ecobackend-three.vercel.app';
+        const STORAGE_KEYS = {
+            TOKEN: window.APP_CONFIG?.TOKEN_KEY || 'ecocollect_token',
+            USER: window.APP_CONFIG?.USER_KEY || 'ecocollect_user',
+            ROLE: window.APP_CONFIG?.ROLE_KEY || 'ecocollect_role'
+        };
+
+        // Mapping des rôles vers les pages
+        const ROLE_PAGES = {
+            'producteur': 'producteur.html',
+            'collecteur': 'collecteur.html',
+            'gestionnaire': 'gestionnaire.html',
+            'superviseur': 'superviseur.html',
+            'admin': 'admin.html'
+        };
 
         function togglePassword(inputId, btn) {
             const inp = document.getElementById(inputId);
@@ -259,106 +285,196 @@
             btn.innerHTML = inp.type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
         }
 
+        function saveAuthData(token, user, role) {
+            try {
+                localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+                localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+                localStorage.setItem(STORAGE_KEYS.ROLE, role);
+                console.log(`✅ Données sauvegardées pour ${role}:`, user?.nomComplet || user?.email);
+                return true;
+            } catch (error) {
+                console.error('❌ Erreur sauvegarde:', error);
+                return false;
+            }
+        }
+
+        function redirectToDashboard(role) {
+            const page = ROLE_PAGES[role];
+            if (page) {
+                console.log(`🔄 Redirection vers ${page} (${role})`);
+                window.location.href = page;
+            } else {
+                console.error(`❌ Page non trouvée pour le rôle: ${role}`);
+                window.location.href = 'index.html';
+            }
+        }
+
         async function handleLogin(e) {
             e.preventDefault();
             
-            const identifiant = document.getElementById('identifiant').value;
+            const identifiant = document.getElementById('identifiant').value.trim();
             const motDePasse = document.getElementById('password').value;
             const messageDiv = document.getElementById('message');
+            
+            if (!identifiant || !motDePasse) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Veuillez remplir tous les champs';
+                return;
+            }
             
             try {
                 messageDiv.className = 'message info';
                 messageDiv.textContent = 'Connexion en cours...';
                 messageDiv.style.display = 'block';
                 
-                console.log('🔍 Tentative de connexion à:', API_URL);
+                console.log('🔍 Tentative de connexion:', identifiant);
                 
-                // Essayer d'abord la connexion producteur
-                const producteurResponse = await fetch(`${API_URL}/api/auth/connexion`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identifiant, motDePasse })
-                });
-                
-                const producteurData = await producteurResponse.json();
-                
-                if (producteurResponse.ok && producteurData.token) {
-                    // Connexion producteur réussie
-                    const userData = producteurData.producteur || producteurData.user || producteurData.utilisateur;
+                // ===== 1. ESSAYER PRODUCTEUR =====
+                try {
+                    const prodResponse = await fetch(`${API_URL}/api/auth/connexion`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identifiant, motDePasse })
+                    });
                     
-                    // Sauvegarder les données
-                    localStorage.setItem(window.APP_CONFIG.TOKEN_KEY, producteurData.token);
-                    localStorage.setItem(window.APP_CONFIG.USER_KEY, JSON.stringify(userData));
-                    localStorage.setItem(window.APP_CONFIG.ROLE_KEY, 'producteur');
+                    const prodData = await prodResponse.json();
                     
-                    messageDiv.className = 'message success';
-                    messageDiv.textContent = 'Connexion producteur réussie ! Redirection...';
-                    
-                    setTimeout(() => {
-                        window.location.href = 'producteur.html';
-                    }, 1500);
-                    
-                    return;
+                    if (prodResponse.ok && prodData.token) {
+                        const userData = prodData.producteur || prodData.user || prodData.utilisateur || prodData;
+                        
+                        if (saveAuthData(prodData.token, userData, 'producteur')) {
+                            messageDiv.className = 'message success';
+                            messageDiv.textContent = 'Connexion producteur réussie ! Redirection...';
+                            setTimeout(() => redirectToDashboard('producteur'), 1500);
+                            return;
+                        }
+                    }
+                } catch (prodError) {
+                    console.log('Producteur non trouvé ou erreur:', prodError.message);
                 }
                 
-                // Si échec producteur, essayer la connexion collecteur
-                const collecteurResponse = await fetch(`${API_URL}/api/collecteurs/connexion`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identifiant, motDePasse })
-                });
-                
-                const collecteurData = await collecteurResponse.json();
-                
-                if (collecteurResponse.ok && collecteurData.success && collecteurData.token) {
-                    // Connexion collecteur réussie
-                    const userData = collecteurData.collecteur;
+                // ===== 2. ESSAYER COLLECTEUR =====
+                try {
+                    const colResponse = await fetch(`${API_URL}/api/collecteurs/connexion`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identifiant, motDePasse })
+                    });
                     
-                    // Sauvegarder les données
-                    localStorage.setItem(window.APP_CONFIG.TOKEN_KEY, collecteurData.token);
-                    localStorage.setItem(window.APP_CONFIG.USER_KEY, JSON.stringify(userData));
-                    localStorage.setItem(window.APP_CONFIG.ROLE_KEY, 'collecteur');
+                    const colData = await colResponse.json();
                     
-                    messageDiv.className = 'message success';
-                    messageDiv.textContent = 'Connexion collecteur réussie ! Redirection...';
-                    
-                    setTimeout(() => {
-                        window.location.href = 'collecteur.html';
-                    }, 1500);
-                    
-                    return;
+                    if (colResponse.ok && colData.success && colData.token) {
+                        if (saveAuthData(colData.token, colData.collecteur, 'collecteur')) {
+                            messageDiv.className = 'message success';
+                            messageDiv.textContent = 'Connexion collecteur réussie ! Redirection...';
+                            setTimeout(() => redirectToDashboard('collecteur'), 1500);
+                            return;
+                        }
+                    }
+                } catch (colError) {
+                    console.log('Collecteur non trouvé ou erreur:', colError.message);
                 }
                 
-                // Si les deux échouent
-                throw new Error('Identifiants incorrects');
+                // ===== 3. ESSAYER GESTIONNAIRE =====
+                try {
+                    const gestResponse = await fetch(`${API_URL}/api/gestionnaires/connexion`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identifiant, motDePasse })
+                    });
+                    
+                    const gestData = await gestResponse.json();
+                    
+                    if (gestResponse.ok && gestData.success && gestData.token) {
+                        if (saveAuthData(gestData.token, gestData.utilisateur, 'gestionnaire')) {
+                            messageDiv.className = 'message success';
+                            messageDiv.textContent = 'Connexion gestionnaire réussie ! Redirection...';
+                            setTimeout(() => redirectToDashboard('gestionnaire'), 1500);
+                            return;
+                        }
+                    }
+                } catch (gestError) {
+                    console.log('Gestionnaire non trouvé ou erreur:', gestError.message);
+                }
+                
+                // ===== 4. ESSAYER SUPERVISEUR =====
+                try {
+                    const supResponse = await fetch(`${API_URL}/api/superviseurs/connexion`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identifiant, motDePasse })
+                    });
+                    
+                    const supData = await supResponse.json();
+                    
+                    if (supResponse.ok && supData.success && supData.token) {
+                        if (saveAuthData(supData.token, supData.superviseur, 'superviseur')) {
+                            messageDiv.className = 'message success';
+                            messageDiv.textContent = 'Connexion superviseur réussie ! Redirection...';
+                            setTimeout(() => redirectToDashboard('superviseur'), 1500);
+                            return;
+                        }
+                    }
+                } catch (supError) {
+                    console.log('Superviseur non trouvé ou erreur:', supError.message);
+                }
+                
+                // ===== 5. ESSAYER ADMIN (si vous avez cette route) =====
+                // À décommenter si vous avez une route admin
+                /*
+                try {
+                    const adminResponse = await fetch(`${API_URL}/api/admin/connexion`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identifiant, motDePasse })
+                    });
+                    
+                    const adminData = await adminResponse.json();
+                    
+                    if (adminResponse.ok && adminData.token) {
+                        if (saveAuthData(adminData.token, adminData.admin, 'admin')) {
+                            messageDiv.className = 'message success';
+                            messageDiv.textContent = 'Connexion admin réussie ! Redirection...';
+                            setTimeout(() => redirectToDashboard('admin'), 1500);
+                            return;
+                        }
+                    }
+                } catch (adminError) {
+                    console.log('Admin non trouvé ou erreur:', adminError.message);
+                }
+                */
+                
+                // ===== AUCUNE CONNEXION RÉUSSIE =====
+                throw new Error('Identifiants incorrects ou compte inexistant');
                 
             } catch (error) {
                 console.error('❌ Erreur connexion:', error);
                 messageDiv.className = 'message error';
                 messageDiv.textContent = error.message || 'Erreur de connexion au serveur';
+                
+                // Nettoyer localStorage en cas d'échec
+                localStorage.removeItem(STORAGE_KEYS.TOKEN);
+                localStorage.removeItem(STORAGE_KEYS.USER);
+                localStorage.removeItem(STORAGE_KEYS.ROLE);
             }
         }
 
         // Vérifier si déjà connecté
         document.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem(window.APP_CONFIG?.TOKEN_KEY);
-            const role = localStorage.getItem(window.APP_CONFIG?.ROLE_KEY);
+            const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+            const role = localStorage.getItem(STORAGE_KEYS.ROLE);
             
-            if (token && role) {
-                if (role === 'producteur') {
-                    window.location.href = 'producteur.html';
-                } else if (role === 'collecteur') {
-                    window.location.href = 'collecteur.html';
-                }
+            if (token && role && ROLE_PAGES[role]) {
+                console.log(`🔄 Session existante: redirection vers ${ROLE_PAGES[role]}`);
+                window.location.href = ROLE_PAGES[role];
             }
         });
 
         // Attacher l'événement au formulaire
         document.getElementById('loginForm').addEventListener('submit', handleLogin);
         
-        // Exposer la fonction globalement
+        // Exposer les fonctions globalement
         window.togglePassword = togglePassword;
     </script>
 </body>
 </html>
-

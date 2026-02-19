@@ -98,3 +98,13 @@ USING expression: true
 CHECK expression: true
 
 Répétez pour SELECT et UPDATE
+
+
+
+-- Supprimer la contrainte qui pose problème
+ALTER TABLE notifications DROP CONSTRAINT IF EXISTS check_notification_recipient;
+
+-- Rendre les deux colonnes optionnelles
+ALTER TABLE notifications 
+ALTER COLUMN utilisateur_id DROP NOT NULL,
+ALTER COLUMN producteur_id DROP NOT NULL;
