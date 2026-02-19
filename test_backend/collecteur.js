@@ -163,7 +163,7 @@ function handleLogout() {
     localStorage.removeItem(CONFIG.TOKEN_KEY);
     localStorage.removeItem(CONFIG.USER_KEY);
     localStorage.removeItem(CONFIG.ROLE_KEY);
-    window.location.href = 'in.html';
+    window.location.href = 'index.html';
 }
 
 // ============================================
