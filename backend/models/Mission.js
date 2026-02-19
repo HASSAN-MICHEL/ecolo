@@ -48,41 +48,85 @@ class Mission {
         }
     }
 
-    // Attribuer une mission à un collecteur
-    static async attribuer(missionId, collecteurId) {
-        const client = await pool.connect();
+    // // Attribuer une mission à un collecteur
+    // static async attribuer(missionId, collecteurId) {
+    //     const client = await pool.connect();
         
-        try {
-            await client.query('BEGIN');
+    //     try {
+    //         await client.query('BEGIN');
 
-            const requete = `
-                UPDATE missions 
-                SET collecteur_id = $1,
-                    statut = 'acceptee',
-                    date_acceptation = CURRENT_TIMESTAMP
-                WHERE id = $2
-                RETURNING *
-            `;
+    //         const requete = `
+    //             UPDATE missions 
+    //             SET collecteur_id = $1,
+    //                 statut = 'acceptee',
+    //                 date_acceptation = CURRENT_TIMESTAMP
+    //             WHERE id = $2
+    //             RETURNING *
+    //         `;
             
-            const resultat = await client.query(requete, [collecteurId, missionId]);
-            const mission = resultat.rows[0];
+    //         const resultat = await client.query(requete, [collecteurId, missionId]);
+    //         const mission = resultat.rows[0];
 
-            // Notification au collecteur
-            await client.query(
-                `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification, reference_id, reference_type)
-                 VALUES ($1, 'collecteur', 'Mission acceptée', 'Vous avez accepté une mission de collecte.', 'mission_acceptee', $2, 'mission')`,
-                [collecteurId, missionId]
-            );
+    //         // Notification au collecteur
+    //         await client.query(
+    //             `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification, reference_id, reference_type)
+    //              VALUES ($1, 'collecteur', 'Mission acceptée', 'Vous avez accepté une mission de collecte.', 'mission_acceptee', $2, 'mission')`,
+    //             [collecteurId, missionId]
+    //         );
 
-            await client.query('COMMIT');
-            return mission;
-        } catch (erreur) {
-            await client.query('ROLLBACK');
-            throw erreur;
-        } finally {
-            client.release();
-        }
+    //         await client.query('COMMIT');
+    //         return mission;
+    //     } catch (erreur) {
+    //         await client.query('ROLLBACK');
+    //         throw erreur;
+    //     } finally {
+    //         client.release();
+    //     }
+    // }
+
+    static async attribuer(missionId, collecteurId) {
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+
+        // Mettre à jour la mission
+        const requeteMission = `
+            UPDATE missions 
+            SET collecteur_id = $1,
+                statut = 'acceptee',
+                date_acceptation = CURRENT_TIMESTAMP
+            WHERE id = $2
+            RETURNING *
+        `;
+        
+        const resultatMission = await client.query(requeteMission, [collecteurId, missionId]);
+        const mission = resultatMission.rows[0];
+
+        // ✅ METTRE À JOUR LA DÉCLARATION
+        await client.query(`
+            UPDATE declarations_dechets 
+            SET statut = 'programme',
+                modifie_le = CURRENT_TIMESTAMP
+            WHERE id = $1
+        `, [mission.declaration_id]);
+
+        // Notification au collecteur
+        await client.query(
+            `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification, reference_id, reference_type)
+             VALUES ($1, 'collecteur', 'Mission acceptée', 'Vous avez accepté une mission de collecte.', 'mission_acceptee', $2, 'mission')`,
+            [collecteurId, missionId]
+        );
+
+        await client.query('COMMIT');
+        return mission;
+    } catch (erreur) {
+        await client.query('ROLLBACK');
+        throw erreur;
+    } finally {
+        client.release();
     }
+ }
 
     // Démarrer une collecte
     static async demarrerCollecte(missionId, collecteurId) {
@@ -97,8 +141,50 @@ class Mission {
         return resultat.rows[0];
     }
 
+
+    static async mettreAJourDeclaration(missionId, nouveauStatutDeclaration) {
+    const requete = `
+        UPDATE declarations_dechets d
+        SET statut = $1,
+            modifie_le = CURRENT_TIMESTAMP
+        FROM missions m
+        WHERE m.id = $2 AND m.declaration_id = d.id
+        RETURNING d.*
+    `;
+    const resultat = await pool.query(requete, [nouveauStatutDeclaration, missionId]);
+    return resultat.rows[0];
+   }
     // Terminer la collecte (avant dépôt)
+    // static async terminerCollecte(missionId, collecteurId, donnees) {
+    //     const requete = `
+    //         UPDATE missions 
+    //         SET statut = 'deposee',
+    //             date_fin_collecte = CURRENT_TIMESTAMP,
+    //             date_depot_point = CURRENT_TIMESTAMP,
+    //             photo_preuve_url = $1,
+    //             code_confirmation_producteur = $2,
+    //             notes_collecte = $3,
+    //             conformite_tri = $4
+    //         WHERE id = $5 AND collecteur_id = $6
+    //         RETURNING *
+    //     `;
+    //     const resultat = await pool.query(requete, [
+    //         donnees.photoPreuveUrl,
+    //         donnees.codeConfirmation,
+    //         donnees.notes,
+    //         donnees.conformiteTri,
+    //         missionId,
+    //         collecteurId
+    //     ]);
+    //     return resultat.rows[0];
+    // }
+
     static async terminerCollecte(missionId, collecteurId, donnees) {
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+
         const requete = `
             UPDATE missions 
             SET statut = 'deposee',
@@ -111,7 +197,8 @@ class Mission {
             WHERE id = $5 AND collecteur_id = $6
             RETURNING *
         `;
-        const resultat = await pool.query(requete, [
+        
+        const resultat = await client.query(requete, [
             donnees.photoPreuveUrl,
             donnees.codeConfirmation,
             donnees.notes,
@@ -119,8 +206,26 @@ class Mission {
             missionId,
             collecteurId
         ]);
-        return resultat.rows[0];
+        
+        const mission = resultat.rows[0];
+
+        // ✅ METTRE À JOUR LA DÉCLARATION
+        await client.query(`
+            UPDATE declarations_dechets 
+            SET statut = 'termine',
+                modifie_le = CURRENT_TIMESTAMP
+            WHERE id = $1
+        `, [mission.declaration_id]);
+
+        await client.query('COMMIT');
+        return mission;
+    } catch (erreur) {
+        await client.query('ROLLBACK');
+        throw erreur;
+    } finally {
+        client.release();
     }
+  }
 
     // Déposer au point de collecte
     static async deposerAuPoint(missionId, collecteurId, pointDepotId) {
@@ -134,24 +239,7 @@ class Mission {
         return resultat.rows[0];
     }
 
-    // static async disponiblesPourCollecteur(collecteurId) {
-    //  const requete = `
-    //     SELECT m.*, 
-    //            d.type_dechet, d.quantite, d.unite,
-    //            p.nom_complet as producteur_nom,
-    //            p.telephone as producteur_telephone,
-    //            p.adresse,  -- C'est p.adresse, pas d.adresse
-    //            p.quartier, p.commune,
-    //            ST_AsGeoJSON(p.localisation_gps) as localisation_gps
-    //     FROM missions m
-    //     JOIN declarations_dechets d ON m.declaration_id = d.id
-    //     JOIN producteurs p ON d.producteur_id = p.id
-    //     WHERE m.statut = 'disponible'
-    //     ORDER BY m.cree_le ASC
-    // `;
-    //     const resultat = await pool.query(requete, [collecteurId]);
-    //     return resultat.rows;
-    // }
+   
 
     static async disponiblesPourCollecteur(collecteurId) {
     const requete = `
@@ -174,46 +262,7 @@ class Mission {
     return resultat.rows;
  }
 
-    // Obtenir les missions d'un collecteur avec filtre
-    // static async obtenirParCollecteur(collecteurId, statut = null) {
-    //     // let requete = `
-    //     //     SELECT m.*, 
-    //     //            d.type_dechet, d.quantite, d.unite, d.adresse,
-    //     //            p.nom_complet as producteur_nom,
-    //     //            p.telephone as producteur_telephone,
-    //     //            p.adresse as producteur_adresse
-    //     //     FROM missions m
-    //     //     JOIN declarations_dechets d ON m.declaration_id = d.id
-    //     //     JOIN producteurs p ON d.producteur_id = p.id
-    //     //     WHERE m.collecteur_id = $1
-    //     // `;
-    //        let requete = `
-    //     SELECT m.*, 
-    //            d.type_dechet, d.quantite, d.unite,
-    //            p.nom_complet as producteur_nom,
-    //            p.telephone as producteur_telephone,
-    //            p.adresse,  -- C'est p.adresse, pas d.adresse
-    //            p.quartier, p.commune,
-    //            ST_AsGeoJSON(p.localisation_gps) as localisation_gps
-    //     FROM missions m
-    //     JOIN declarations_dechets d ON m.declaration_id = d.id
-    //     JOIN producteurs p ON d.producteur_id = p.id
-    //     WHERE m.collecteur_id = $1
-    // `;
-        
-    //     const params = [collecteurId];
-        
-    //     if (statut && statut !== 'tous') {
-    //         requete += ` AND m.statut = $2`;
-    //         params.push(statut);
-    //     }
-        
-    //     requete += ` ORDER BY m.cree_le DESC`;
-        
-    //     const resultat = await pool.query(requete, params);
-    //     return resultat.rows;
-    // }
-
+  
 
     static async obtenirParCollecteur(collecteurId, statut = null) {
     let requete = `

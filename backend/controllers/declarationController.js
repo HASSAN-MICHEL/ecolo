@@ -115,7 +115,7 @@ class DeclarationController {
         }
     }
 
-static async suivreDeclaration(req, res) {
+   static async suivreDeclaration(req, res) {
     try {
         const { id } = req.params;
         const producteurId = req.producteurId;

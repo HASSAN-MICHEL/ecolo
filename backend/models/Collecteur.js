@@ -464,7 +464,7 @@ static async statistiquesGains(id) {
         gain_moyen_collecte: 0
     };
 }
-// ✅ Obtenir tous les gains avec détails des missions
+
 static async gainsAvecDetails(id) {
     const requete = `
         SELECT 
