@@ -75,6 +75,14 @@ router.get('/missions/validees', GestionnaireController.missionsValidees);
 router.get('/missions/:missionId', GestionnaireController.missionDetails);
 router.post('/missions/:missionId/valider', GestionnaireController.validerMission);
 
+// Statistiques 
+router.get('/statistiques/completes', GestionnaireController.statistiquesCompletes);
+router.get('/statistiques/par-type-dechet', GestionnaireController.statistiquesParTypeDechet);
+router.get('/statistiques/repartition-journaliere', GestionnaireController.repartitionJournaliere)
+
+router.get('/mes-missions/validees', GestionnaireController.mesMissionsValidees);
+router.get('/mon-historique', GestionnaireController.monHistorique);
+
 // 💰 Attribution des crédits
 router.post('/collecteurs/:collecteurId/missions/:missionId/credits', GestionnaireController.attribuerCredits);
 

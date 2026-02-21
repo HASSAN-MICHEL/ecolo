@@ -8,6 +8,7 @@ import Producteur from '../models/Producteur.js';
 import Collecteur from '../models/Collecteur.js';
 import Gestionnaire from '../models/GestionnairePoint.js';
 import Superviseur from '../models/Superviseur.js';
+import EmailService from '../services/EmailService.js';
 
 class AuthController {
     // ============================================
@@ -464,26 +465,6 @@ class AuthController {
     }
 }
 
-    // Middleware pour vérifier le type d'utilisateur
-    // static verifierTypeUtilisateur(typesAutorises) {
-    //     return (req, res, next) => {
-    //         if (!req.utilisateurType) {
-    //             return res.status(401).json({ 
-    //                 success: false,
-    //                 message: 'Type d\'utilisateur non spécifié' 
-    //             });
-    //         }
-
-    //         if (!typesAutorises.includes(req.utilisateurType)) {
-    //             return res.status(403).json({ 
-    //                 success: false,
-    //                 message: 'Accès non autorisé pour ce type d\'utilisateur' 
-    //             });
-    //         }
-
-    //         next();
-    //     };
-    // }
 
     static verifierTypeUtilisateur(typesAutorises) {
     return (req, res, next) => {
@@ -503,59 +484,58 @@ class AuthController {
     };
 }
 
-    // ============================================
-    // RÉINITIALISATION DE MOT DE PASSE
-    // ============================================
     
-    static async demanderReinitialisationMdp(req, res) {
-        try {
-            const { email } = req.body;
+    // // ============================================
+    
+    // static async demanderReinitialisationMdp(req, res) {
+    //     try {
+    //         const { email } = req.body;
 
-            const resultat = await AuthController._trouverUtilisateurParIdentifiant(email);
+    //         const resultat = await AuthController._trouverUtilisateurParIdentifiant(email);
             
-            if (!resultat || !resultat.utilisateur) {
-                return res.json({ 
-                    success: true,
-                    message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation' 
-                });
-            }
+    //         if (!resultat || !resultat.utilisateur) {
+    //             return res.json({ 
+    //                 success: true,
+    //                 message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation' 
+    //             });
+    //         }
 
-            const { utilisateur, type } = resultat;
+    //         const { utilisateur, type } = resultat;
 
-            // Générer un token de réinitialisation
-            const token = crypto.randomBytes(32).toString('hex');
-            const expireLe = new Date();
-            expireLe.setHours(expireLe.getHours() + 1);
+    //         // Générer un token de réinitialisation
+    //         const token = crypto.randomBytes(32).toString('hex');
+    //         const expireLe = new Date();
+    //         expireLe.setHours(expireLe.getHours() + 1);
 
-            // Sauvegarder le token
-            const requete = `
-                INSERT INTO tokens 
-                (utilisateur_id, type_utilisateur, token, type_token, expire_le)
-                VALUES ($1, $2, $3, 'reset_password', $4)
-            `;
-            await pool.query(requete, [utilisateur.id, type, token, expireLe]);
+    //         // Sauvegarder le token
+    //         const requete = `
+    //             INSERT INTO tokens 
+    //             (utilisateur_id, type_utilisateur, token, type_token, expire_le)
+    //             VALUES ($1, $2, $3, 'reset_password', $4)
+    //         `;
+    //         await pool.query(requete, [utilisateur.id, type, token, expireLe]);
 
-            const lienReinitialisation = `${process.env.FRONTEND_URL}/reinitialiser-mot-de-passe?token=${token}`;
+    //         const lienReinitialisation = `${process.env.FRONTEND_URL}/reinitialiser-mot-de-passe?token=${token}`;
             
-            console.log(`🔐 Lien de réinitialisation: ${lienReinitialisation}`);
+    //         console.log(`🔐 Lien de réinitialisation: ${lienReinitialisation}`);
 
-            res.json({ 
-                success: true,
-                message: 'Lien de réinitialisation envoyé avec succès'
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur demande réinitialisation:', erreur);
-            res.status(500).json({ 
-                success: false,
-                message: 'Erreur lors de la demande',
-                erreur: erreur.message 
-            });
-        }
-    }
+    //         res.json({ 
+    //             success: true,
+    //             message: 'Lien de réinitialisation envoyé avec succès'
+    //         });
+    //     } catch (erreur) {
+    //         console.error('❌ Erreur demande réinitialisation:', erreur);
+    //         res.status(500).json({ 
+    //             success: false,
+    //             message: 'Erreur lors de la demande',
+    //             erreur: erreur.message 
+    //         });
+    //     }
+    // }
+//Version de reinitialisation de mot de passe avec TOKen plus haut:
 
     static async reinitialiserMdp(req, res) {
-        try {
-            const { token, nouveauMotDePasse } = req.body;
+        try {            const { token, nouveauMotDePasse } = req.body;
 
             // Vérifier le token
             const requeteToken = `
@@ -661,9 +641,7 @@ class AuthController {
         }
     }
 
-    // ============================================
-    // MÉTHODES PRIVÉES
-    // ============================================
+   
     
     static _genererToken(id, email, type) {
         return jwt.sign(
@@ -809,6 +787,311 @@ class AuthController {
                 break;
         }
     }
+
+
+    // controllers/AuthController.js - Ajoutez ces méthodes
+
+// Générer un code aléatoire à 6 chiffres
+static _genererCode6Chiffres() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+
+
+// // ✅ NOUVELLE VERSION - Demander réinitialisation par CODE
+// static async demanderReinitialisationMdp(req, res) {
+//     try {
+//         const { email } = req.body;
+
+//         if (!email) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Email requis'
+//             });
+//         }
+
+//         // Chercher l'utilisateur par email
+//         const resultat = await AuthController._trouverUtilisateurParIdentifiant(email);
+        
+//         if (!resultat || !resultat.utilisateur) {
+//             // Pour des raisons de sécurité, on renvoie le même message
+//             return res.json({ 
+//                 success: true,
+//                 message: 'Si un compte existe avec cet email, vous recevrez un code de réinitialisation'
+//             });
+//         }
+
+//         const { utilisateur, type } = resultat;
+
+//         // Vérifier les demandes récentes (anti-spam)
+//         const checkRecent = await pool.query(`
+//             SELECT COUNT(*) FROM codes_reinitialisation 
+//             WHERE email = $1 
+//             AND cree_le > NOW() - INTERVAL '5 minutes'
+//         `, [email]);
+
+//         if (parseInt(checkRecent.rows[0].count) >= 3) {
+//             return res.status(429).json({
+//                 success: false,
+//                 message: 'Trop de demandes. Veuillez attendre quelques minutes.'
+//             });
+//         }
+
+//         // Générer un code à 6 chiffres
+//         const code = AuthController._genererCode6Chiffres();
+//         const expireLe = new Date();
+//         expireLe.setMinutes(expireLe.getMinutes() + 15); // Valable 15 minutes
+
+//         // Sauvegarder le code en base de données
+//         await pool.query(`
+//             INSERT INTO codes_reinitialisation 
+//             (utilisateur_id, type_utilisateur, code, email, expire_le)
+//             VALUES ($1, $2, $3, $4, $5)
+//         `, [utilisateur.id, type, code, email, expireLe]);
+
+//         // Envoyer le code par email
+//         const emailEnvoye = await EmailService.envoyerCodeDev(email, code, utilisateur.nom_complet);
+
+//         if (!emailEnvoye) {
+//             return res.status(500).json({
+//                 success: false,
+//                 message: 'Erreur lors de l\'envoi du code'
+//             });
+//         }
+
+//         res.json({ 
+//             success: true,
+//             message: 'Code de réinitialisation envoyé avec succès'
+//         });
+
+//     } catch (erreur) {
+//         console.error('❌ Erreur demande réinitialisation:', erreur);
+//         res.status(500).json({ 
+//             success: false,
+//             message: 'Erreur lors de la demande',
+//             erreur: erreur.message 
+//         });
+//     }
+// }
+
+// ✅ NOUVELLE VERSION - Demander réinitialisation par CODE
+static async demanderReinitialisationMdp(req, res) {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email requis'
+            });
+        }
+
+        // Chercher l'utilisateur par email
+        const resultat = await AuthController._trouverUtilisateurParIdentifiant(email);
+        
+        if (!resultat || !resultat.utilisateur) {
+            // Pour des raisons de sécurité, on renvoie le même message
+            return res.json({ 
+                success: true,
+                message: 'Si un compte existe avec cet email, vous recevrez un code de réinitialisation'
+            });
+        }
+
+        const { utilisateur, type } = resultat;
+
+        // Vérifier les demandes récentes (anti-spam)
+        const checkRecent = await pool.query(`
+            SELECT COUNT(*) FROM codes_reinitialisation 
+            WHERE email = $1 
+            AND cree_le > NOW() - INTERVAL '5 minutes'
+        `, [email]);
+
+        if (parseInt(checkRecent.rows[0].count) >= 3) {
+            return res.status(429).json({
+                success: false,
+                message: 'Trop de demandes. Veuillez attendre quelques minutes.'
+            });
+        }
+
+        // Générer un code à 6 chiffres
+        const code = AuthController._genererCode6Chiffres();
+        const expireLe = new Date();
+        expireLe.setMinutes(expireLe.getMinutes() + 15); // Valable 15 minutes
+
+        // Sauvegarder le code en base de données
+        await pool.query(`
+            INSERT INTO codes_reinitialisation 
+            (utilisateur_id, type_utilisateur, code, email, expire_le)
+            VALUES ($1, $2, $3, $4, $5)
+        `, [utilisateur.id, type, code, email, expireLe]);
+
+        // ✅ CORRECTION ICI : Utiliser la méthode d'envoi réel
+        const emailEnvoye = await EmailService.envoyerCodeReinitialisation(
+            email, 
+            code, 
+            utilisateur.nom_complet
+        );
+
+        if (!emailEnvoye) {
+            // En cas d'échec, on peut toujours afficher le code dans la console
+            console.log('\n' + '='.repeat(50));
+            console.log('⚠️ ÉCHEC ENVOI EMAIL - CODE À UTILISER');
+            console.log('📧 À:', email);
+            console.log('🔐 Code:', code);
+            console.log('='.repeat(50) + '\n');
+            
+            return res.status(500).json({
+                success: false,
+                message: 'Erreur lors de l\'envoi du code. Veuillez réessayer.'
+            });
+        }
+
+        res.json({ 
+            success: true,
+            message: 'Code de réinitialisation envoyé avec succès'
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur demande réinitialisation:', erreur);
+        res.status(500).json({ 
+            success: false,
+            message: 'Erreur lors de la demande',
+            erreur: erreur.message 
+        });
+    }
+}
+
+// ✅ NOUVELLE VERSION - Vérifier le code
+static async verifierCodeReinitialisation(req, res) {
+    try {
+        const { email, code } = req.body;
+
+        if (!email || !code) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email et code requis'
+            });
+        }
+
+        // Vérifier le code
+        const resultat = await pool.query(`
+            SELECT * FROM codes_reinitialisation 
+            WHERE email = $1 
+            AND code = $2
+            AND utilise = false 
+            AND expire_le > NOW()
+            ORDER BY cree_le DESC
+            LIMIT 1
+        `, [email, code]);
+
+        if (resultat.rows.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Code invalide ou expiré'
+            });
+        }
+
+        const codeData = resultat.rows[0];
+
+        // Incrémenter les tentatives
+        await pool.query(`
+            UPDATE codes_reinitialisation 
+            SET tentatives = tentatives + 1 
+            WHERE id = $1
+        `, [codeData.id]);
+
+        res.json({
+            success: true,
+            message: 'Code valide',
+            token: codeData.id // On renvoie l'ID du code comme token temporaire
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur vérification code:', erreur);
+        res.status(500).json({ 
+            success: false,
+            message: 'Erreur lors de la vérification',
+            erreur: erreur.message 
+        });
+    }
+}
+
+//  Réinitialiser le mot de passe avec le code
+static async reinitialiserMdpAvecCode(req, res) {
+    try {
+        const { email, code, nouveauMotDePasse } = req.body;
+
+        if (!email || !code || !nouveauMotDePasse) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email, code et nouveau mot de passe requis'
+            });
+        }
+
+        if (nouveauMotDePasse.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Le mot de passe doit contenir au moins 6 caractères'
+            });
+        }
+
+        // Vérifier le code
+        const resultat = await pool.query(`
+            SELECT * FROM codes_reinitialisation 
+            WHERE email = $1 
+            AND code = $2
+            AND utilise = false 
+            AND expire_le > NOW()
+            ORDER BY cree_le DESC
+            LIMIT 1
+        `, [email, code]);
+
+        if (resultat.rows.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Code invalide ou expiré'
+            });
+        }
+
+        const codeData = resultat.rows[0];
+
+        // Hasher le nouveau mot de passe
+        const nouveauMotDePasseHash = await bcrypt.hash(nouveauMotDePasse, 10);
+
+        // Mettre à jour le mot de passe
+        await AuthController._mettreAJourMotDePasse(
+            codeData.utilisateur_id,
+            codeData.type_utilisateur,
+            nouveauMotDePasseHash
+        );
+
+        // Marquer le code comme utilisé
+        await pool.query(`
+            UPDATE codes_reinitialisation 
+            SET utilise = true 
+            WHERE id = $1
+        `, [codeData.id]);
+
+        // Supprimer tous les anciens codes pour cet utilisateur
+        await pool.query(`
+            DELETE FROM codes_reinitialisation 
+            WHERE email = $1 AND utilise = false
+        `, [email]);
+
+        res.json({ 
+            success: true,
+            message: 'Mot de passe réinitialisé avec succès' 
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur réinitialisation:', erreur);
+        res.status(500).json({ 
+            success: false,
+            message: 'Erreur lors de la réinitialisation',
+            erreur: erreur.message 
+        });
+    }
+}
 
     static _preparerDonneesUtilisateur(utilisateur, type) {
         const base = {

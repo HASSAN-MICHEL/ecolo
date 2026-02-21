@@ -48,42 +48,7 @@ class Mission {
         }
     }
 
-    // // Attribuer une mission à un collecteur
-    // static async attribuer(missionId, collecteurId) {
-    //     const client = await pool.connect();
-        
-    //     try {
-    //         await client.query('BEGIN');
-
-    //         const requete = `
-    //             UPDATE missions 
-    //             SET collecteur_id = $1,
-    //                 statut = 'acceptee',
-    //                 date_acceptation = CURRENT_TIMESTAMP
-    //             WHERE id = $2
-    //             RETURNING *
-    //         `;
-            
-    //         const resultat = await client.query(requete, [collecteurId, missionId]);
-    //         const mission = resultat.rows[0];
-
-    //         // Notification au collecteur
-    //         await client.query(
-    //             `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification, reference_id, reference_type)
-    //              VALUES ($1, 'collecteur', 'Mission acceptée', 'Vous avez accepté une mission de collecte.', 'mission_acceptee', $2, 'mission')`,
-    //             [collecteurId, missionId]
-    //         );
-
-    //         await client.query('COMMIT');
-    //         return mission;
-    //     } catch (erreur) {
-    //         await client.query('ROLLBACK');
-    //         throw erreur;
-    //     } finally {
-    //         client.release();
-    //     }
-    // }
-
+    
     static async attribuer(missionId, collecteurId) {
     const client = await pool.connect();
     
@@ -155,29 +120,8 @@ class Mission {
     return resultat.rows[0];
    }
     // Terminer la collecte (avant dépôt)
-    // static async terminerCollecte(missionId, collecteurId, donnees) {
-    //     const requete = `
-    //         UPDATE missions 
-    //         SET statut = 'deposee',
-    //             date_fin_collecte = CURRENT_TIMESTAMP,
-    //             date_depot_point = CURRENT_TIMESTAMP,
-    //             photo_preuve_url = $1,
-    //             code_confirmation_producteur = $2,
-    //             notes_collecte = $3,
-    //             conformite_tri = $4
-    //         WHERE id = $5 AND collecteur_id = $6
-    //         RETURNING *
-    //     `;
-    //     const resultat = await pool.query(requete, [
-    //         donnees.photoPreuveUrl,
-    //         donnees.codeConfirmation,
-    //         donnees.notes,
-    //         donnees.conformiteTri,
-    //         missionId,
-    //         collecteurId
-    //     ]);
-    //     return resultat.rows[0];
-    // }
+   
+
 
     static async terminerCollecte(missionId, collecteurId, donnees) {
     const client = await pool.connect();

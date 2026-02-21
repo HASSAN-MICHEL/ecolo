@@ -38,6 +38,26 @@ CREATE TABLE producteurs (
     modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+-- tables pour les code de reinitialisation de mot de passe
+
+-- Table pour stocker les codes de réinitialisation
+CREATE TABLE IF NOT EXISTS codes_reinitialisation (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    utilisateur_id UUID NOT NULL,
+    type_utilisateur VARCHAR(50) NOT NULL, -- 'producteur', 'collecteur', etc.
+    code VARCHAR(6) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    expire_le TIMESTAMP NOT NULL,
+    utilise BOOLEAN DEFAULT FALSE,
+    tentatives INT DEFAULT 0,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index pour recherche rapide
+CREATE INDEX idx_codes_reinitialisation_code ON codes_reinitialisation(code);
+CREATE INDEX idx_codes_reinitialisation_utilisateur ON codes_reinitialisation(utilisateur_id);
+
 -- Table des déclarations de déchets
 CREATE TABLE declarations_dechets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

@@ -9,10 +9,15 @@ const router = express.Router();
 router.post('/inscription', ProdutionController.inscrire);
 
 // Connexion
-router.post('/connexion', AuthController.connecterProducteur);
 
-// Réinitialisation de mot de passe
 router.post('/demande-reinitialisation-mdp', AuthController.demanderReinitialisationMdp);
+router.post('/verifier-code-reinitialisation', AuthController.verifierCodeReinitialisation);
+router.post('/reinitialiser-mdp-code', AuthController.reinitialiserMdpAvecCode);
+
+
+router.post('/connexion', AuthController.connecterProducteur);
+// Réinitialisation de mot de passe
+//router.post('/demande-reinitialisation-mdp', AuthController.demanderReinitialisationMdp);
 router.post('/reinitialiser-mdp', AuthController.reinitialiserMdp);
 
 // Vérifier token (route test)

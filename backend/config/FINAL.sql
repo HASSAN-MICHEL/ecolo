@@ -69,3 +69,13 @@ INSERT INTO superviseurs (
     'Aïssatou Ndiaye',
     'superviseur_adjoint'
 );
+
+
+--modification de la table missions pour facilité le referencement des gestionnaire sur les missions 
+
+-- Ajouter la colonne validee_par à la table missions
+ALTER TABLE missions 
+ADD COLUMN validee_par UUID REFERENCES gestionnaires_points(id);
+
+-- Créer un index pour améliorer les performances
+CREATE INDEX idx_missions_validee_par ON missions(validee_par);

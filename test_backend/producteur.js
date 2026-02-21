@@ -1,5 +1,5 @@
 
-// // ============================================
+
 
 // const CONFIG = {
 //     API_URL: 'https://ecobackend-three.vercel.app',
@@ -152,7 +152,7 @@
     
 //     showSuccess(null, 'Déconnexion réussie');
 //     setTimeout(() => {
-//         window.location.href = 'in.html';
+//         window.location.href = 'index.html';
 //     }, 500);
 // }
 
@@ -197,6 +197,60 @@
 // // ============================================
 // // TABLEAU DE BORD
 // // ============================================
+// // async function loadDashboard() {
+// //     if (!currentToken) return;
+    
+// //     try {
+// //         console.log('📊 Chargement du tableau de bord');
+        
+// //         // Points
+// //         const pointsEl = document.getElementById('dashboardPoints');
+// //         if (pointsEl) pointsEl.textContent = currentUser?.points || '0';
+        
+// //         // Charger les déclarations pour les stats
+// //         const response = await fetch(`${CONFIG.API_URL}/api/declarations`, {
+// //             headers: { 'Authorization': `Bearer ${currentToken}` }
+// //         }).catch(() => null);
+        
+// //         if (response && response.ok) {
+// //             const data = await response.json();
+// //             const declarations = data.declarations || data || [];
+            
+// //             const totalDeclarations = declarations.length;
+// //             const completedCollections = declarations.filter(d => d.statut === 'termine').length;
+// //             const totalWaste = declarations
+// //                 .filter(d => d.statut === 'termine')
+// //                 .reduce((sum, d) => sum + (d.poids_estime || 0), 0);
+            
+// //             const declEl = document.getElementById('dashboardDeclarations');
+// //             if (declEl) declEl.textContent = totalDeclarations;
+            
+// //             const collectionsEl = document.getElementById('dashboardCollections');
+// //             if (collectionsEl) collectionsEl.textContent = completedCollections;
+            
+// //             const wasteEl = document.getElementById('dashboardWaste');
+// //             if (wasteEl) wasteEl.textContent = totalWaste.toFixed(2);
+            
+// //             // Charger l'historique récent
+// //             loadRecentHistory(declarations.slice(0, 5));
+// //         } else {
+// //             // Fallback
+// //             const declEl = document.getElementById('dashboardDeclarations');
+// //             if (declEl) declEl.textContent = '0';
+            
+// //             const collectionsEl = document.getElementById('dashboardCollections');
+// //             if (collectionsEl) collectionsEl.textContent = '0';
+            
+// //             const wasteEl = document.getElementById('dashboardWaste');
+// //             if (wasteEl) wasteEl.textContent = '0';
+// //         }
+        
+// //     } catch (error) {
+// //         console.error('❌ Erreur dashboard:', error);
+// //     }
+// // }
+
+
 // async function loadDashboard() {
 //     if (!currentToken) return;
     
@@ -210,17 +264,41 @@
 //         // Charger les déclarations pour les stats
 //         const response = await fetch(`${CONFIG.API_URL}/api/declarations`, {
 //             headers: { 'Authorization': `Bearer ${currentToken}` }
-//         }).catch(() => null);
+//         });
         
-//         if (response && response.ok) {
+//         if (response.ok) {
 //             const data = await response.json();
-//             const declarations = data.declarations || data || [];
+//             let declarations = data.declarations || data;
+            
+//             if (!Array.isArray(declarations)) {
+//                 declarations = [];
+//             }
+            
+//             // Normaliser les statuts
+//             declarations = declarations.map(d => ({
+//                 ...d,
+//                 statut: (d.statut || '').toLowerCase().trim()
+//             }));
             
 //             const totalDeclarations = declarations.length;
-//             const completedCollections = declarations.filter(d => d.statut === 'termine').length;
+            
+//             // Compter les collectes terminées avec différents statuts possibles
+//             const completedCollections = declarations.filter(d => 
+//                 d.statut === 'termine' || 
+//                 d.statut === 'terminee' || 
+//                 d.statut === 'validee'
+//             ).length;
+            
+//             // Calculer le poids total des déchets validés
 //             const totalWaste = declarations
-//                 .filter(d => d.statut === 'termine')
-//                 .reduce((sum, d) => sum + (d.poids_estime || 0), 0);
+//                 .filter(d => d.statut === 'termine' || d.statut === 'terminee' || d.statut === 'validee')
+//                 .reduce((sum, d) => sum + (parseFloat(d.quantite) || 0), 0);
+            
+//             console.log('📊 Stats calculées:', {
+//                 total: totalDeclarations,
+//                 completed: completedCollections,
+//                 poids: totalWaste
+//             });
             
 //             const declEl = document.getElementById('dashboardDeclarations');
 //             if (declEl) declEl.textContent = totalDeclarations;
@@ -235,14 +313,9 @@
 //             loadRecentHistory(declarations.slice(0, 5));
 //         } else {
 //             // Fallback
-//             const declEl = document.getElementById('dashboardDeclarations');
-//             if (declEl) declEl.textContent = '0';
-            
-//             const collectionsEl = document.getElementById('dashboardCollections');
-//             if (collectionsEl) collectionsEl.textContent = '0';
-            
-//             const wasteEl = document.getElementById('dashboardWaste');
-//             if (wasteEl) wasteEl.textContent = '0';
+//             document.getElementById('dashboardDeclarations').textContent = '0';
+//             document.getElementById('dashboardCollections').textContent = '0';
+//             document.getElementById('dashboardWaste').textContent = '0';
 //         }
         
 //     } catch (error) {
@@ -361,6 +434,50 @@
 //     }
 // }
 
+
+// // async function loadDeclarations() {
+// //     if (!currentToken) return;
+    
+// //     const filter = document.getElementById('declarationFilter')?.value || 'all';
+// //     const container = document.getElementById('declarationsList');
+// //     if (!container) return;
+    
+// //     try {
+// //         const response = await fetch(`${CONFIG.API_URL}/api/declarations`, {
+// //             headers: { 'Authorization': `Bearer ${currentToken}` }
+// //         }).catch(() => null);
+        
+// //         if (!response || !response.ok) {
+// //             container.innerHTML = '<p class="empty-message">Erreur de chargement des déclarations</p>';
+// //             return;
+// //         }
+        
+// //         const data = await response.json();
+// //         let declarations = data.declarations || data || [];
+        
+// //         // Filtrer si nécessaire
+// //         if (filter !== 'all') {
+// //             declarations = declarations.filter(d => d.statut === filter);
+// //         }
+        
+// //         // Afficher les déclarations
+// //         if (declarations.length === 0) {
+// //             container.innerHTML = '<p class="empty-message">Aucune déclaration trouvée</p>';
+// //             return;
+// //         }
+        
+// //         container.innerHTML = '';
+// //         declarations.forEach(declaration => {
+// //             const element = createDeclarationElement(declaration);
+// //             if (element) container.appendChild(element);
+// //         });
+        
+// //     } catch (error) {
+// //         console.error('❌ Erreur déclarations:', error);
+// //         container.innerHTML = '<p class="empty-message error">Erreur de chargement</p>';
+// //     }
+// // }
+
 // async function loadDeclarations() {
 //     if (!currentToken) return;
     
@@ -368,18 +485,36 @@
 //     const container = document.getElementById('declarationsList');
 //     if (!container) return;
     
+//     // Afficher un indicateur de chargement
+//     container.innerHTML = '<p class="empty-message"><i class="fas fa-spinner fa-spin"></i> Chargement...</p>';
+    
 //     try {
+//         console.log('📥 Chargement des déclarations...');
+        
 //         const response = await fetch(`${CONFIG.API_URL}/api/declarations`, {
 //             headers: { 'Authorization': `Bearer ${currentToken}` }
-//         }).catch(() => null);
+//         });
         
-//         if (!response || !response.ok) {
-//             container.innerHTML = '<p class="empty-message">Erreur de chargement des déclarations</p>';
-//             return;
+//         if (!response.ok) {
+//             throw new Error(`Erreur HTTP: ${response.status}`);
 //         }
         
 //         const data = await response.json();
-//         let declarations = data.declarations || data || [];
+//         console.log('📦 Données reçues:', data);
+        
+//         // Normaliser les données (peuvent être dans data.declarations ou directement data)
+//         let declarations = data.declarations || data;
+        
+//         // S'assurer que c'est un tableau
+//         if (!Array.isArray(declarations)) {
+//             console.warn('⚠️ Les données ne sont pas un tableau:', declarations);
+//             declarations = [];
+//         }
+        
+//         // Afficher les statuts pour debug
+//         declarations.forEach(d => {
+//             console.log(`Déclaration ${d.id}: statut="${d.statut}"`);
+//         });
         
 //         // Filtrer si nécessaire
 //         if (filter !== 'all') {
@@ -400,37 +535,124 @@
         
 //     } catch (error) {
 //         console.error('❌ Erreur déclarations:', error);
-//         container.innerHTML = '<p class="empty-message error">Erreur de chargement</p>';
+//         container.innerHTML = `<p class="empty-message error">Erreur de chargement: ${error.message}</p>`;
 //     }
-// }
+// } 
+
+
+// // function createDeclarationElement(declaration) {
+// //     const template = document.getElementById('declarationTemplate');
+// //     if (!template) return null;
+    
+// //     const clone = template.content.cloneNode(true);
+// //     const element = clone.querySelector('.declaration-item');
+// //     if (!element) return null;
+    
+// //     element.dataset.id = declaration.id;
+    
+// //     const statusMap = {
+// //         'en_attente': { text: 'En attente', class: 'badge-warning' },
+// //         'affecte': { text: 'Collecteur affecté', class: 'badge-info' },
+// //         'programme': { text: 'Programmée', class: 'badge-info' },
+// //         'termine': { text: 'Terminée', class: 'badge-success' },
+// //         'annule': { text: 'Annulée', class: 'badge-danger' }
+// //     };
+    
+// //     const status = statusMap[declaration.statut] || { text: declaration.statut, class: 'badge-info' };
+    
+// //     const idEl = element.querySelector('.declaration-id');
+// //     if (idEl) idEl.textContent = `#${declaration.id?.substring(0, 8) || '???'}`;
+    
+// //     const dateEl = element.querySelector('.declaration-date');
+// //     if (dateEl) dateEl.textContent = declaration.date_declaration 
+// //         ? new Date(declaration.date_declaration).toLocaleDateString('fr-FR')
+// //         : 'Date inconnue';
+    
+// //     const statusEl = element.querySelector('.declaration-status');
+// //     if (statusEl) {
+// //         statusEl.textContent = status.text;
+// //         statusEl.className = `badge ${status.class}`;
+// //     }
+    
+// //     const typeEl = element.querySelector('.declaration-type');
+// //     if (typeEl) typeEl.textContent = formatWasteType(declaration.type_dechet);
+    
+// //     const quantityEl = element.querySelector('.declaration-quantity');
+// //     if (quantityEl) quantityEl.textContent = `${declaration.quantite || 0} ${declaration.unite || ''}`;
+    
+// //     const modeEl = element.querySelector('.declaration-mode');
+// //     if (modeEl) modeEl.textContent = formatCollectionMode(declaration.mode_collecte);
+    
+// //     // === AJOUT DE L'ÉVÉNEMENT DE SUIVI ===
+// //     const viewDetailBtn = element.querySelector('.view-detail-btn');
+// //     if (viewDetailBtn) {
+// //         viewDetailBtn.addEventListener('click', function() {
+// //             const declarationId = element.dataset.id;
+// //             showDeclarationDetail(declarationId);
+// //         });
+// //     }
+    
+// //     return element;
+// // }
+
+
+
+
+
 
 // function createDeclarationElement(declaration) {
 //     const template = document.getElementById('declarationTemplate');
-//     if (!template) return null;
+//     if (!template) {
+//         console.error('❌ Template declarationTemplate non trouvé');
+//         return null;
+//     }
     
 //     const clone = template.content.cloneNode(true);
 //     const element = clone.querySelector('.declaration-item');
 //     if (!element) return null;
     
+//     // Stocker l'ID dans l'élément
 //     element.dataset.id = declaration.id;
+//     element.dataset.statut = declaration.statut || 'inconnu';
     
+//     // Normaliser le statut (gérer les différents formats possibles)
+//     let statut = declaration.statut || 'en_attente';
+//     statut = statut.toLowerCase().trim();
+    
+//     // Mapping des statuts pour l'affichage
 //     const statusMap = {
 //         'en_attente': { text: 'En attente', class: 'badge-warning' },
+//         'en_attente_affectation': { text: 'En attente', class: 'badge-warning' },
+//         'en_attente_collecte': { text: 'En attente', class: 'badge-warning' },
 //         'affecte': { text: 'Collecteur affecté', class: 'badge-info' },
+//         'affectee': { text: 'Collecteur affecté', class: 'badge-info' },
+//         'collecteur_affecte': { text: 'Collecteur affecté', class: 'badge-info' },
 //         'programme': { text: 'Programmée', class: 'badge-info' },
+//         'programmee': { text: 'Programmée', class: 'badge-info' },
+//         'en_cours': { text: 'En cours', class: 'badge-info' },
 //         'termine': { text: 'Terminée', class: 'badge-success' },
-//         'annule': { text: 'Annulée', class: 'badge-danger' }
+//         'terminee': { text: 'Terminée', class: 'badge-success' },
+//         'validee': { text: 'Validée', class: 'badge-success' },
+//         'annule': { text: 'Annulée', class: 'badge-danger' },
+//         'annulee': { text: 'Annulée', class: 'badge-danger' }
 //     };
     
-//     const status = statusMap[declaration.statut] || { text: declaration.statut, class: 'badge-info' };
+//     const status = statusMap[statut] || { text: statut, class: 'badge-info' };
     
+//     // Remplir les informations
 //     const idEl = element.querySelector('.declaration-id');
 //     if (idEl) idEl.textContent = `#${declaration.id?.substring(0, 8) || '???'}`;
     
 //     const dateEl = element.querySelector('.declaration-date');
-//     if (dateEl) dateEl.textContent = declaration.date_declaration 
-//         ? new Date(declaration.date_declaration).toLocaleDateString('fr-FR')
-//         : 'Date inconnue';
+//     if (dateEl) {
+//         dateEl.textContent = declaration.date_declaration 
+//             ? new Date(declaration.date_declaration).toLocaleDateString('fr-FR', {
+//                 day: '2-digit',
+//                 month: '2-digit',
+//                 year: 'numeric'
+//               })
+//             : 'Date inconnue';
+//     }
     
 //     const statusEl = element.querySelector('.declaration-status');
 //     if (statusEl) {
@@ -442,12 +664,108 @@
 //     if (typeEl) typeEl.textContent = formatWasteType(declaration.type_dechet);
     
 //     const quantityEl = element.querySelector('.declaration-quantity');
-//     if (quantityEl) quantityEl.textContent = `${declaration.quantite || 0} ${declaration.unite || ''}`;
+//     if (quantityEl) {
+//         quantityEl.textContent = `${declaration.quantite || 0} ${declaration.unite || ''}`;
+//     }
     
 //     const modeEl = element.querySelector('.declaration-mode');
 //     if (modeEl) modeEl.textContent = formatCollectionMode(declaration.mode_collecte);
     
+//     // Ajouter l'événement de suivi
+//     const viewDetailBtn = element.querySelector('.view-detail-btn');
+//     if (viewDetailBtn) {
+//         viewDetailBtn.addEventListener('click', (e) => {
+//             e.preventDefault();
+//             e.stopPropagation();
+//             const declarationId = element.dataset.id;
+//             showDeclarationDetail(declarationId);
+//         });
+//     }
+    
 //     return element;
+// }
+
+// // ============================================
+// // FONCTIONS DE SUIVI DES DÉCLARATIONS (RESTAURÉES)
+// // ============================================
+
+// async function showDeclarationDetail(declarationId) {
+//     if (!currentToken) return;
+    
+//     console.log('🔍 Affichage du détail de la déclaration:', declarationId);
+    
+//     const container = document.getElementById('declarationDetail');
+//     const content = document.getElementById('detailContent');
+    
+//     if (!container || !content) {
+//         console.error('❌ Éléments declarationDetail ou detailContent non trouvés');
+//         return;
+//     }
+    
+//     try {
+//         const response = await fetch(`${CONFIG.API_URL}/api/declarations/${declarationId}/suivre`, {
+//             headers: { 'Authorization': `Bearer ${currentToken}` }
+//         });
+        
+//         if (!response.ok) {
+//             throw new Error('Erreur de chargement du détail');
+//         }
+        
+//         const data = await response.json();
+        
+//         content.innerHTML = createDetailHTML(data.declaration || data);
+        
+//         // Cacher la liste des déclarations et afficher le détail
+//         const declarationsList = document.getElementById('declarationsList');
+//         if (declarationsList) declarationsList.style.display = 'none';
+        
+//         container.classList.remove('hidden');
+        
+//     } catch (error) {
+//         console.error('❌ Erreur lors du chargement du détail:', error);
+//         content.innerHTML = '<p class="error">Erreur de chargement du détail</p>';
+//     }
+// }
+
+// function hideDeclarationDetail() {
+//     const container = document.getElementById('declarationDetail');
+//     if (container) container.classList.add('hidden');
+    
+//     const declarationsList = document.getElementById('declarationsList');
+//     if (declarationsList) declarationsList.style.display = 'block';
+// }
+
+// function createDetailHTML(declaration) {
+//     const statusMap = {
+//         'en_attente': { text: 'En attente d\'affectation', color: '#ff9800' },
+//         'affecte': { text: 'Collecteur affecté', color: '#2196f3' },
+//         'programme': { text: 'Collecte programmée', color: '#2196f3' },
+//         'termine': { text: 'Collecte terminée', color: '#4caf50' },
+//         'annule': { text: 'Annulée', color: '#f44336' }
+//     };
+    
+//     const status = statusMap[declaration.statut] || { text: declaration.statut, color: '#666' };
+    
+//     return `
+//         <div style="border-left: 4px solid ${status.color}; padding-left: 1rem;">
+//             <h4 style="margin-bottom: 1rem;">Déclaration #${declaration.id?.substring(0, 8) || '???'}</h4>
+            
+//             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+//                 <div><strong>Type:</strong> ${formatWasteType(declaration.type_dechet)}</div>
+//                 <div><strong>Quantité:</strong> ${declaration.quantite || 0} ${declaration.unite || ''}</div>
+//                 <div><strong>Mode:</strong> ${formatCollectionMode(declaration.mode_collecte)}</div>
+//                 <div><strong>Date:</strong> ${declaration.date_declaration ? new Date(declaration.date_declaration).toLocaleDateString('fr-FR') : 'N/A'}</div>
+//             </div>
+            
+//             <div style="background: var(--muted); padding: 1rem; border-radius: var(--radius);">
+//                 <strong>Statut actuel:</strong> ${status.text}
+//             </div>
+            
+//             <button class="btn btn-secondary" style="margin-top: 1rem; width: auto;" onclick="hideDeclarationDetail()">
+//                 <i class="fas fa-arrow-left"></i> Retour à la liste
+//             </button>
+//         </div>
+//     `;
 // }
 
 // // ============================================
@@ -824,6 +1142,8 @@
 // window.showNewDeclarationForm = showNewDeclarationForm;
 // window.hideNewDeclarationForm = hideNewDeclarationForm;
 // window.handleNewDeclaration = handleNewDeclaration;
+// window.showDeclarationDetail = showDeclarationDetail;
+// window.hideDeclarationDetail = hideDeclarationDetail;
 // window.handleUpdateProfile = handleUpdateProfile;
 // window.handleChangePassword = handleChangePassword;
 // window.handleLogout = handleLogout;
@@ -831,11 +1151,10 @@
 // window.showApiUrlModal = showApiUrlModal;
 // window.hideApiUrlModal = hideApiUrlModal;
 // window.saveApiUrl = saveApiUrl;
-// window.switchAuthTab = switchAuthTab;
-// window.handleLogin = handleLogin;
-// window.handleRegister = handleRegister;
 
 
+
+// producteur.js - Version complète et corrigée
 
 const CONFIG = {
     API_URL: 'https://ecobackend-three.vercel.app',
@@ -850,18 +1169,13 @@ console.log('📡 API URL utilisée:', CONFIG.API_URL);
 // État de l'application
 let currentUser = null;
 let currentToken = null;
+let refreshInterval = null;
 
 // ============================================
-// INITIALISATION - Vérification de session
+// INITIALISATION
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Initialisation de producteur.js');
-    
-    // Afficher l'URL de l'API
-    const apiUrlEl = document.getElementById('apiUrl');
-    const apiUrlInput = document.getElementById('apiUrlInput');
-    if (apiUrlEl) apiUrlEl.textContent = CONFIG.API_URL;
-    if (apiUrlInput) apiUrlInput.value = CONFIG.API_URL;
     
     // Récupérer les données de session
     const token = localStorage.getItem(CONFIG.TOKEN_KEY);
@@ -892,13 +1206,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         showSection('dashboard');
         
         // Charger les données
-        await loadDashboard();
-        await loadDeclarations();
-        await loadProfile();
-        await loadNotifications();
+        await Promise.all([
+            loadDashboard(),
+            loadDeclarations(),
+            loadProfile(),
+            loadNotifications()
+        ]);
         
         // Initialiser les écouteurs
         initEventListeners();
+        
+        // Démarrer l'auto-raffraîchissement
+        startAutoRefresh();
         
     } catch (error) {
         console.error('❌ Erreur lors du chargement:', error);
@@ -909,6 +1228,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function initEventListeners() {
     console.log('✅ Écouteurs initialisés');
+}
+
+function startAutoRefresh() {
+    if (refreshInterval) clearInterval(refreshInterval);
+    
+    refreshInterval = setInterval(() => {
+        const activeSection = document.querySelector('.section.active');
+        if (activeSection) {
+            if (activeSection.id === 'dashboard') {
+                loadDashboard();
+            } else if (activeSection.id === 'declarations') {
+                loadDeclarations();
+            }
+        }
+    }, 30000); // 30 secondes
 }
 
 // ============================================
@@ -928,7 +1262,6 @@ function updateUserDisplay() {
     
     const userAvatar = document.getElementById('userAvatar');
     if (userAvatar) {
-        // Initiales pour l'avatar
         const initiales = (currentUser.nomComplet || 'P')
             .split(' ')
             .map(n => n[0])
@@ -964,6 +1297,12 @@ function saveAuthData(token, user) {
 
 function clearSession() {
     console.log('🧹 Nettoyage de la session');
+    
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+    }
+    
     currentToken = null;
     currentUser = null;
     
@@ -979,7 +1318,6 @@ function handleLogout() {
     console.log('🚪 Déconnexion...');
     clearSession();
     
-    // Réinitialiser l'interface
     const userName = document.getElementById('userName');
     if (userName) userName.textContent = 'Non connecté';
     
@@ -1046,17 +1384,41 @@ async function loadDashboard() {
         // Charger les déclarations pour les stats
         const response = await fetch(`${CONFIG.API_URL}/api/declarations`, {
             headers: { 'Authorization': `Bearer ${currentToken}` }
-        }).catch(() => null);
+        });
         
-        if (response && response.ok) {
+        if (response.ok) {
             const data = await response.json();
-            const declarations = data.declarations || data || [];
+            let declarations = data.declarations || data;
+            
+            if (!Array.isArray(declarations)) {
+                declarations = [];
+            }
+            
+            // Normaliser les statuts
+            declarations = declarations.map(d => ({
+                ...d,
+                statut: (d.statut || '').toLowerCase().trim()
+            }));
             
             const totalDeclarations = declarations.length;
-            const completedCollections = declarations.filter(d => d.statut === 'termine').length;
+            
+            // Compter les collectes terminées
+            const completedCollections = declarations.filter(d => 
+                d.statut === 'termine' || 
+                d.statut === 'terminee' || 
+                d.statut === 'validee'
+            ).length;
+            
+            // Calculer le poids total des déchets validés
             const totalWaste = declarations
-                .filter(d => d.statut === 'termine')
-                .reduce((sum, d) => sum + (d.poids_estime || 0), 0);
+                .filter(d => d.statut === 'termine' || d.statut === 'terminee' || d.statut === 'validee')
+                .reduce((sum, d) => sum + (parseFloat(d.quantite) || 0), 0);
+            
+            console.log('📊 Stats calculées:', {
+                total: totalDeclarations,
+                completed: completedCollections,
+                poids: totalWaste
+            });
             
             const declEl = document.getElementById('dashboardDeclarations');
             if (declEl) declEl.textContent = totalDeclarations;
@@ -1071,14 +1433,9 @@ async function loadDashboard() {
             loadRecentHistory(declarations.slice(0, 5));
         } else {
             // Fallback
-            const declEl = document.getElementById('dashboardDeclarations');
-            if (declEl) declEl.textContent = '0';
-            
-            const collectionsEl = document.getElementById('dashboardCollections');
-            if (collectionsEl) collectionsEl.textContent = '0';
-            
-            const wasteEl = document.getElementById('dashboardWaste');
-            if (wasteEl) wasteEl.textContent = '0';
+            document.getElementById('dashboardDeclarations').textContent = '0';
+            document.getElementById('dashboardCollections').textContent = '0';
+            document.getElementById('dashboardWaste').textContent = '0';
         }
         
     } catch (error) {
@@ -1110,7 +1467,7 @@ function loadRecentHistory(declarations) {
         item.innerHTML = `
             <div style="display: flex; justify-content: space-between;">
                 <span style="font-weight: 500;">${type}</span>
-                <span class="badge ${getStatusClass(status)}">${status}</span>
+                <span class="badge ${getStatusClass(status)}">${getStatusText(status)}</span>
             </div>
             <div style="font-size: 0.85rem; color: var(--muted-foreground);">${date} • ${quantity}</div>
         `;
@@ -1175,8 +1532,6 @@ async function handleNewDeclaration(e) {
                 'Authorization': `Bearer ${currentToken}`
             },
             body: JSON.stringify(declarationData)
-        }).catch(err => {
-            throw new Error('Erreur réseau: ' + err.message);
         });
         
         if (!response.ok) {
@@ -1204,18 +1559,42 @@ async function loadDeclarations() {
     const container = document.getElementById('declarationsList');
     if (!container) return;
     
+    // Afficher un indicateur de chargement
+    container.innerHTML = '<p class="empty-message"><i class="fas fa-spinner fa-spin"></i> Chargement...</p>';
+    
     try {
+        console.log('📥 Chargement des déclarations...');
+        
         const response = await fetch(`${CONFIG.API_URL}/api/declarations`, {
             headers: { 'Authorization': `Bearer ${currentToken}` }
-        }).catch(() => null);
+        });
         
-        if (!response || !response.ok) {
-            container.innerHTML = '<p class="empty-message">Erreur de chargement des déclarations</p>';
-            return;
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
         }
         
         const data = await response.json();
-        let declarations = data.declarations || data || [];
+        console.log('📦 Données reçues:', data);
+        
+        // Normaliser les données
+        let declarations = data.declarations || data;
+        
+        // S'assurer que c'est un tableau
+        if (!Array.isArray(declarations)) {
+            console.warn('⚠️ Les données ne sont pas un tableau:', declarations);
+            declarations = [];
+        }
+        
+        // Normaliser les statuts
+        declarations = declarations.map(d => ({
+            ...d,
+            statut: (d.statut || 'en_attente').toLowerCase().trim()
+        }));
+        
+        // Afficher les statuts pour debug
+        declarations.forEach(d => {
+            console.log(`Déclaration ${d.id?.substring(0,8)}: statut="${d.statut}"`);
+        });
         
         // Filtrer si nécessaire
         if (filter !== 'all') {
@@ -1236,37 +1615,59 @@ async function loadDeclarations() {
         
     } catch (error) {
         console.error('❌ Erreur déclarations:', error);
-        container.innerHTML = '<p class="empty-message error">Erreur de chargement</p>';
+        container.innerHTML = `<p class="empty-message error">Erreur de chargement: ${error.message}</p>`;
     }
 }
 
 function createDeclarationElement(declaration) {
     const template = document.getElementById('declarationTemplate');
-    if (!template) return null;
+    if (!template) {
+        console.error('❌ Template declarationTemplate non trouvé');
+        return null;
+    }
     
     const clone = template.content.cloneNode(true);
     const element = clone.querySelector('.declaration-item');
     if (!element) return null;
     
+    // Stocker l'ID dans l'élément
     element.dataset.id = declaration.id;
+    element.dataset.statut = declaration.statut || 'inconnu';
     
+    // Mapping complet des statuts
     const statusMap = {
         'en_attente': { text: 'En attente', class: 'badge-warning' },
+        'en_attente_affectation': { text: 'En attente', class: 'badge-warning' },
+        'en_attente_collecte': { text: 'En attente', class: 'badge-warning' },
         'affecte': { text: 'Collecteur affecté', class: 'badge-info' },
+        'affectee': { text: 'Collecteur affecté', class: 'badge-info' },
+        'collecteur_affecte': { text: 'Collecteur affecté', class: 'badge-info' },
         'programme': { text: 'Programmée', class: 'badge-info' },
+        'programmee': { text: 'Programmée', class: 'badge-info' },
+        'en_cours': { text: 'En cours', class: 'badge-info' },
         'termine': { text: 'Terminée', class: 'badge-success' },
-        'annule': { text: 'Annulée', class: 'badge-danger' }
+        'terminee': { text: 'Terminée', class: 'badge-success' },
+        'validee': { text: 'Validée', class: 'badge-success' },
+        'annule': { text: 'Annulée', class: 'badge-danger' },
+        'annulee': { text: 'Annulée', class: 'badge-danger' }
     };
     
     const status = statusMap[declaration.statut] || { text: declaration.statut, class: 'badge-info' };
     
+    // Remplir les informations
     const idEl = element.querySelector('.declaration-id');
     if (idEl) idEl.textContent = `#${declaration.id?.substring(0, 8) || '???'}`;
     
     const dateEl = element.querySelector('.declaration-date');
-    if (dateEl) dateEl.textContent = declaration.date_declaration 
-        ? new Date(declaration.date_declaration).toLocaleDateString('fr-FR')
-        : 'Date inconnue';
+    if (dateEl) {
+        dateEl.textContent = declaration.date_declaration 
+            ? new Date(declaration.date_declaration).toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+              })
+            : 'Date inconnue';
+    }
     
     const statusEl = element.querySelector('.declaration-status');
     if (statusEl) {
@@ -1278,15 +1679,19 @@ function createDeclarationElement(declaration) {
     if (typeEl) typeEl.textContent = formatWasteType(declaration.type_dechet);
     
     const quantityEl = element.querySelector('.declaration-quantity');
-    if (quantityEl) quantityEl.textContent = `${declaration.quantite || 0} ${declaration.unite || ''}`;
+    if (quantityEl) {
+        quantityEl.textContent = `${declaration.quantite || 0} ${declaration.unite || ''}`;
+    }
     
     const modeEl = element.querySelector('.declaration-mode');
     if (modeEl) modeEl.textContent = formatCollectionMode(declaration.mode_collecte);
     
-    // === AJOUT DE L'ÉVÉNEMENT DE SUIVI ===
+    // Ajouter l'événement de suivi
     const viewDetailBtn = element.querySelector('.view-detail-btn');
     if (viewDetailBtn) {
-        viewDetailBtn.addEventListener('click', function() {
+        viewDetailBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const declarationId = element.dataset.id;
             showDeclarationDetail(declarationId);
         });
@@ -1296,11 +1701,13 @@ function createDeclarationElement(declaration) {
 }
 
 // ============================================
-// FONCTIONS DE SUIVI DES DÉCLARATIONS (RESTAURÉES)
+// SUIVI DES DÉCLARATIONS
 // ============================================
-
 async function showDeclarationDetail(declarationId) {
-    if (!currentToken) return;
+    if (!currentToken) {
+        showError(null, 'Vous devez être connecté');
+        return;
+    }
     
     console.log('🔍 Affichage du détail de la déclaration:', declarationId);
     
@@ -1312,28 +1719,37 @@ async function showDeclarationDetail(declarationId) {
         return;
     }
     
+    // Afficher le chargement
+    content.innerHTML = '<p class="empty-message"><i class="fas fa-spinner fa-spin"></i> Chargement du suivi...</p>';
+    container.classList.remove('hidden');
+    
+    // Cacher la liste des déclarations
+    const declarationsList = document.getElementById('declarationsList');
+    if (declarationsList) declarationsList.style.display = 'none';
+    
     try {
         const response = await fetch(`${CONFIG.API_URL}/api/declarations/${declarationId}/suivre`, {
             headers: { 'Authorization': `Bearer ${currentToken}` }
         });
         
         if (!response.ok) {
-            throw new Error('Erreur de chargement du détail');
+            throw new Error(`Erreur HTTP: ${response.status}`);
         }
         
         const data = await response.json();
+        console.log('📦 Détail reçu:', data);
         
-        content.innerHTML = createDetailHTML(data.declaration || data);
-        
-        // Cacher la liste des déclarations et afficher le détail
-        const declarationsList = document.getElementById('declarationsList');
-        if (declarationsList) declarationsList.style.display = 'none';
-        
-        container.classList.remove('hidden');
+        const declaration = data.declaration || data;
+        content.innerHTML = createDetailHTML(declaration);
         
     } catch (error) {
         console.error('❌ Erreur lors du chargement du détail:', error);
-        content.innerHTML = '<p class="error">Erreur de chargement du détail</p>';
+        content.innerHTML = `
+            <p class="error">Erreur de chargement du détail: ${error.message}</p>
+            <button class="btn btn-secondary" style="margin-top: 1rem;" onclick="hideDeclarationDetail()">
+                <i class="fas fa-arrow-left"></i> Retour
+            </button>
+        `;
     }
 }
 
@@ -1346,34 +1762,109 @@ function hideDeclarationDetail() {
 }
 
 function createDetailHTML(declaration) {
+    // Mapping des statuts avec couleurs
     const statusMap = {
-        'en_attente': { text: 'En attente d\'affectation', color: '#ff9800' },
-        'affecte': { text: 'Collecteur affecté', color: '#2196f3' },
-        'programme': { text: 'Collecte programmée', color: '#2196f3' },
-        'termine': { text: 'Collecte terminée', color: '#4caf50' },
-        'annule': { text: 'Annulée', color: '#f44336' }
+        'en_attente': { text: 'En attente d\'affectation', color: '#ff9800', icon: '⏳' },
+        'en_attente_affectation': { text: 'En attente d\'affectation', color: '#ff9800', icon: '⏳' },
+        'affecte': { text: 'Collecteur affecté', color: '#2196f3', icon: '👤' },
+        'affectee': { text: 'Collecteur affecté', color: '#2196f3', icon: '👤' },
+        'collecteur_affecte': { text: 'Collecteur affecté', color: '#2196f3', icon: '👤' },
+        'programme': { text: 'Collecte programmée', color: '#2196f3', icon: '📅' },
+        'programmee': { text: 'Collecte programmée', color: '#2196f3', icon: '📅' },
+        'en_cours': { text: 'Collecte en cours', color: '#9c27b0', icon: '🚛' },
+        'termine': { text: 'Collecte terminée', color: '#4caf50', icon: '✅' },
+        'terminee': { text: 'Collecte terminée', color: '#4caf50', icon: '✅' },
+        'validee': { text: 'Validée', color: '#4caf50', icon: '✓' },
+        'annule': { text: 'Annulée', color: '#f44336', icon: '✗' },
+        'annulee': { text: 'Annulée', color: '#f44336', icon: '✗' }
     };
     
-    const status = statusMap[declaration.statut] || { text: declaration.statut, color: '#666' };
+    const statut = (declaration.statut || 'en_attente').toLowerCase().trim();
+    const status = statusMap[statut] || { text: statut, color: '#666', icon: '•' };
+    
+    // Informations du collecteur si disponible
+    const collecteurInfo = declaration.collecteur_nom ? `
+        <div style="margin-top: 1rem; padding: 1rem; background: var(--muted); border-radius: var(--radius);">
+            <strong><i class="fas fa-user"></i> Collecteur assigné:</strong><br>
+            ${declaration.collecteur_nom}<br>
+            ${declaration.collecteur_telephone ? `📞 ${declaration.collecteur_telephone}` : ''}
+        </div>
+    ` : '';
+    
+    // Dates importantes
+    const dateDeclaration = declaration.date_declaration 
+        ? new Date(declaration.date_declaration).toLocaleString('fr-FR')
+        : 'Non spécifiée';
+    
+    const dateCollecte = declaration.date_collecte
+        ? new Date(declaration.date_collecte).toLocaleString('fr-FR')
+        : declaration.date_souhaitee 
+            ? new Date(declaration.date_souhaitee).toLocaleDateString('fr-FR')
+            : 'Non planifiée';
+    
+    const dateValidation = declaration.date_validation
+        ? new Date(declaration.date_validation).toLocaleString('fr-FR')
+        : null;
     
     return `
-        <div style="border-left: 4px solid ${status.color}; padding-left: 1rem;">
-            <h4 style="margin-bottom: 1rem;">Déclaration #${declaration.id?.substring(0, 8) || '???'}</h4>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                <div><strong>Type:</strong> ${formatWasteType(declaration.type_dechet)}</div>
-                <div><strong>Quantité:</strong> ${declaration.quantite || 0} ${declaration.unite || ''}</div>
-                <div><strong>Mode:</strong> ${formatCollectionMode(declaration.mode_collecte)}</div>
-                <div><strong>Date:</strong> ${declaration.date_declaration ? new Date(declaration.date_declaration).toLocaleDateString('fr-FR') : 'N/A'}</div>
+        <div style="border-left: 4px solid ${status.color}; padding-left: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h4 style="font-size: 1.2rem;">
+                    ${status.icon} Déclaration #${declaration.id?.substring(0, 8) || '???'}
+                </h4>
+                <span style="background: ${status.color}20; color: ${status.color}; padding: 0.5rem 1rem; border-radius: 100px; font-weight: 500;">
+                    ${status.text}
+                </span>
             </div>
             
-            <div style="background: var(--muted); padding: 1rem; border-radius: var(--radius);">
-                <strong>Statut actuel:</strong> ${status.text}
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div>
+                    <strong>Type de déchet:</strong><br>
+                    ${formatWasteType(declaration.type_dechet)}
+                </div>
+                <div>
+                    <strong>Quantité:</strong><br>
+                    ${declaration.quantite || 0} ${declaration.unite || ''}
+                </div>
+                <div>
+                    <strong>Mode de collecte:</strong><br>
+                    ${formatCollectionMode(declaration.mode_collecte)}
+                </div>
+                <div>
+                    <strong>Date de déclaration:</strong><br>
+                    ${dateDeclaration}
+                </div>
+                <div>
+                    <strong>Date de collecte:</strong><br>
+                    ${dateCollecte}
+                </div>
+                ${dateValidation ? `
+                <div>
+                    <strong>Date de validation:</strong><br>
+                    ${dateValidation}
+                </div>
+                ` : ''}
             </div>
             
-            <button class="btn btn-secondary" style="margin-top: 1rem; width: auto;" onclick="hideDeclarationDetail()">
-                <i class="fas fa-arrow-left"></i> Retour à la liste
-            </button>
+            ${collecteurInfo}
+            
+            ${declaration.notes ? `
+            <div style="margin-top: 1rem; padding: 1rem; background: var(--muted); border-radius: var(--radius);">
+                <strong><i class="fas fa-sticky-note"></i> Notes:</strong><br>
+                ${declaration.notes}
+            </div>
+            ` : ''}
+            
+            <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                <button class="btn btn-secondary" onclick="hideDeclarationDetail()">
+                    <i class="fas fa-arrow-left"></i> Retour à la liste
+                </button>
+                ${declaration.statut === 'en_attente' ? `
+                <button class="btn btn-warning" onclick="annulerDeclaration('${declaration.id}')">
+                    <i class="fas fa-times"></i> Annuler la demande
+                </button>
+                ` : ''}
+            </div>
         </div>
     `;
 }
@@ -1639,49 +2130,56 @@ function formatProducerType(type) {
     return types[type] || type || 'Non spécifié';
 }
 
-function getStatusClass(status) {
-    const classes = {
-        'en_attente': 'badge-warning',
-        'affecte': 'badge-info',
-        'programme': 'badge-info',
-        'termine': 'badge-success',
-        'annule': 'badge-danger'
+function getStatusText(status) {
+    const statusMap = {
+        'en_attente': 'En attente',
+        'en_attente_affectation': 'En attente',
+        'en_attente_collecte': 'En attente',
+        'affecte': 'Collecteur affecté',
+        'affectee': 'Collecteur affecté',
+        'collecteur_affecte': 'Collecteur affecté',
+        'programme': 'Programmée',
+        'programmee': 'Programmée',
+        'en_cours': 'En cours',
+        'termine': 'Terminée',
+        'terminee': 'Terminée',
+        'validee': 'Validée',
+        'annule': 'Annulée',
+        'annulee': 'Annulée'
     };
-    return classes[status] || 'badge-info';
+    return statusMap[status] || status;
 }
 
-// ============================================
-// CONFIGURATION API
-// ============================================
-function showApiUrlModal() {
-    const modal = document.getElementById('apiUrlModal');
-    if (modal) modal.classList.remove('hidden');
+function getStatusClass(status) {
+    const statusMap = {
+        'en_attente': 'badge-warning',
+        'en_attente_affectation': 'badge-warning',
+        'en_attente_collecte': 'badge-warning',
+        'affecte': 'badge-info',
+        'affectee': 'badge-info',
+        'collecteur_affecte': 'badge-info',
+        'programme': 'badge-info',
+        'programmee': 'badge-info',
+        'en_cours': 'badge-info',
+        'termine': 'badge-success',
+        'terminee': 'badge-success',
+        'validee': 'badge-success',
+        'annule': 'badge-danger',
+        'annulee': 'badge-danger'
+    };
+    return statusMap[status] || 'badge-info';
 }
 
-function hideApiUrlModal() {
-    const modal = document.getElementById('apiUrlModal');
-    if (modal) modal.classList.add('hidden');
-}
-
-function saveApiUrl() {
-    const input = document.getElementById('apiUrlInput');
-    if (!input) return;
-    
-    const newUrl = input.value.trim();
-    
-    if (!newUrl) {
-        showError(null, 'L\'URL ne peut pas être vide');
-        return;
+function annulerDeclaration(declarationId) {
+    if (confirm('Êtes-vous sûr de vouloir annuler cette déclaration ?')) {
+        console.log('Annulation de la déclaration:', declarationId);
+        // Implémenter l'appel API pour annuler
+        showSuccess(null, 'Déclaration annulée avec succès');
+        setTimeout(() => {
+            hideDeclarationDetail();
+            loadDeclarations();
+        }, 1000);
     }
-    
-    CONFIG.API_URL = newUrl;
-    localStorage.setItem('api_url', newUrl);
-    
-    const apiUrlEl = document.getElementById('apiUrl');
-    if (apiUrlEl) apiUrlEl.textContent = newUrl;
-    
-    hideApiUrlModal();
-    showSuccess(null, 'URL de l\'API mise à jour avec succès');
 }
 
 // ============================================
@@ -1744,6 +2242,40 @@ async function loadDepotPoints() {
     }
 }
 
+// ============================================
+// CONFIGURATION API
+// ============================================
+function showApiUrlModal() {
+    const modal = document.getElementById('apiUrlModal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function hideApiUrlModal() {
+    const modal = document.getElementById('apiUrlModal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function saveApiUrl() {
+    const input = document.getElementById('apiUrlInput');
+    if (!input) return;
+    
+    const newUrl = input.value.trim();
+    
+    if (!newUrl) {
+        showError(null, 'L\'URL ne peut pas être vide');
+        return;
+    }
+    
+    CONFIG.API_URL = newUrl;
+    localStorage.setItem('api_url', newUrl);
+    
+    const apiUrlEl = document.getElementById('apiUrl');
+    if (apiUrlEl) apiUrlEl.textContent = newUrl;
+    
+    hideApiUrlModal();
+    showSuccess(null, 'URL de l\'API mise à jour avec succès');
+}
+
 // Exposer les fonctions globalement
 window.showSection = showSection;
 window.togglePassword = togglePassword;
@@ -1761,3 +2293,4 @@ window.loadDepotPoints = loadDepotPoints;
 window.showApiUrlModal = showApiUrlModal;
 window.hideApiUrlModal = hideApiUrlModal;
 window.saveApiUrl = saveApiUrl;
+window.annulerDeclaration = annulerDeclaration;

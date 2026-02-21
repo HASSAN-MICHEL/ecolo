@@ -129,96 +129,7 @@ class GestionnaireController {
 //     }
 // }
 
-
-
-
-// ✅ Tableau de bord avec stats globales + personnelles
-static async tableauBord(req, res) {
-    try {
-        const gestionnaireId = req.utilisateurId;
-        const gestionnaire = await GestionnairePoint.trouverParId(gestionnaireId);
-        
-        if (!gestionnaire || !gestionnaire.point_collecte_id) {
-            return res.json({
-                success: true,
-                statistiques: {
-                    en_attente: 0,
-                    total_validees: 0,
-                    poids_total_global: 0,
-                    gains_distribues_global: 0
-                },
-                mes_statistiques: {
-                    missions_validees: 0,
-                    poids_total_valide: 0,
-                    gains_distribues: 0
-                },
-                dernieresMissions: [],
-                monHistorique: []
-            });
-        }
-
-        // Stats globales + personnelles
-        const dashboard = await GestionnairePoint.tableauBord(gestionnaireId);
-        
-        // Toutes les missions récentes du point
-        const missionsRecentes = await GestionnairePoint.toutesMissionsDuPoint(gestionnaireId);
-        
-        // Mon historique personnel
-        const monHistorique = await GestionnairePoint.monHistorique(gestionnaireId, 10);
-
-        res.json({
-            success: true,
-            ...dashboard,
-            dernieresMissions: missionsRecentes.slice(0, 10),
-            monHistorique
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur tableau bord:', erreur);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Erreur lors de la récupération du tableau de bord' 
-        });
-    }
-}
-
-// ✅ Toutes les missions (globales) - À CONSERVER
-static async missions(req, res) {
-    try {
-        const gestionnaireId = req.utilisateurId;
-        const { statut } = req.query;
-        
-        const missions = await GestionnairePoint.toutesMissionsDuPoint(gestionnaireId, statut);
-
-        res.json({
-            success: true,
-            missions,
-            total: missions.length
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur récupération missions:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-// ✅ MES missions validées (personnelles)
-static async mesMissionsValidees(req, res) {
-    try {
-        const gestionnaireId = req.utilisateurId;
-        const missions = await GestionnairePoint.mesMissionsValidees(gestionnaireId);
-
-        res.json({
-            success: true,
-            missions,
-            total: missions.length
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur récupération mes missions validées:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-
-// MISSION EN ATTENTE POUR CHAQUE gestionnaire celon les points de collecte qui lui sont associés
+    // Dans GestionnaireController.missionsEnAttente
 static async missionsEnAttente(req, res) {
     try {
         const gestionnaireId = req.utilisateurId;
@@ -343,53 +254,7 @@ static async missionsEnAttente(req, res) {
         }
     }
 
-
-    // ✅ Mon historique personnel
-static async monHistorique(req, res) {
-    try {
-        const gestionnaireId = req.utilisateurId;
-        const historique = await GestionnairePoint.monHistorique(gestionnaireId, 50);
-
-        res.json({
-            success: true,
-            historique,
-            total: historique.length
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur récupération historique:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-// ✅ Détails d'une mission (avec indication si validée par moi)
-static async missionDetails(req, res) {
-    try {
-        const { missionId } = req.params;
-        const gestionnaireId = req.utilisateurId;
-
-        const mission = await GestionnairePoint.missionDetails(missionId, gestionnaireId);
-
-        if (!mission) {
-            return res.status(404).json({
-                success: false,
-                message: 'Mission non trouvée'
-            });
-        }
-
-        // Ajouter un indicateur "validée par moi"
-        mission.validee_par_moi = (mission.validee_par === gestionnaireId);
-
-        res.json({
-            success: true,
-            mission
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur récupération mission:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-    //  Attribuer des crédits bonus supplémentaires
+    // ✅ Attribuer des crédits bonus supplémentaires
     static async attribuerCredits(req, res) {
         try {
             const { collecteurId, missionId } = req.params;
@@ -478,70 +343,6 @@ static async missionDetails(req, res) {
             res.status(500).json({ success: false, message: 'Erreur serveur' });
         }
     }
-
-    // controllers/GestionnaireController.js - Ajoutez ces méthodes
-
-// ✅ Statistiques complètes du point
-static async statistiquesCompletes(req, res) {
-    try {
-        const gestionnaireId = req.utilisateurId;
-        const stats = await GestionnairePoint.statistiquesCompletes(gestionnaireId);
-        
-        res.json({
-            success: true,
-            ...stats
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur récupération stats complètes:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-// ✅ Statistiques par type de déchet
-static async statistiquesParTypeDechet(req, res) {
-    try {
-        const gestionnaireId = req.utilisateurId;
-        const stats = await GestionnairePoint.statistiquesParTypeDechet(gestionnaireId);
-        
-        // Calculer les totaux
-        const total = stats.reduce((acc, item) => {
-            acc.poids_total += parseFloat(item.poids_total_valide || 0);
-            acc.missions_total += parseInt(item.nombre_total_missions || 0);
-            return acc;
-        }, { poids_total: 0, missions_total: 0 });
-        
-        res.json({
-            success: true,
-            stats,
-            total: {
-                poids: total.poids_total,
-                missions: total.missions_total
-            }
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur récupération stats par type:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-// ✅ Répartition journalière
-static async repartitionJournaliere(req, res) {
-    try {
-        const gestionnaireId = req.utilisateurId;
-        const { jours = 30 } = req.query;
-        
-        const repartition = await GestionnairePoint.repartitionJournaliere(gestionnaireId, jours);
-        
-        res.json({
-            success: true,
-            repartition,
-            total_jours: repartition.length
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur récupération répartition:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
 }
 
 export default GestionnaireController;
