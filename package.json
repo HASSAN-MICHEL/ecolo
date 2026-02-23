@@ -9,6 +9,7 @@
     "dev": "concurrently \"npm run server\" \"npm run electron:dev\"",
     "server": "node backend/server.js",
     "electron": "electron .",
+    "start" : "node backend/appi.js",
     "electron:dev": "wait-on http://localhost:5000 && cross-env ELECTRON_APP=true electron .",
     "build:win-installer": "electron-builder --win nsis --config.forceCodeSigning=false",
     "build:app": "electron-builder --dir",
