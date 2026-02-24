@@ -1,0 +1,20 @@
+
+EMAIL_APLI_NAME=ECOCOLLECT
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=nadiraamin26@gmail.com
+EMAIL_PASS=fkig qncz hlpl rfnk
+
+SUPABASE_DB_HOST=db.cyjgsbdchsarsyrobbal.supabase.co
+SUPABASE_DB_PORT=5432
+SUPABASE_DB_USER=postgres
+SUPABASE_DB_NAME=postgres
+SUPABASE_DB_PASS=Hassan236@Aàç*
+SUPABASE_URL=https://cyjgsbdchsarsyrobbal.supabase.co
+SUPABASE_ANOM_KEY=sb_publishable_jIWBL7qWlbdtrBGH14rwZg_-YwnU2aB
+
+JWT_SECRET=ytr-è-çàçè&éhfgvbnsdrecocollectù!
+JWT_EXPIRE=7d
+DATABASE_URL=postgresql://postgres.cyjgsbdchsarsyrobbal:Hassan236@Aàç*@aws-1-eu-central-1.pooler.supabase.com:5432/postgres
+
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5amdzYmRjaHNhcnN5cm9iYmFsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTM1MTA0MCwiZXhwIjoyMDg2OTI3MDQwfQ.RxWuh3_TEczkfmuO2yw-qkyHJnqJXrRMQmI-9zsxunw

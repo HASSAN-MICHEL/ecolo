@@ -49,74 +49,13 @@ class Mission {
     }
 
     
-//     static async attribuer(missionId, collecteurId) {
-//     const client = await pool.connect();
-    
-//     try {
-//         await client.query('BEGIN');
-
-//         // Mettre à jour la mission
-//         const requeteMission = `
-//             UPDATE missions 
-//             SET collecteur_id = $1,
-//                 statut = 'acceptee',
-//                 date_acceptation = CURRENT_TIMESTAMP
-//             WHERE id = $2
-//             RETURNING *
-//         `;
-        
-//         const resultatMission = await client.query(requeteMission, [collecteurId, missionId]);
-//         const mission = resultatMission.rows[0];
-
-//         // ✅ METTRE À JOUR LA DÉCLARATION
-//         await client.query(`
-//             UPDATE declarations_dechets 
-//             SET statut = 'programme',
-//                 modifie_le = CURRENT_TIMESTAMP
-//             WHERE id = $1
-//         `, [mission.declaration_id]);
-
-//         // Notification au collecteur
-//         await client.query(
-//             `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification, reference_id, reference_type)
-//              VALUES ($1, 'collecteur', 'Mission acceptée', 'Vous avez accepté une mission de collecte.', 'mission_acceptee', $2, 'mission')`,
-//             [collecteurId, missionId]
-//         );
-
-//         await client.query('COMMIT');
-//         return mission;
-//     } catch (erreur) {
-//         await client.query('ROLLBACK');
-//         throw erreur;
-//     } finally {
-//         client.release();
-//     }
-
-    
-//  }
-
-static async attribuer(missionId, collecteurId) {
+    static async attribuer(missionId, collecteurId) {
     const client = await pool.connect();
     
     try {
         await client.query('BEGIN');
 
-        // 1. Récupérer les infos de la mission et du producteur
-        const infoMission = await client.query(`
-            SELECT m.*, d.producteur_id, p.nom_complet as producteur_nom
-            FROM missions m
-            JOIN declarations_dechets d ON m.declaration_id = d.id
-            JOIN producteurs p ON d.producteur_id = p.id
-            WHERE m.id = $1
-        `, [missionId]);
-
-        if (infoMission.rows.length === 0) {
-            throw new Error('Mission non trouvée');
-        }
-
-        const mission = infoMission.rows[0];
-
-        // 2. Mettre à jour la mission
+        // Mettre à jour la mission
         const requeteMission = `
             UPDATE missions 
             SET collecteur_id = $1,
@@ -127,9 +66,9 @@ static async attribuer(missionId, collecteurId) {
         `;
         
         const resultatMission = await client.query(requeteMission, [collecteurId, missionId]);
-        const missionMaj = resultatMission.rows[0];
+        const mission = resultatMission.rows[0];
 
-        // 3. Mettre à jour la déclaration
+        // ✅ METTRE À JOUR LA DÉCLARATION
         await client.query(`
             UPDATE declarations_dechets 
             SET statut = 'programme',
@@ -137,54 +76,24 @@ static async attribuer(missionId, collecteurId) {
             WHERE id = $1
         `, [mission.declaration_id]);
 
-        // 4. Notification au collecteur
-        await client.query(`
-            INSERT INTO notifications (
-                utilisateur_id, 
-                type_utilisateur, 
-                titre, 
-                message, 
-                type_notification,
-                reference_id,
-                reference_type
-            ) VALUES ($1, 'collecteur', $2, $3, 'mission_acceptee', $4, 'mission')
-        `, [
-            collecteurId,
-            'Mission acceptée ✓',
-            `Vous avez accepté une mission chez ${mission.producteur_nom || 'un producteur'}.`,
-            missionId
-        ]);
-
-        // 5. Notification au producteur
-        await client.query(`
-            INSERT INTO notifications (
-                utilisateur_id, 
-                type_utilisateur, 
-                titre, 
-                message, 
-                type_notification,
-                reference_id,
-                reference_type
-            ) VALUES ($1, 'producteur', $2, $3, 'mission_acceptee', $4, 'mission')
-        `, [
-            mission.producteur_id,
-            'Collecteur en route 🚚',
-            `Un collecteur a accepté votre mission et sera bientôt chez vous.`,
-            missionId
-        ]);
+        // Notification au collecteur
+        await client.query(
+            `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification, reference_id, reference_type)
+             VALUES ($1, 'collecteur', 'Mission acceptée', 'Vous avez accepté une mission de collecte.', 'mission_acceptee', $2, 'mission')`,
+            [collecteurId, missionId]
+        );
 
         await client.query('COMMIT');
-        
-        return missionMaj;
-        
+        return mission;
     } catch (erreur) {
         await client.query('ROLLBACK');
-        console.error('❌ Erreur dans attribuer:', erreur);
         throw erreur;
     } finally {
         client.release();
     }
-}
+
+    
+ }
 
     // Démarrer une collecte
     static async demarrerCollecte(missionId, collecteurId) {

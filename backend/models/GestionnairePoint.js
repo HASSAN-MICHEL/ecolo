@@ -163,55 +163,136 @@ class GestionnairePoint {
         return resultat.rows[0];
     }
 
-    // models/GestionnairePoint.js - Méthode validerMission CORRIGÉE
+
+
+// models/GestionnairePoint.js - Méthode validerMission avec prix personnalisé
 static async validerMission(missionId, gestionnaireId, data) {
     const client = await pool.connect();
     
     try {
         await client.query('BEGIN');
         
-        // Vérifier que la mission existe
+        // Récupérer les détails de la mission
         const missionCheck = await client.query(`
-            SELECT point_depot_id, collecteur_id, statut
-            FROM missions 
-            WHERE id = $1
+            SELECT m.*, d.type_dechet, d.quantite, c.id as collecteur_id,
+                   c.nom_complet as collecteur_nom
+            FROM missions m
+            JOIN declarations_dechets d ON m.declaration_id = d.id
+            JOIN collecteurs c ON m.collecteur_id = c.id
+            WHERE m.id = $1
         `, [missionId]);
         
         if (missionCheck.rows.length === 0) {
             throw new Error('Mission non trouvée');
         }
         
-        if (missionCheck.rows[0].statut !== 'deposee') {
+        const mission = missionCheck.rows[0];
+        
+        if (mission.statut !== 'deposee') {
             throw new Error('Cette mission n\'est pas en attente de validation');
         }
         
-        // ✅ Mettre à jour la mission AVEC validee_par
+        // ✅ Utiliser le prix fourni par le gestionnaire
+        const poidsDepose = data.poidsDepose;
+        const prixParKg = data.prixParKg; // PRIX PERSONNALISÉ
+        const montantTotal = data.montantTotal; // DÉJÀ CALCULÉ
+        
+        console.log(`💰 Calcul des crédits: ${poidsDepose} kg × ${prixParKg} FCFA = ${montantTotal} FCFA`);
+        
+        // ✅ 1. Mettre à jour la mission
         await client.query(`
             UPDATE missions 
             SET statut = 'validee',
                 poids_depose = $1,
                 date_validation = NOW(),
                 validation_notes = $2,
-                validee_par = $3  -- ← AJOUTER CETTE LIGNE
-            WHERE id = $4
-        `, [data.poidsDepose, data.validationNotes || null, gestionnaireId, missionId]);
+                validee_par = $3,
+                gains_attribues = $4  -- AJOUTER LE MONTANT DANS LA MISSION
+            WHERE id = $5
+        `, [
+            poidsDepose, 
+            data.validationNotes || null, 
+            gestionnaireId, 
+            montantTotal,
+            missionId
+        ]);
+        
+        // ✅ 2. Attribuer les crédits au collecteur avec le montant calculé
+        const gainResult = await client.query(`
+            INSERT INTO gains_collecteurs (
+                collecteur_id, 
+                mission_id, 
+                montant, 
+                type_gain, 
+                statut,
+                date_validation
+            ) VALUES ($1, $2, $3, 'collecte', 'valide', CURRENT_TIMESTAMP)
+            RETURNING *
+        `, [mission.collecteur_id, missionId, montantTotal]);
+        
+        // ✅ 3. Mettre à jour le total des gains du collecteur
+        await client.query(`
+            UPDATE collecteurs 
+            SET gains_total = COALESCE(gains_total, 0) + $1
+            WHERE id = $2
+        `, [montantTotal, mission.collecteur_id]);
+        
+        // ✅ 4. Notification au collecteur
+        await client.query(`
+            INSERT INTO notifications (
+                utilisateur_id, 
+                type_utilisateur, 
+                titre, 
+                message, 
+                type_notification,
+                reference_id,
+                reference_type
+            ) VALUES ($1, 'collecteur', $2, $3, 'gain_recu', $4, 'gain')
+        `, [
+            mission.collecteur_id,
+            'Mission validée',
+            `Votre mission a été validée. Vous avez reçu ${montantTotal} FCFA pour ${poidsDepose} kg à ${prixParKg} FCFA/kg.`,
+            gainResult.rows[0].id
+        ]);
         
         await client.query('COMMIT');
         
         return { 
             id: missionId, 
-            poidsDepose: data.poidsDepose,
+            poidsDepose,
+            prixParKg,
+            montantTotal,
+            collecteurId: mission.collecteur_id,
+            collecteurNom: mission.collecteur_nom,
             valideePar: gestionnaireId
         };
         
     } catch (erreur) {
         await client.query('ROLLBACK');
+        console.error('❌ Erreur dans validerMission:', erreur);
         throw erreur;
     } finally {
         client.release();
-    }
-}
+    } ; 
 
+      await client.query(`
+        INSERT INTO notifications (
+            utilisateur_id, 
+            type_utilisateur, 
+            titre, 
+            message, 
+            type_notification,
+            reference_id,
+            reference_type
+        ) VALUES ($1, 'collecteur', $2, $3, 'validation_collecte', $4, 'mission')
+    `, [
+        mission.collecteur_id,
+        'Mission validée ✓',
+        `Votre mission a été validée par le gestionnaire. Vous avez gagné ${gainsAttribues} FCFA.`,
+        missionId
+    ]);
+
+}
     // }
 
     // ✅ Attribuer des crédits supplémentaires (bonus) - VERSION CORRIGÉE
@@ -783,6 +864,90 @@ static async repartitionJournaliere(gestionnaireId, jours = 30) {
         console.error('❌ Erreur dans repartitionJournaliere:', error);
         return [];
     }
+}
+
+// ✅ Mettre à jour le profil du gestionnaire (lui-même) - SANS point de collecte
+static async mettreAJourProfil(id, donnees) {
+    const champs = [];
+    const valeurs = [];
+    let index = 1;
+
+    // Champs modifiables par le gestionnaire lui-même
+    if (donnees.nomComplet) {
+        champs.push(`nom_complet = $${index++}`);
+        valeurs.push(donnees.nomComplet);
+    }
+    if (donnees.telephone) {
+        champs.push(`telephone = $${index++}`);
+        valeurs.push(donnees.telephone);
+    }
+    if (donnees.fonction) {
+        champs.push(`fonction = $${index++}`);
+        valeurs.push(donnees.fonction);
+    }
+
+    if (champs.length === 0) {
+        return null;
+    }
+
+    valeurs.push(id);
+    const requete = `
+        UPDATE gestionnaires_points 
+        SET ${champs.join(', ')}, modifie_le = CURRENT_TIMESTAMP
+        WHERE id = $${index}
+        RETURNING id, email, nom_complet, telephone, point_collecte_id, fonction
+    `;
+
+    const resultat = await pool.query(requete, valeurs);
+    return resultat.rows[0];
+}
+
+// ✅ Mettre à jour TOUT le gestionnaire (pour superviseur) - AVEC point de collecte
+static async mettreAJourComplet(id, donnees, superviseurId) {
+    const champs = [];
+    const valeurs = [];
+    let index = 1;
+
+    // Tous les champs modifiables par le superviseur
+    if (donnees.nomComplet) {
+        champs.push(`nom_complet = $${index++}`);
+        valeurs.push(donnees.nomComplet);
+    }
+    if (donnees.telephone) {
+        champs.push(`telephone = $${index++}`);
+        valeurs.push(donnees.telephone);
+    }
+    if (donnees.fonction) {
+        champs.push(`fonction = $${index++}`);
+        valeurs.push(donnees.fonction);
+    }
+    if (donnees.pointCollecteId !== undefined) {
+        champs.push(`point_collecte_id = $${index++}`);
+        valeurs.push(donnees.pointCollecteId);
+    }
+    if (donnees.estActif !== undefined) {
+        champs.push(`est_actif = $${index++}`);
+        valeurs.push(donnees.estActif);
+    }
+    if (donnees.email) {
+        champs.push(`email = $${index++}`);
+        valeurs.push(donnees.email);
+    }
+
+    if (champs.length === 0) {
+        return null;
+    }
+
+    valeurs.push(id);
+    const requete = `
+        UPDATE gestionnaires_points 
+        SET ${champs.join(', ')}, modifie_le = CURRENT_TIMESTAMP
+        WHERE id = $${index}
+        RETURNING id, email, nom_complet, telephone, point_collecte_id, fonction, est_actif
+    `;
+
+    const resultat = await pool.query(requete, valeurs);
+    return resultat.rows[0];
 }
 
 }

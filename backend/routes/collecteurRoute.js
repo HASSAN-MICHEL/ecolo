@@ -69,6 +69,8 @@ router.post('/inscription',
 // Connexion (pas d'upload)
 router.post('/connexion', CollecteurController.connexion);
 
+
+
 // Routes protégées
 router.use(AuthCollecteur.verifierToken);
 

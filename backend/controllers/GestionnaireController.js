@@ -66,6 +66,105 @@ class GestionnaireController {
         }
     }
 
+
+// Récupérer le profil du gestionnaire connecté
+static async getProfil(req, res) {
+    try {
+        const gestionnaireId = req.utilisateurId;
+        const gestionnaire = await GestionnairePoint.trouverParId(gestionnaireId);
+
+        if (!gestionnaire) {
+            return res.status(404).json({
+                success: false,
+                message: 'Gestionnaire non trouvé'
+            });
+        }
+
+        // Ne pas renvoyer le mot de passe
+        delete gestionnaire.mot_de_passe_hash;
+
+        res.json({
+            success: true,
+            utilisateur: {
+                id: gestionnaire.id,
+                email: gestionnaire.email,
+                telephone: gestionnaire.telephone,
+                nomComplet: gestionnaire.nom_complet,
+                pointCollecteId: gestionnaire.point_collecte_id,
+                pointCollecteNom: gestionnaire.point_collecte_nom,
+                fonction: gestionnaire.fonction,
+                estActif: gestionnaire.est_actif,
+                dateCreation: gestionnaire.cree_le,
+                derniereConnexion: gestionnaire.derniere_connexion
+            }
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur récupération profil:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération du profil'
+        });
+    }
+}
+
+// Mettre à jour son propre profil (sans point de collecte)
+static async mettreAJourProfil(req, res) {
+    try {
+        const gestionnaireId = req.utilisateurId;
+        const { nomComplet, telephone, fonction } = req.body;
+
+        // Vérifier que le gestionnaire existe
+        const gestionnaire = await GestionnairePoint.trouverParId(gestionnaireId);
+        if (!gestionnaire) {
+            return res.status(404).json({
+                success: false,
+                message: 'Gestionnaire non trouvé'
+            });
+        }
+
+        // Vérifier l'unicité du téléphone si modifié
+        if (telephone && telephone !== gestionnaire.telephone) {
+            const existe = await pool.query(
+                'SELECT id FROM gestionnaires_points WHERE telephone = $1 AND id != $2',
+                [telephone, gestionnaireId]
+            );
+            if (existe.rows.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Ce numéro de téléphone est déjà utilisé'
+                });
+            }
+        }
+
+        const donnees = {};
+        if (nomComplet) donnees.nomComplet = nomComplet;
+        if (telephone) donnees.telephone = telephone;
+        if (fonction) donnees.fonction = fonction;
+
+        const gestionnaireMaj = await GestionnairePoint.mettreAJourProfil(gestionnaireId, donnees);
+
+        if (!gestionnaireMaj) {
+            return res.status(400).json({
+                success: false,
+                message: 'Aucune donnée à mettre à jour'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Profil mis à jour avec succès',
+            utilisateur: gestionnaireMaj
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur mise à jour profil:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la mise à jour du profil',
+            erreur: erreur.message
+        });
+    }
+}
+
     // ✅ Obtenir TOUTES les missions (avec filtre optionnel)
     static async missions(req, res) {
         try {
@@ -96,38 +195,6 @@ class GestionnaireController {
             res.status(500).json({ success: false, message: 'Erreur serveur' });
         }
     }
-
-//     // Dans GestionnaireController.missionsEnAttente
-// static async missionsEnAttente(req, res) {
-//     try {
-//         const gestionnaireId = req.utilisateurId;
-//         // Version simplifiée pour test
-//         const missions = await pool.query(`
-//             SELECT 
-//                 m.id,
-//                 m.statut,
-//                 m.date_depot_point,
-//                 d.type_dechet,
-//                 d.quantite,
-//                 d.unite,
-//                 c.nom_complet as collecteur_nom
-//             FROM missions m
-//             JOIN declarations_dechets d ON m.declaration_id = d.id
-//             JOIN collecteurs c ON m.collecteur_id = c.id
-//             WHERE m.statut = 'deposee'
-//             ORDER BY m.date_depot_point DESC
-//         `);
-
-//         res.json({
-//             success: true,
-//             missions: missions.rows,
-//             total: missions.rows.length
-//         });
-//     } catch (erreur) {
-//         console.error('❌ Erreur:', erreur);
-//         res.status(500).json({ success: false, message: 'Erreur serveur' });
-//     }
-// }
 
 
 
@@ -305,43 +372,61 @@ static async missionsEnAttente(req, res) {
     }
 
     // ✅ Valider une mission (avec attribution automatique des gains)
-    static async validerMission(req, res) {
-        try {
-            const { missionId } = req.params;
-            const gestionnaireId = req.utilisateurId;
-            const { poidsDepose, qualiteDechets, validationNotes } = req.body;
+static async validerMission(req, res) {
+    try {
+        const { missionId } = req.params;
+        const gestionnaireId = req.utilisateurId;
+        const { poidsDepose, prixParKg, qualiteDechets, validationNotes } = req.body; // AJOUTER prixParKg
 
-            // Validation
-            if (!poidsDepose || isNaN(parseFloat(poidsDepose)) || parseFloat(poidsDepose) <= 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Le poids doit être un nombre positif'
-                });
-            }
-
-            const mission = await GestionnairePoint.validerMission(
-                missionId, 
-                gestionnaireId, 
-                { 
-                    poidsDepose: parseFloat(poidsDepose), 
-                    qualiteDechets: qualiteDechets || 'conforme', 
-                    validationNotes 
-                }
-            );
-
-            res.json({
-                success: true,
-                message: 'Mission validée avec succès. Les gains ont été automatiquement attribués au collecteur.',
-                mission
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur validation mission:', erreur);
-            res.status(500).json({
+        // Validation
+        if (!poidsDepose || isNaN(parseFloat(poidsDepose)) || parseFloat(poidsDepose) <= 0) {
+            return res.status(400).json({
                 success: false,
-                message: erreur.message || 'Erreur lors de la validation'
+                message: 'Le poids doit être un nombre positif'
             });
         }
+
+        // AJOUTER LA VALIDATION DU PRIX
+        if (!prixParKg || isNaN(parseFloat(prixParKg)) || parseFloat(prixParKg) <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Le prix par kilogramme doit être un nombre positif'
+            });
+        }
+
+        // Calculer le montant total
+        const montantTotal = parseFloat(poidsDepose) * parseFloat(prixParKg);
+
+        const mission = await GestionnairePoint.validerMission(
+            missionId, 
+            gestionnaireId, 
+            { 
+                poidsDepose: parseFloat(poidsDepose),
+                prixParKg: parseFloat(prixParKg), // PASSER LE PRIX
+                montantTotal: montantTotal, // PASSER LE MONTANT CALCULÉ
+                qualiteDechets: qualiteDechets || 'conforme', 
+                validationNotes 
+            }
+        );
+
+        res.json({
+            success: true,
+            message: `Mission validée avec succès. ${montantTotal} FCFA attribués au collecteur.`,
+            mission: {
+                ...mission,
+                montantTotal,
+                poidsDepose,
+                prixParKg
+            }
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur validation mission:', erreur);
+        res.status(500).json({
+            success: false,
+            message: erreur.message || 'Erreur lors de la validation'
+        });
     }
+}
 
 
     // ✅ Mon historique personnel

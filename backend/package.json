@@ -5,8 +5,8 @@
   "type": "module",
   "main": "app.js",
   "scripts": {
-    "dev": "node appi.js",
-    "start": "node appi.js",
+    "dev": "node app.js",
+    "start": "node app.js",
     "vercel-build": "npm install"
   },
   "dependencies": {

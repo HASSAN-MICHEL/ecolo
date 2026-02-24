@@ -1,11 +1,12 @@
   
   -- Creons notre  base de données , et ici nous allons utilisé des triggers et implementé les fonctions et vue  necessaire en base de données pour mon travail : ICI on a commencé par les Producteurs
 CREATE DATABASE ecocollect_db;
-\c ecocollect_db;   ALTER TABLE producteurs ADD COLUMN IF NOT EXISTS derniere_connexion TIMESTAMP;
+\c ecocollect_db;   ALTER TABLE producteurs ADD COLUMN IF NOT EXISTS derniere_connexion TIMESTAMP;  ALTER TABLE missions ADD COLUMN prix_par_kg INTEGER;
 
 -- Extension pour UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "postgis";
+
 
 -- Enumérations (en français)
 CREATE TYPE type_producteur AS ENUM ('menage', 'commerce', 'entreprise', 'administration');

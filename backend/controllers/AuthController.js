@@ -678,21 +678,18 @@ class AuthController {
         let utilisateur = await Producteur.trouverParEmail(identifiant);
         if (utilisateur) return { utilisateur, type: 'producteur' };
 
-        utilisateur = await Collecteur.findByEmail(identifiant);
+        utilisateur = await Collecteur.trouverParEmail(identifiant);
         if (utilisateur) return { utilisateur, type: 'collecteur' };
 
-        utilisateur = await Gestionnaire.findByEmail(identifiant);
+        utilisateur = await Gestionnaire.trouverParEmail(identifiant);
         if (utilisateur) return { utilisateur, type: 'gestionnaire' };
 
-        utilisateur = await Superviseur.findByEmail(identifiant);
+        utilisateur = await Superviseur.trouverParEmail(identifiant);
         if (utilisateur) return { utilisateur, type: 'superviseur' };
 
         // Par téléphone
         utilisateur = await Producteur.trouverParTelephone(identifiant);
         if (utilisateur) return { utilisateur, type: 'producteur' };
-
-        utilisateur = await Collecteur.findByTelephone(identifiant);
-        if (utilisateur) return { utilisateur, type: 'collecteur' };
 
         return null;
     }

@@ -129,39 +129,6 @@ class SuperviseurController {
         }
     }
 
-    // Valider un collecteur
-    // static async validerCollecteur(req, res) {
-    //     try {
-    //         const { collecteurId } = req.params;
-    //         const superviseurId = req.utilisateurId;
-    //         const { notes } = req.body;
-
-    //         const collecteur = await Superviseur.activerCollecteur(collecteurId, superviseurId, true);
-
-    //         // Notification au collecteur
-    //         await pool.query(
-    //             `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification)
-    //              VALUES ($1, 'collecteur', 'Compte validé', 
-    //                      'Félicitations! Votre compte a été validé. Vous pouvez maintenant recevoir des missions.',
-    //                      'compte_valide')`,
-    //             [collecteurId]
-    //         );
-
-    //         res.json({
-    //             success: true,
-    //             message: 'Collecteur validé avec succès',
-    //             collecteur
-    //         });
-    //     } catch (erreur) {
-    //         console.error('Erreur validation collecteur:', erreur);
-    //         res.status(500).json({
-    //             success: false,
-    //             message: 'Erreur lors de la validation du collecteur',
-    //             erreur: erreur.message
-    //         });
-    //     }
-    // }
-  
 
     static async validerCollecteur(req, res) {
     try {
@@ -292,24 +259,6 @@ class SuperviseurController {
         }
     }
 
-    // Liste des gestionnaires
-    // static async gestionnaires(req, res) {
-    //     try {
-    //         const gestionnaires = await Superviseur.gestionnaires();
-
-    //         res.json({
-    //             success: true,
-    //             gestionnaires
-    //         });
-    //     } catch (erreur) {
-    //         console.error('Erreur récupération gestionnaires:', erreur);
-    //         res.status(500).json({
-    //             success: false,
-    //             message: 'Erreur lors de la récupération des gestionnaires',
-    //             erreur: erreur.message
-    //         });
-    //     }
-    // }
 
     static async gestionnaires(req, res) {
     try {
@@ -329,29 +278,6 @@ class SuperviseurController {
         });
     }
  }
-
-    // Attribuer une mission à un collecteur
-    // static async attribuerMission(req, res) {
-    //     try {
-    //         const { missionId, collecteurId } = req.params;
-    //         const superviseurId = req.utilisateurId;
-
-    //         const mission = await Superviseur.attribuerMission(missionId, collecteurId, superviseurId);
-
-    //         res.json({
-    //             success: true,
-    //             message: 'Mission attribuée avec succès',
-    //             mission
-    //         });
-    //     } catch (erreur) {
-    //         console.error('Erreur attribution mission:', erreur);
-    //         res.status(500).json({
-    //             success: false,
-    //             message: 'Erreur lors de l\'attribution de la mission',
-    //             erreur: erreur.message
-    //         });
-    //     }
-    // }
 
 
     static async attribuerMission(req, res) {
@@ -400,39 +326,6 @@ class SuperviseurController {
         }
     }
 
-    // Statistiques générales
-    // static async statistiques(req, res) {
-    //     try {
-    //         const stats = await Superviseur.statistiques();
-
-    //         // Évolution des 7 derniers jours
-    //         const evolution = await pool.query(`
-    //             SELECT 
-    //                 DATE(date_validation) as jour,
-    //                 COUNT(*) as missions_validees,
-    //                 COALESCE(SUM(poids_depose), 0) as poids_total
-    //             FROM missions
-    //             WHERE date_validation >= CURRENT_DATE - INTERVAL '7 days'
-    //             GROUP BY DATE(date_validation)
-    //             ORDER BY jour DESC
-    //         `);
-
-    //         res.json({
-    //             success: true,
-    //             stats,
-    //             evolution: evolution.rows
-    //         });
-    //     } catch (erreur) {
-    //         console.error('Erreur statistiques:', erreur);
-    //         res.status(500).json({
-    //             success: false,
-    //             message: 'Erreur lors de la récupération des statistiques',
-    //             erreur: erreur.message
-    //         });
-    //     }
-    // }
-
-
 // Dans statistiques
 static async statistiques(req, res) {
     try {
@@ -465,6 +358,432 @@ static async statistiques(req, res) {
         });
     }
 }
+
+// ✅ Récupérer les détails d'un gestionnaire spécifique
+static async getGestionnaireDetails(req, res) {
+    try {
+        const { gestionnaireId } = req.params;
+        
+        const gestionnaire = await GestionnairePoint.trouverParId(gestionnaireId);
+        
+        if (!gestionnaire) {
+            return res.status(404).json({
+                success: false,
+                message: 'Gestionnaire non trouvé'
+            });
+        }
+
+        // Ne pas renvoyer le mot de passe
+        delete gestionnaire.mot_de_passe_hash;
+
+        res.json({
+            success: true,
+            gestionnaire: {
+                id: gestionnaire.id,
+                email: gestionnaire.email,
+                telephone: gestionnaire.telephone,
+                nomComplet: gestionnaire.nom_complet,
+                pointCollecteId: gestionnaire.point_collecte_id,
+                pointCollecteNom: gestionnaire.point_collecte_nom,
+                fonction: gestionnaire.fonction,
+                estActif: gestionnaire.est_actif,
+                creePar: gestionnaire.cree_par,
+                dateCreation: gestionnaire.cree_le,
+                derniereConnexion: gestionnaire.derniere_connexion
+            }
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur récupération détails gestionnaire:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération des détails'
+        });
+    }
+}
+
+// // ✅ Modifier un gestionnaire (TOUT, y compris point de collecte)
+// static async modifierGestionnaireComplet(req, res) {
+//     try {
+//         const { gestionnaireId } = req.params;
+//         const superviseurId = req.utilisateurId;
+//         const { 
+//             email, 
+//             telephone, 
+//             nomComplet, 
+//             pointCollecteId, 
+//             fonction, 
+//             estActif 
+//         } = req.body;
+
+//         // Vérifier que le gestionnaire existe
+//         const gestionnaire = await GestionnairePoint.trouverParId(gestionnaireId);
+//         if (!gestionnaire) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Gestionnaire non trouvé'
+//             });
+//         }
+
+//         // Vérifier l'unicité de l'email si modifié
+//         if (email && email !== gestionnaire.email) {
+//             const emailExiste = await GestionnairePoint.trouverParEmail(email);
+//             if (emailExiste) {
+//                 return res.status(400).json({
+//                     success: false,
+//                     message: 'Cet email est déjà utilisé'
+//                 });
+//             }
+//         }
+
+//         // Vérifier l'unicité du téléphone si modifié
+//         if (telephone && telephone !== gestionnaire.telephone) {
+//             const telExiste = await pool.query(
+//                 'SELECT id FROM gestionnaires_points WHERE telephone = $1 AND id != $2',
+//                 [telephone, gestionnaireId]
+//             );
+//             if (telExiste.rows.length > 0) {
+//                 return res.status(400).json({
+//                     success: false,
+//                     message: 'Ce numéro de téléphone est déjà utilisé'
+//                 });
+//             }
+//         }
+
+//         const donnees = {};
+//         if (email) donnees.email = email;
+//         if (telephone) donnees.telephone = telephone;
+//         if (nomComplet) donnees.nomComplet = nomComplet;
+//         if (pointCollecteId !== undefined) donnees.pointCollecteId = pointCollecteId;
+//         if (fonction) donnees.fonction = fonction;
+//         if (estActif !== undefined) donnees.estActif = estActif;
+
+//         const gestionnaireMaj = await GestionnairePoint.mettreAJourComplet(
+//             gestionnaireId, 
+//             donnees, 
+//             superviseurId
+//         );
+
+//         if (!gestionnaireMaj) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Aucune donnée à mettre à jour'
+//             });
+//         }
+
+//         // Récupérer le nom du point de collecte pour la réponse
+//         const pointCollecte = pointCollecteId ? 
+//             await pool.query('SELECT nom FROM points_depot_volontaire WHERE id = $1', [pointCollecteId]) : null;
+
+//         res.json({
+//             success: true,
+//             message: 'Gestionnaire modifié avec succès',
+//             gestionnaire: {
+//                 ...gestionnaireMaj,
+//                 pointCollecteNom: pointCollecte?.rows[0]?.nom || gestionnaire.point_collecte_nom
+//             }
+//         });
+//     } catch (erreur) {
+//         console.error('❌ Erreur modification gestionnaire:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de la modification du gestionnaire',
+//             erreur: erreur.message
+//         });
+//     }
+// }
+
+// ✅ Activer/Désactiver un gestionnaire
+static async activerGestionnaire(req, res) {
+    try {
+        const { gestionnaireId } = req.params;
+        const { estActif } = req.body;
+
+        if (estActif === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: 'Le statut est requis (true/false)'
+            });
+        }
+
+        const gestionnaire = await GestionnairePoint.mettreAJour(gestionnaireId, { estActif });
+
+        if (!gestionnaire) {
+            return res.status(404).json({
+                success: false,
+                message: 'Gestionnaire non trouvé'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `Gestionnaire ${estActif ? 'activé' : 'désactivé'} avec succès`,
+            gestionnaire
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur activation gestionnaire:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de l\'activation du gestionnaire'
+        });
+    }
+}
+
+  static async getProfil(req, res) {
+        try {
+            const superviseurId = req.utilisateurId;
+            const superviseur = await Superviseur.trouverParId(superviseurId);
+
+            if (!superviseur) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Superviseur non trouvé'
+                });
+            }
+
+            delete superviseur.mot_de_passe_hash;
+
+            res.json({
+                success: true,
+                superviseur
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur getProfil:', erreur);
+            res.status(500).json({ success: false, message: 'Erreur serveur' });
+        }
+    }
+
+    static async modifierProfil(req, res) {
+        try {
+            const superviseurId = req.utilisateurId;
+            const { nomComplet, telephone } = req.body;
+
+            const superviseur = await Superviseur.mettreAJour(superviseurId, { nomComplet, telephone });
+
+            res.json({
+                success: true,
+                message: 'Profil mis à jour avec succès',
+                superviseur
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur modifierProfil:', erreur);
+            res.status(500).json({ success: false, message: 'Erreur serveur' });
+        }
+    }
+
+    static async changerMotDePasse(req, res) {
+        try {
+            const superviseurId = req.utilisateurId;
+            const { motDePasseActuel, nouveauMotDePasse } = req.body;
+
+            const superviseur = await Superviseur.trouverParId(superviseurId);
+            const valide = await bcrypt.compare(motDePasseActuel, superviseur.mot_de_passe_hash);
+
+            if (!valide) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Mot de passe actuel incorrect'
+                });
+            }
+
+            const salt = await bcrypt.genSalt(10);
+            const hash = await bcrypt.hash(nouveauMotDePasse, salt);
+
+            await Superviseur.mettreAJour(superviseurId, { mot_de_passe_hash: hash });
+
+            res.json({
+                success: true,
+                message: 'Mot de passe modifié avec succès'
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur changerMotDePasse:', erreur);
+            res.status(500).json({ success: false, message: 'Erreur serveur' });
+        }
+    }
+
+    // ========== COLLECTEURS ==========
+    static async getAllCollecteurs(req, res) {
+        try {
+            const collecteurs = await pool.query(`
+                SELECT id, email, telephone, nom_complet, type_collecteur,
+                       zone_intervention_nom, statut, est_actif, photo_profil_url,
+                       points_total, gains_total, cree_le
+                FROM collecteurs
+                ORDER BY cree_le DESC
+            `);
+
+            res.json({
+                success: true,
+                collecteurs: collecteurs.rows
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur getAllCollecteurs:', erreur);
+            res.status(500).json({ success: false, message: 'Erreur serveur' });
+        }
+    }
+
+    static async getCollecteurDetails(req, res) {
+        try {
+            const { collecteurId } = req.params;
+
+            const collecteur = await pool.query(`
+                SELECT * FROM collecteurs WHERE id = $1
+            `, [collecteurId]);
+
+            if (collecteur.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Collecteur non trouvé'
+                });
+            }
+
+            res.json({
+                success: true,
+                collecteur: collecteur.rows[0]
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur getCollecteurDetails:', erreur);
+            res.status(500).json({ success: false, message: 'Erreur serveur' });
+        }
+    }
+
+    static async rejeterCollecteur(req, res) {
+        try {
+            const { collecteurId } = req.params;
+            const { notes } = req.body;
+
+            await pool.query(`
+                UPDATE collecteurs 
+                SET statut = 'rejete', notes_validation = $1
+                WHERE id = $2
+            `, [notes, collecteurId]);
+
+            res.json({
+                success: true,
+                message: 'Collecteur rejeté avec succès'
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur rejeterCollecteur:', erreur);
+            res.status(500).json({ success: false, message: 'Erreur serveur' });
+        }
+    }
+
+    // ========== GESTIONNAIRES ==========
+    static async getGestionnaireDetails(req, res) {
+        try {
+            const { gestionnaireId } = req.params;
+
+            const gestionnaire = await pool.query(`
+                SELECT g.*, p.nom as point_collecte_nom
+                FROM gestionnaires_points g
+                LEFT JOIN points_depot_volontaire p ON g.point_collecte_id = p.id
+                WHERE g.id = $1
+            `, [gestionnaireId]);
+
+            if (gestionnaire.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Gestionnaire non trouvé'
+                });
+            }
+
+            res.json({
+                success: true,
+                gestionnaire: gestionnaire.rows[0]
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur getGestionnaireDetails:', erreur);
+            res.status(500).json({ success: false, message: 'Erreur serveur' });
+        }
+    }
+
+    static async modifierGestionnaireComplet(req, res) {
+        try {
+            const { gestionnaireId } = req.params;
+            const { email, telephone, nomComplet, pointCollecteId, fonction, estActif } = req.body;
+
+            // Vérifier que le gestionnaire existe
+            const gestionnaire = await GestionnairePoint.trouverParId(gestionnaireId);
+            if (!gestionnaire) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Gestionnaire non trouvé'
+                });
+            }
+
+            const donnees = {};
+            if (email) donnees.email = email;
+            if (telephone) donnees.telephone = telephone;
+            if (nomComplet) donnees.nomComplet = nomComplet;
+            if (pointCollecteId !== undefined) donnees.pointCollecteId = pointCollecteId;
+            if (fonction) donnees.fonction = fonction;
+            if (estActif !== undefined) donnees.estActif = estActif;
+
+            const gestionnaireMaj = await GestionnairePoint.mettreAJour(gestionnaireId, donnees);
+
+            res.json({
+                success: true,
+                message: 'Gestionnaire modifié avec succès',
+                gestionnaire: gestionnaireMaj
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur modifierGestionnaireComplet:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la modification',
+                erreur: erreur.message
+            });
+        }
+    }
+
+    // ========== MISSIONS ==========
+    static async missionsDisponibles(req, res) {
+        try {
+            const missions = await pool.query(`
+                SELECT m.*, d.type_dechet, d.quantite, d.unite,
+                       p.nom_complet as producteur_nom, p.adresse
+                FROM missions m
+                JOIN declarations_dechets d ON m.declaration_id = d.id
+                JOIN producteurs p ON d.producteur_id = p.id
+                WHERE m.statut = 'disponible'
+                ORDER BY m.cree_le DESC
+            `);
+
+            res.json({
+                success: true,
+                missions: missions.rows
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur missionsDisponibles:', erreur);
+            res.status(500).json({ success: false, message: 'Erreur serveur' });
+        }
+    }
+
+    // ========== STATISTIQUES ==========
+    static async evolutionHebdomadaire(req, res) {
+        try {
+            const { jours = 7 } = req.query;
+
+            const evolution = await pool.query(`
+                SELECT 
+                    DATE(date_validation) as jour,
+                    COUNT(*) as missions_validees,
+                    COALESCE(SUM(poids_depose), 0) as poids_total
+                FROM missions
+                WHERE statut = 'validee'
+                  AND date_validation >= NOW() - ($1 || ' days')::INTERVAL
+                GROUP BY DATE(date_validation)
+                ORDER BY jour DESC
+            `, [jours]);
+
+            res.json({
+                success: true,
+                evolution: evolution.rows
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur evolutionHebdomadaire:', erreur);
+            res.status(500).json({ success: false, message: 'Erreur serveur' });
+        }
+    }
 }
 
 export default SuperviseurController;

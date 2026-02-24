@@ -88,5 +88,8 @@ router.post('/collecteurs/:collecteurId/missions/:missionId/credits', Gestionnai
 
 // 🔐 Sécurité
 router.put('/changer-mot-de-passe', GestionnaireController.modifierMotDePasse);
+router.get('/profil', GestionnaireController.getProfil); // recuperer son profil
 
+// Mettre à jour son propre profil (sans point de collecte car seul le superviseur peut modifier cela)
+router.put('/profil', GestionnaireController.mettreAJourProfil);
 export default router;

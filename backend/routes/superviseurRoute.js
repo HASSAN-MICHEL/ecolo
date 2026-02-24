@@ -44,28 +44,34 @@ const router = express.Router();
 // ============================================
 console.log('🟢 Routes publiques superviseur...');
 router.post('/connexion', SuperviseurController.connexion);
-// Ajoute d'autres routes publiques si nécessaire
 
-// ============================================
-// 2. ENSUITE le middleware de protection
-// ============================================
 console.log('🔒 Application du middleware de protection...');
-router.use(AuthController.verifierToken);  // ✅ Maintenant c'est APRÈS les routes publiques
+router.use(AuthController.verifierToken);  
 
-// ============================================
-// 3. ENFIN les routes PROTÉGÉES
 // ============================================
 console.log('🔐 Routes protégées superviseur...');
+
+router.get('/profil', SuperviseurController.getProfil);
+router.put('/profil', SuperviseurController.modifierProfil);
 
 // Gestion des collecteurs
 router.get('/collecteurs/en-attente', SuperviseurController.collecteursEnAttente);
 router.post('/collecteurs/:collecteurId/valider', SuperviseurController.validerCollecteur);
 router.post('/collecteurs/:collecteurId/suspendre', SuperviseurController.suspendreCollecteur);
+router.get('/collecteurs', SuperviseurController.getAllCollecteurs);
+router.get('/collecteurs/en-attente', SuperviseurController.collecteursEnAttente);
+router.get('/collecteurs/:collecteurId', SuperviseurController.getCollecteurDetails);
+router.post('/collecteurs/:collecteurId/rejeter', SuperviseurController.rejeterCollecteur);
+
 
 // Gestion des gestionnaires
 router.get('/gestionnaires', SuperviseurController.gestionnaires);
 router.post('/gestionnaires', SuperviseurController.creerGestionnaire);
 router.put('/gestionnaires/:gestionnaireId', SuperviseurController.modifierGestionnaire);
+
+router.put('/gestionnaires/:gestionnaireId', SuperviseurController.modifierGestionnaireComplet);
+
+router.patch('/gestionnaires/:gestionnaireId/activer', SuperviseurController.activerGestionnaire);
 
 // Gestion des missions
 router.post('/missions', SuperviseurController.creerMission);

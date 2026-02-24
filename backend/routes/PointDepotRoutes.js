@@ -23,8 +23,8 @@ import PointDepotController from '../controllers/PointDepotController.js';
 
 const router = express.Router();
 
-// ✅ CHANGEZ '' en '/'
-router.get('/', PointDepotController.getAll);  // ← Maintenant ça correspond à /api/points-depot/
+
+router.get('/', PointDepotController.getAll);  
 router.get('/:id', PointDepotController.getById);
 router.post('/', PointDepotController.create);
 router.put('/:id', PointDepotController.update);
