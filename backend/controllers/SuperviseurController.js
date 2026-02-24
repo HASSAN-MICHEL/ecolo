@@ -494,7 +494,7 @@ static async getGestionnaireDetails(req, res) {
 
 // ✅ Activer/Désactiver un gestionnaire
 static async activerGestionnaire(req, res) {
-    try {
+    try {   
         const { gestionnaireId } = req.params;
         const { estActif } = req.body;
 
