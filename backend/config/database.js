@@ -33,7 +33,7 @@
 
 
 
-//
+// Au dessus version pour le deploiement en local  et en dessous pour la production avec vercel
 
 import pkg from "pg";
 const { Pool } = pkg;

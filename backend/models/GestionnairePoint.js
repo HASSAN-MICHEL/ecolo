@@ -378,8 +378,8 @@ static async attribuerCredits(collecteurId, missionId, montant, gestionnaireId) 
     }
   
  }
-  // models/GestionnairePoint.js - VERSION SANS validee_par
-// models/GestionnairePoint.js - tableauBord avec stats personnalisées
+
+//  tableauBord avec stats personnalisées
 static async tableauBord(gestionnaireId) {
     const gestionnaire = await this.trouverParId(gestionnaireId);
     
@@ -410,7 +410,7 @@ static async tableauBord(gestionnaireId) {
             WHERE m.point_depot_id = $1
         `, [gestionnaire.point_collecte_id]);
         
-        // ✅ Stats PERSONNELLES de CE gestionnaire
+        // Stats PERSONNELLES de CE gestionnaire
         const mesStats = await pool.query(`
             SELECT 
                 COUNT(CASE WHEN m.statut = 'validee' AND m.validee_par = $1 THEN 1 END) as missions_validees,
@@ -450,7 +450,7 @@ static async tableauBord(gestionnaireId) {
     }
 }
 
-// models/GestionnairePoint.js - mesMissionsValidees avec filtre
+// mesMissionsValidees avec filtre
 static async mesMissionsValidees(gestionnaireId) {
     const gestionnaire = await this.trouverParId(gestionnaireId);
     
@@ -487,7 +487,7 @@ static async mesMissionsValidees(gestionnaireId) {
         return [];
     }
 }
-// models/GestionnairePoint.js - monHistorique avec filtre
+// monHistorique avec filtre
 static async monHistorique(gestionnaireId, limite = 20) {
     const gestionnaire = await this.trouverParId(gestionnaireId);
     
@@ -522,7 +522,7 @@ static async monHistorique(gestionnaireId, limite = 20) {
     }
 }
 
-// models/GestionnairePoint.js - toutesMissionsDuPoint avec indicateur
+//  toutesMissionsDuPoint avec indicateur
 static async toutesMissionsDuPoint(gestionnaireId, statut = null) {
     const gestionnaire = await this.trouverParId(gestionnaireId);
     
