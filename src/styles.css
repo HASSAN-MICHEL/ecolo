@@ -1,0 +1,22 @@
+/* Test styles temporaires */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%);
+}
+
+.test-green {
+  background-color: #16a34a !important;
+  color: white !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+}
+
+.test-card {
+  background: white !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+  padding: 1.5rem !important;
+  margin: 1rem !important;
+}
