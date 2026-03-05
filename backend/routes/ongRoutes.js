@@ -57,7 +57,7 @@
 // routes/ongRoutes.js
 import express from 'express';
 import OngController from '../controllers/OngController.js';
-import AuthController from '../controllers/authController.js';
+import AuthController from '../controllers/AuthController.js';
 import { uploadLogo, uploadRapport } from '../middleware/uploads.js';   
 
 const router = express.Router();

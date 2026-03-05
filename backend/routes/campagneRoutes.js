@@ -50,7 +50,7 @@
 // routes/campagneRoute.js
 import express from 'express';
 import CampagneController from '../controllers/CampagneController.js';  
-import AuthController from '../controllers/authController.js';
+import AuthController from '../controllers/AuthController.js';
 
 const router = express.Router();
 

@@ -54,7 +54,7 @@
 import express from 'express';
 import RecycleurController from '../controllers/RecycleurController.js';
 import { uploadRecycleurFiles , uploadCertificat } from '../middleware/uploads.js';
-import AuthController from '../controllers/authController.js';
+import AuthController from '../controllers/AuthController.js';
 
 const router = express.Router();
 

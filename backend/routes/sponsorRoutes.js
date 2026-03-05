@@ -4,7 +4,7 @@
 import express from 'express';
 import SponsorController from '../controllers/SponsorController.js';
 import { uploadLogo } from '../middleware/uploads.js';
-import AuthController from '../controllers/authController.js';
+import AuthController from '../controllers/AuthController.js';
 import AdminController  from '../controllers/AdminController.js';  
 
 const router = express.Router();
