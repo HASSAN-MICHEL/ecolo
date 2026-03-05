@@ -131,7 +131,7 @@ router.put('/ongs/:id', uploadLogo, AdminController.modifierOng);
 
 // ===== GESTION DES CAMPAGNES =====
 router.post('/campagnes', CampagneController.creer);
-router.get('/campagness', CampagneController.lister);
+router.get('/campagnes', CampagneController.lister);
 router.get('/campagnes/:id', AdminController.detailsCampagne);
 router.put('/campagnes/:id', AdminController.modifierCampagne);
 //router.delete('/campagnes/:id', AdminController.supprimerCampagne);
