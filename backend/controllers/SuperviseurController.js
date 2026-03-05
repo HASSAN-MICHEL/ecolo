@@ -401,97 +401,6 @@ static async getGestionnaireDetails(req, res) {
     }
 }
 
-// // ✅ Modifier un gestionnaire (TOUT, y compris point de collecte)
-// static async modifierGestionnaireComplet(req, res) {
-//     try {
-//         const { gestionnaireId } = req.params;
-//         const superviseurId = req.utilisateurId;
-//         const { 
-//             email, 
-//             telephone, 
-//             nomComplet, 
-//             pointCollecteId, 
-//             fonction, 
-//             estActif 
-//         } = req.body;
-
-//         // Vérifier que le gestionnaire existe
-//         const gestionnaire = await GestionnairePoint.trouverParId(gestionnaireId);
-//         if (!gestionnaire) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: 'Gestionnaire non trouvé'
-//             });
-//         }
-
-//         // Vérifier l'unicité de l'email si modifié
-//         if (email && email !== gestionnaire.email) {
-//             const emailExiste = await GestionnairePoint.trouverParEmail(email);
-//             if (emailExiste) {
-//                 return res.status(400).json({
-//                     success: false,
-//                     message: 'Cet email est déjà utilisé'
-//                 });
-//             }
-//         }
-
-//         // Vérifier l'unicité du téléphone si modifié
-//         if (telephone && telephone !== gestionnaire.telephone) {
-//             const telExiste = await pool.query(
-//                 'SELECT id FROM gestionnaires_points WHERE telephone = $1 AND id != $2',
-//                 [telephone, gestionnaireId]
-//             );
-//             if (telExiste.rows.length > 0) {
-//                 return res.status(400).json({
-//                     success: false,
-//                     message: 'Ce numéro de téléphone est déjà utilisé'
-//                 });
-//             }
-//         }
-
-//         const donnees = {};
-//         if (email) donnees.email = email;
-//         if (telephone) donnees.telephone = telephone;
-//         if (nomComplet) donnees.nomComplet = nomComplet;
-//         if (pointCollecteId !== undefined) donnees.pointCollecteId = pointCollecteId;
-//         if (fonction) donnees.fonction = fonction;
-//         if (estActif !== undefined) donnees.estActif = estActif;
-
-//         const gestionnaireMaj = await GestionnairePoint.mettreAJourComplet(
-//             gestionnaireId, 
-//             donnees, 
-//             superviseurId
-//         );
-
-//         if (!gestionnaireMaj) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Aucune donnée à mettre à jour'
-//             });
-//         }
-
-//         // Récupérer le nom du point de collecte pour la réponse
-//         const pointCollecte = pointCollecteId ? 
-//             await pool.query('SELECT nom FROM points_depot_volontaire WHERE id = $1', [pointCollecteId]) : null;
-
-//         res.json({
-//             success: true,
-//             message: 'Gestionnaire modifié avec succès',
-//             gestionnaire: {
-//                 ...gestionnaireMaj,
-//                 pointCollecteNom: pointCollecte?.rows[0]?.nom || gestionnaire.point_collecte_nom
-//             }
-//         });
-//     } catch (erreur) {
-//         console.error('❌ Erreur modification gestionnaire:', erreur);
-//         res.status(500).json({
-//             success: false,
-//             message: 'Erreur lors de la modification du gestionnaire',
-//             erreur: erreur.message
-//         });
-//     }
-// }
-
 // ✅ Activer/Désactiver un gestionnaire
 static async activerGestionnaire(req, res) {
     try {   
@@ -784,6 +693,371 @@ static async activerGestionnaire(req, res) {
             res.status(500).json({ success: false, message: 'Erreur serveur' });
         }
     }
+
+    static async getDemandesEnlevement(req, res) {
+    try {
+        const { statut, recycleurId, pointDepotId } = req.query;
+
+        const demandes = await Superviseur.getDemandesEnlevement({
+            statut,
+            recycleurId,
+            pointDepotId
+        });
+
+        res.json({
+            success: true,
+            demandes,
+            total: demandes.length
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur getDemandesEnlevement:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération des demandes',
+            erreur: erreur.message
+        });
+    }
+}
+
+// Récupérer les demandes traitées par le superviseur connecté
+static async mesDemandesTraitees(req, res) {
+    try {
+        const superviseurId = req.utilisateurId;
+        const { statut, dateDebut, dateFin } = req.query;
+
+        const demandes = await Superviseur.getDemandesParSuperviseur(superviseurId, {
+            statut,
+            dateDebut,
+            dateFin
+        });
+
+        // Statistiques personnelles
+        const stats = await Superviseur.statistiquesDemandes(superviseurId);
+
+        res.json({
+            success: true,
+            demandes,
+            statistiques: stats,
+            total: demandes.length
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur mesDemandesTraitees:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération de vos demandes',
+            erreur: erreur.message
+        });
+    }
+}
+
+// // Valider une demande
+// static async validerDemandeEnlevement(req, res) {
+//     try {
+//         const { demandeId } = req.params;
+//         const superviseurId = req.utilisateurId;
+
+//         const resultat = await Superviseur.validerDemandeEnlevement(demandeId, superviseurId);
+
+//         res.json({
+//             success: true,
+//             message: 'Demande validée avec succès',
+//             demande: resultat
+//         });
+//     } catch (erreur) {
+//         console.error('❌ Erreur validerDemandeEnlevement:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: erreur.message || 'Erreur lors de la validation',
+//             erreur: erreur.message
+//         });
+//     }
+// }
+
+// controllers/SuperviseurController.js - Version corrigée
+
+static async validerDemandeEnlevement(req, res) {
+    const client = await pool.connect();
+    
+    try {
+        const { demandeId } = req.params;
+        const superviseurId = req.utilisateurId;
+
+        // 1. D'abord, récupérer les informations de la demande
+        const demandeInfo = await client.query(`
+            SELECT recycleur_id, type_dechet, quantite_demandee 
+            FROM demandes_enlevement 
+            WHERE id = $1
+        `, [demandeId]);
+
+        if (demandeInfo.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Demande non trouvée'
+            });
+        }
+
+        const { recycleur_id, type_dechet, quantite_demandee } = demandeInfo.rows[0];
+
+        // 2. Valider la demande via le modèle
+        const resultat = await Superviseur.validerDemandeEnlevement(demandeId, superviseurId);
+
+        // 3. Ajouter au stock du recycleur
+        const StockRecycleur = (await import('../models/StockRecycleur.js')).default;
+        
+        const stockResult = await StockRecycleur.ajouterDepuisDemande(
+            demandeId,
+            recycleur_id,           // ← Utiliser recycleur_id de la requête
+            type_dechet,             // ← Utiliser type_dechet de la requête
+            quantite_demandee        // ← Utiliser quantite_demandee de la requête
+        );
+
+        console.log('✅ Stock recycleur mis à jour:', stockResult);
+
+        res.json({
+            success: true,
+            message: 'Demande validée avec succès',
+            demande: resultat,
+            stock: stockResult
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur validerDemandeEnlevement:', erreur);
+        res.status(500).json({
+            success: false,
+            message: erreur.message || 'Erreur lors de la validation',
+            erreur: erreur.message
+        });
+    } finally {
+        client.release();
+    }
+}
+
+// Refuser une demande
+static async refuserDemandeEnlevement(req, res) {
+    try {
+        const { demandeId } = req.params;
+        const superviseurId = req.utilisateurId;
+        const { motif } = req.body;
+
+        if (!motif) {
+            return res.status(400).json({
+                success: false,
+                message: 'Veuillez fournir un motif de refus'
+            });
+        }
+
+        const resultat = await Superviseur.refuserDemandeEnlevement(demandeId, superviseurId, motif);
+
+        res.json({
+            success: true,
+            message: 'Demande refusée',
+            demande: resultat
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur refuserDemandeEnlevement:', erreur);
+        res.status(500).json({
+            success: false,
+            message: erreur.message || 'Erreur lors du refus',
+            erreur: erreur.message
+        });
+    }
+}
+
+
+static async getAllDeclarations(req, res) {
+    try {
+        const { statut, recycleurId, dateDebut, dateFin } = req.query;
+
+        let requete = `
+            SELECT 
+                dr.*,
+                r.nom_entreprise as recycleur_nom,
+                r.nom_responsable as recycleur_responsable,
+                r.email as recycleur_email,
+                r.telephone as recycleur_telephone,
+                de.point_depot_id,
+                pdv.nom as point_nom
+            FROM declarations_recyclage dr
+            JOIN recycleurs r ON dr.recycleur_id = r.id
+            LEFT JOIN demandes_enlevement de ON dr.demande_enlevement_id = de.id
+            LEFT JOIN points_depot_volontaire pdv ON de.point_depot_id = pdv.id
+            WHERE 1=1
+        `;
+        
+        const valeurs = [];
+        let index = 1;
+
+        if (statut) {
+            requete += ` AND dr.statut = $${index}`;
+            valeurs.push(statut);
+            index++;
+        }
+
+        if (recycleurId) {
+            requete += ` AND dr.recycleur_id = $${index}`;
+            valeurs.push(recycleurId);
+            index++;
+        }
+
+        if (dateDebut) {
+            requete += ` AND dr.date_recyclage >= $${index}`;
+            valeurs.push(dateDebut);
+            index++;
+        }
+
+        if (dateFin) {
+            requete += ` AND dr.date_recyclage <= $${index}`;
+            valeurs.push(dateFin);
+            index++;
+        }
+
+        requete += ` ORDER BY dr.date_recyclage DESC`;
+
+        const resultat = await pool.query(requete, valeurs);
+        
+        // Statistiques globales
+        const stats = await pool.query(`
+            SELECT 
+                COUNT(*) as total,
+                COUNT(*) FILTER (WHERE statut = 'en_attente') as en_attente,
+                COUNT(*) FILTER (WHERE statut = 'validee') as validees,
+                COALESCE(SUM(quantite_recyclee), 0) as total_kg
+            FROM declarations_recyclage
+        `);
+
+        res.json({
+            success: true,
+            declarations: resultat.rows,
+            statistiques: stats.rows[0]
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur getAllDeclarations:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération des déclarations',
+            erreur: erreur.message
+        });
+    }
+}
+
+static async validerDeclaration(req, res) {
+    try {
+        const { declarationId } = req.params;
+        const superviseurId = req.utilisateurId;
+
+        const requete = `
+            UPDATE declarations_recyclage 
+            SET statut = 'validee',
+                valide_par = $1,
+                date_validation = CURRENT_TIMESTAMP
+            WHERE id = $2
+            RETURNING *
+        `;
+
+        const resultat = await pool.query(requete, [superviseurId, declarationId]);
+
+        if (resultat.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Déclaration non trouvée'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Déclaration validée avec succès',
+            declaration: resultat.rows[0]
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur validerDeclaration:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la validation',
+            erreur: erreur.message
+        });
+    }
+}
+
+// Statistiques globales des demandes
+static async statistiquesDemandes(req, res) {
+    try {
+        const stats = await Superviseur.statistiquesDemandes();
+
+        // Évolution par mois
+        const evolution = await pool.query(`
+            SELECT 
+                DATE_TRUNC('month', cree_le) as mois,
+                COUNT(*) as total,
+                COUNT(*) FILTER (WHERE statut = 'validee') as validees,
+                COUNT(*) FILTER (WHERE statut = 'refusee') as refusees,
+                SUM(quantite_demandee) FILTER (WHERE statut = 'validee') as kg_valides
+            FROM demandes_enlevement
+            WHERE cree_le >= NOW() - INTERVAL '6 months'
+            GROUP BY DATE_TRUNC('month', cree_le)
+            ORDER BY mois DESC
+        `);
+
+        res.json({
+            success: true,
+            stats,
+            evolution: evolution.rows
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur statistiquesDemandes:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération des statistiques',
+            erreur: erreur.message
+        });
+    }
+}
+
+// Récupérer les détails d'une demande
+static async detailsDemande(req, res) {
+    try {
+        const { demandeId } = req.params;
+
+        const demande = await pool.query(`
+            SELECT 
+                de.*,
+                r.nom_entreprise as recycleur_nom,
+                r.nom_responsable as recycleur_responsable,
+                r.email as recycleur_email,
+                r.telephone as recycleur_telephone,
+                r.adresse as recycleur_adresse,
+                pdv.nom as point_nom,
+                pdv.commune as point_commune,
+                pdv.quartier as point_quartier,
+                pdv.adresse as point_adresse,
+                s.nom_complet as valide_par_nom,
+                s.email as valide_par_email
+            FROM demandes_enlevement de
+            JOIN recycleurs r ON de.recycleur_id = r.id
+            JOIN points_depot_volontaire pdv ON de.point_depot_id = pdv.id
+            LEFT JOIN superviseurs s ON de.valide_par = s.id
+            WHERE de.id = $1
+        `, [demandeId]);
+
+        if (demande.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Demande non trouvée'
+            });
+        }
+
+        res.json({
+            success: true,
+            demande: demande.rows[0]
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur detailsDemande:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération des détails',
+            erreur: erreur.message
+        });
+    }
+}
 }
 
 export default SuperviseurController;

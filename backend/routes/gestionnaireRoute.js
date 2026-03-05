@@ -33,9 +33,15 @@ router.get('/mon-historique', GestionnaireController.monHistorique);
 // 💰 Attribution des crédits
 router.post('/collecteurs/:collecteurId/missions/:missionId/credits', GestionnaireController.attribuerCredits);
 
+// Voir les campagnes disponible pour alidation des missions :
+
+router.get('/campagnes-disponibles', GestionnaireController.getCampagnesDisponibles);
+
 // 🔐 Sécurité
 router.put('/changer-mot-de-passe', GestionnaireController.modifierMotDePasse);
 router.get('/profil', GestionnaireController.getProfil); // recuperer son profil
+
+
 
 // Mettre à jour son propre profil (sans point de collecte car seul le superviseur peut modifier cela)
 router.put('/profil', GestionnaireController.mettreAJourProfil);

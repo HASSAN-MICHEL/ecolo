@@ -59,12 +59,70 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
+const certificatStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = 'uploads/recyclage';
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `certificat-${uniqueSuffix}${ext}`);
+  }
+});
+
+export const uploadCertificat = multer({
+  storage: certificatStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Format de fichier non supporté. Utilisez PDF, JPEG ou PNG'));
+    }
+  }
+}).single('certificat');
+
 // Middleware pour gérer plusieurs fichiers
 export const uploadCollecteurFiles = upload.fields([
     { name: 'photoProfil', maxCount: 1 },
     { name: 'photoCniRecto', maxCount: 1 },
     { name: 'photoCniVerso', maxCount: 1 }
 ]);
+
+export const uploadRecycleurFiles = (req, res, next) => {
+    console.log('🔍 Middleware uploadRecycleurFiles - Début');
+    
+    upload.fields([
+        { name: 'photoProfil', maxCount: 1 },
+        { name: 'photoCniRecto', maxCount: 1 },
+        { name: 'photoCniVerso', maxCount: 1 }
+    ])(req, res, (err) => {
+        if (err) {
+            console.error('❌ Erreur multer:', err);
+            return res.status(400).json({
+                success: false,
+                message: err.message
+            });
+        }
+        
+        console.log('✅ Fichiers uploadés avec succès');
+        console.log('📁 req.files:', req.files);
+        console.log('📝 req.body:', req.body);
+        
+        next();
+    });
+};
+
+// Upload logo
+export const uploadLogo = upload.single('logo');
+
+// Upload rapport
+export const uploadRapport = upload.single('fichier');
 
 // Servir les fichiers statiques
 export const serveStatic = (app) => {

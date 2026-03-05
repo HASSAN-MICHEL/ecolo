@@ -36,8 +36,16 @@
 import express from 'express';
 import SuperviseurController from '../controllers/SuperviseurController.js';
 import AuthController from '../controllers/AuthController.js';
+import AdminController  from '../controllers/AdminController.js';  
 
 const router = express.Router();
+
+
+
+// Routes publiques
+router.get('/ongs' , AdminController.listerOngs);
+// Routes publiques
+router.get('/sponsors' , AdminController.listerSponsors);
 
 // ============================================
 // 1. D'ABORD les routes PUBLIQUES
@@ -80,4 +88,29 @@ router.post('/missions/:missionId/attribuer/:collecteurId', SuperviseurControlle
 // Statistiques
 router.get('/statistiques', SuperviseurController.statistiques);
 
+//géré les demandes des recycleur:
+
+
+// Liste toutes les demandes
+router.get('/demandes-recycleurs', SuperviseurController.getDemandesEnlevement);
+
+// Demandes traitées par le superviseur connecté
+router.get('/demandes-recycleurs/mes-traitements', SuperviseurController.mesDemandesTraitees);
+
+// Statistiques des demandes
+router.get('/demandes-recycleurs/statistiques', SuperviseurController.statistiquesDemandes);
+
+// Détails d'une demande
+router.get('/demandes-recycleurs/:demandeId', SuperviseurController.detailsDemande);
+
+// Valider une demande
+router.post('/demandes-recycleurs/:demandeId/valider', SuperviseurController.validerDemandeEnlevement);
+
+// Refuser une demande
+// router.post('/demandes-recycleurs/:demandeId/refuser', SuperviseurController.refuserDemandeEnlevement);
+// router.get('/declarations-recyclage', SuperviseurController.getAllDeclarations);
+// router.put('/declarations-recyclage/:declarationId/valider', SuperviseurController.validerDeclaration);
+
+router.get('/declarations-recyclage', SuperviseurController.getAllDeclarations);
+router.put('/declarations-recyclage/:declarationId/valider', SuperviseurController.validerDeclaration);
 export default router;

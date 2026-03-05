@@ -48,57 +48,16 @@ class Mission {
         }
     }
 
-    
-//     static async attribuer(missionId, collecteurId) {
-//     const client = await pool.connect();
-    
-//     try {
-//         await client.query('BEGIN');
-
-//         // Mettre à jour la mission
-//         const requeteMission = `
-//             UPDATE missions 
-//             SET collecteur_id = $1,
-//                 statut = 'acceptee',
-//                 date_acceptation = CURRENT_TIMESTAMP
-//             WHERE id = $2
-//             RETURNING *
-//         `;
-        
-//         const resultatMission = await client.query(requeteMission, [collecteurId, missionId]);
-//         const mission = resultatMission.rows[0];
-
-//         // ✅ METTRE À JOUR LA DÉCLARATION
-//         await client.query(`
-//             UPDATE declarations_dechets 
-//             SET statut = 'programme',
-//                 modifie_le = CURRENT_TIMESTAMP
-//             WHERE id = $1
-//         `, [mission.declaration_id]);
-
-//         // Notification au collecteur
-//         await client.query(
-//             `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification, reference_id, reference_type)
-//              VALUES ($1, 'collecteur', 'Mission acceptée', 'Vous avez accepté une mission de collecte.', 'mission_acceptee', $2, 'mission')`,
-//             [collecteurId, missionId]
-//         );
-
-//         await client.query('COMMIT');
-//         return mission;
-//     } catch (erreur) {
-//         await client.query('ROLLBACK');
-//         throw erreur;
-//     } finally {
-//         client.release();
-//     }
 
     
-//  }
+
 
 static async attribuer(missionId, collecteurId) {
     const client = await pool.connect();
     
     try {
+        console.log('📝 Début attribuer - missionId:', missionId, 'collecteurId:', collecteurId);
+        
         await client.query('BEGIN');
 
         // 1. Récupérer les infos de la mission et du producteur
@@ -110,11 +69,19 @@ static async attribuer(missionId, collecteurId) {
             WHERE m.id = $1
         `, [missionId]);
 
+        console.log('📝 infoMission rows:', infoMission.rows);
+
         if (infoMission.rows.length === 0) {
             throw new Error('Mission non trouvée');
         }
 
         const mission = infoMission.rows[0];
+        console.log('📝 Mission récupérée:', { 
+            id: mission.id, 
+            producteur_id: mission.producteur_id,
+            producteur_nom: mission.producteur_nom,
+            declaration_id: mission.declaration_id 
+        });
 
         // 2. Mettre à jour la mission
         const requeteMission = `
@@ -127,7 +94,7 @@ static async attribuer(missionId, collecteurId) {
         `;
         
         const resultatMission = await client.query(requeteMission, [collecteurId, missionId]);
-        const missionMaj = resultatMission.rows[0];
+        console.log('📝 Mission mise à jour:', resultatMission.rows[0]);
 
         // 3. Mettre à jour la déclaration
         await client.query(`
@@ -137,56 +104,96 @@ static async attribuer(missionId, collecteurId) {
             WHERE id = $1
         `, [mission.declaration_id]);
 
-        // 4. Notification au collecteur
-        await client.query(`
+        // 4. Notification au collecteur - Vérifions les valeurs
+        console.log('📝 Tentative insertion notification collecteur avec:', {
+            utilisateur_id: collecteurId,
+            type_utilisateur: 'collecteur',
+            titre: 'Mission acceptée ✓',
+            message: `Vous avez accepté une mission chez ${mission.producteur_nom || 'un producteur'}.`,
+            type_notification: 'mission_acceptee',
+            reference_id: missionId,
+            reference_type: 'mission',
+            producteur_id: null
+        });
+
+        const resultCollecteur = await client.query(`
             INSERT INTO notifications (
-                utilisateur_id, 
-                type_utilisateur, 
-                titre, 
-                message, 
+                utilisateur_id,
+                type_utilisateur,
+                titre,
+                message,
                 type_notification,
                 reference_id,
-                reference_type
-            ) VALUES ($1, 'collecteur', $2, $3, 'mission_acceptee', $4, 'mission')
+                reference_type,
+                producteur_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id
         `, [
             collecteurId,
+            'collecteur',
             'Mission acceptée ✓',
             `Vous avez accepté une mission chez ${mission.producteur_nom || 'un producteur'}.`,
-            missionId
+            'mission_acceptee',
+            missionId,
+            'mission',
+            null
         ]);
+
+        console.log('✅ Notification collecteur créée avec ID:', resultCollecteur.rows[0]?.id);
 
         // 5. Notification au producteur
-        await client.query(`
+        console.log('📝 Tentative insertion notification producteur avec:', {
+            utilisateur_id: mission.producteur_id,
+            type_utilisateur: 'producteur',
+            titre: 'Collecteur en route 🚚',
+            message: 'Un collecteur a accepté votre mission et sera bientôt chez vous.',
+            type_notification: 'mission_acceptee',
+            reference_id: missionId,
+            reference_type: 'mission',
+            producteur_id: mission.producteur_id
+        });
+
+        const resultProducteur = await client.query(`
             INSERT INTO notifications (
-                utilisateur_id, 
-                type_utilisateur, 
-                titre, 
-                message, 
+                utilisateur_id,
+                type_utilisateur,
+                titre,
+                message,
                 type_notification,
                 reference_id,
-                reference_type
-            ) VALUES ($1, 'producteur', $2, $3, 'mission_acceptee', $4, 'mission')
+                reference_type,
+                producteur_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id
         `, [
             mission.producteur_id,
+            'producteur',
             'Collecteur en route 🚚',
             `Un collecteur a accepté votre mission et sera bientôt chez vous.`,
-            missionId
+            'mission_acceptee',
+            missionId,
+            'mission',
+            mission.producteur_id
         ]);
 
+        console.log('✅ Notification producteur créée avec ID:', resultProducteur.rows[0]?.id);
+
         await client.query('COMMIT');
+        console.log('✅ Transaction COMMIT réussie');
         
-        return missionMaj;
+        return resultatMission.rows[0];
         
     } catch (erreur) {
         await client.query('ROLLBACK');
         console.error('❌ Erreur dans attribuer:', erreur);
+        console.error('❌ Stack trace:', erreur.stack);
         throw erreur;
     } finally {
         client.release();
     }
 }
-
-    // Démarrer une collecte
+    // Démarr
+    // er une collecte
     static async demarrerCollecte(missionId, collecteurId) {
         const requete = `
             UPDATE missions 

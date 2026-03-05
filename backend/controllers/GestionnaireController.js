@@ -6,6 +6,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import GestionnairePoint from '../models/GestionnairePoint.js';
 import { pool } from '../config/database.js';
+import AchatGestionnaire from '../models/AchatGestionnaire.js';
+import StockDechet from '../models/StockDechet.js';
 
 class GestionnaireController {
     // Connexion
@@ -371,12 +373,21 @@ static async missionsEnAttente(req, res) {
         }
     }
 
-    // ✅ Valider une mission (avec attribution automatique des gains)
 static async validerMission(req, res) {
     try {
         const { missionId } = req.params;
         const gestionnaireId = req.utilisateurId;
-        const { poidsDepose, prixParKg, qualiteDechets, validationNotes } = req.body; // AJOUTER prixParKg
+        // ✅ AJOUTER campagneId
+        const { poidsDepose, prixParKg, qualiteDechets, validationNotes, campagneId } = req.body;
+
+        console.log('📥 Données reçues:', { 
+            missionId, 
+            poidsDepose, 
+            prixParKg, 
+            qualiteDechets, 
+            validationNotes, 
+            campagneId  // ← Vérifier que c'est bien reçu
+        });
 
         // Validation
         if (!poidsDepose || isNaN(parseFloat(poidsDepose)) || parseFloat(poidsDepose) <= 0) {
@@ -386,7 +397,6 @@ static async validerMission(req, res) {
             });
         }
 
-        // AJOUTER LA VALIDATION DU PRIX
         if (!prixParKg || isNaN(parseFloat(prixParKg)) || parseFloat(prixParKg) <= 0) {
             return res.status(400).json({
                 success: false,
@@ -397,15 +407,17 @@ static async validerMission(req, res) {
         // Calculer le montant total
         const montantTotal = parseFloat(poidsDepose) * parseFloat(prixParKg);
 
+        // ✅ Passer campagneId à la méthode du modèle
         const mission = await GestionnairePoint.validerMission(
             missionId, 
             gestionnaireId, 
             { 
                 poidsDepose: parseFloat(poidsDepose),
-                prixParKg: parseFloat(prixParKg), // PASSER LE PRIX
-                montantTotal: montantTotal, // PASSER LE MONTANT CALCULÉ
+                prixParKg: parseFloat(prixParKg),
+                montantTotal: montantTotal,
                 qualiteDechets: qualiteDechets || 'conforme', 
-                validationNotes 
+                validationNotes,
+                campagneId: campagneId || null  // ← AJOUTÉ
             }
         );
 
@@ -416,7 +428,8 @@ static async validerMission(req, res) {
                 ...mission,
                 montantTotal,
                 poidsDepose,
-                prixParKg
+                prixParKg,
+                campagneId  // ← Retourner pour confirmation
             }
         });
     } catch (erreur) {
@@ -627,6 +640,43 @@ static async repartitionJournaliere(req, res) {
         res.status(500).json({ success: false, message: 'Erreur serveur' });
     }
 }
+
+// controllers/GestionnaireController.js - Ajoutez cette méthode
+
+static async getCampagnesDisponibles(req, res) {
+    try {
+        const gestionnaireId = req.utilisateurId;
+        
+        // Récupérer le point de collecte du gestionnaire
+        const gestionnaire = await GestionnairePoint.trouverParId(gestionnaireId);
+        
+        if (!gestionnaire || !gestionnaire.point_collecte_id) {
+            return res.json({
+                success: true,
+                campagnes: []
+            });
+        }
+        
+        const Campagne = (await import('../models/Campagne.js')).default;
+        
+        // Récupérer toutes les campagnes actives
+        const campagnes = await Campagne.rechercher({ statut: 'active' });
+        
+        res.json({
+            success: true,
+            campagnes
+        });
+        
+    } catch (erreur) {
+        console.error('❌ Erreur getCampagnesDisponibles:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération des campagnes',
+            erreur: erreur.message
+        });
+    }
+}
+ 
 }
 
 export default GestionnaireController;

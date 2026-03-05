@@ -164,8 +164,163 @@ class GestionnairePoint {
     }
 
 
+// static async validerMission(missionId, gestionnaireId, data) {
+//     const client = await pool.connect();
+    
+//     try {
+//         await client.query('BEGIN');
+        
+//         // Récupérer les détails de la mission
+//         const missionCheck = await client.query(`
+//             SELECT m.*, d.type_dechet, d.quantite, c.id as collecteur_id,
+//                    c.nom_complet as collecteur_nom,
+//                    m.point_depot_id
+//             FROM missions m
+//             JOIN declarations_dechets d ON m.declaration_id = d.id
+//             JOIN collecteurs c ON m.collecteur_id = c.id
+//             WHERE m.id = $1
+//         `, [missionId]);
+        
+//         if (missionCheck.rows.length === 0) {
+//             throw new Error('Mission non trouvée');
+//         }
+        
+//         const mission = missionCheck.rows[0];
+        
+//         if (mission.statut !== 'deposee') {
+//             throw new Error('Cette mission n\'est pas en attente de validation');
+//         }
+        
+//         // ✅ Vérifier que le point de dépôt est bien défini
+//         if (!mission.point_depot_id) {
+//             throw new Error('Cette mission n\'a pas de point de dépôt associé');
+//         }
+        
+//         // ✅ Utiliser le prix fourni par le gestionnaire
+//         const poidsDepose = data.poidsDepose;
+//         const prixParKg = data.prixParKg;
+//         const montantTotal = data.montantTotal;
+        
+//         console.log(`💰 Calcul des crédits: ${poidsDepose} kg × ${prixParKg} FCFA = ${montantTotal} FCFA`);
+//         console.log(`📦 Mise à jour du stock pour le point ${mission.point_depot_id}, type ${mission.type_dechet}, +${poidsDepose} kg`);
+        
+//         // ✅ 1. Mettre à jour la mission
+//         await client.query(`
+//             UPDATE missions 
+//             SET statut = 'validee',
+//                 poids_depose = $1,
+//                 date_validation = NOW(),
+//                 validation_notes = $2,
+//                 validee_par = $3,
+//                 gains_attribues = $4
+//             WHERE id = $5
+//         `, [
+//             poidsDepose, 
+//             data.validationNotes || null, 
+//             gestionnaireId, 
+//             montantTotal,
+//             missionId
+//         ]);
+        
+//         // ✅ 2. Mettre à jour le stock du point de dépôt
+//         await client.query(`
+//             INSERT INTO stocks_dechets (
+//                 point_depot_id,
+//                 type_dechet,
+//                 quantite_disponible,
+//                 dernier_mouvement
+//             ) VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+//             ON CONFLICT (point_depot_id, type_dechet) 
+//             DO UPDATE SET 
+//                 quantite_disponible = stocks_dechets.quantite_disponible + $3,
+//                 dernier_mouvement = CURRENT_TIMESTAMP,
+//                 modifie_le = CURRENT_TIMESTAMP
+//         `, [mission.point_depot_id, mission.type_dechet, poidsDepose]);
+        
+//         // ✅ 3. Journaliser l'action dans historique_actions
+//         await client.query(`
+//             INSERT INTO historique_actions (
+//                 utilisateur_id,
+//                 action,
+//                 details,
+//                 cree_le
+//             ) VALUES ($1, 'validation_mission', $2, CURRENT_TIMESTAMP)
+//         `, [
+//             gestionnaireId,
+//             JSON.stringify({
+//                 mission_id: missionId,
+//                 point_depot_id: mission.point_depot_id,
+//                 type_dechet: mission.type_dechet,
+//                 poids: poidsDepose,
+//                 collecteur_id: mission.collecteur_id,
+//                 montant: montantTotal
+//             })
+//         ]);
+        
+//         // ✅ 4. Attribuer les crédits au collecteur
+//         const gainResult = await client.query(`
+//             INSERT INTO gains_collecteurs (
+//                 collecteur_id, 
+//                 mission_id, 
+//                 montant, 
+//                 type_gain, 
+//                 statut,
+//                 date_validation
+//             ) VALUES ($1, $2, $3, 'collecte', 'valide', CURRENT_TIMESTAMP)
+//             RETURNING *
+//         `, [mission.collecteur_id, missionId, montantTotal]);
+        
+//         // ✅ 5. Mettre à jour le total des gains du collecteur
+//         await client.query(`
+//             UPDATE collecteurs 
+//             SET gains_total = COALESCE(gains_total, 0) + $1
+//             WHERE id = $2
+//         `, [montantTotal, mission.collecteur_id]);
+        
+//         // ✅ 6. Notification au collecteur
+//         await client.query(`
+//             INSERT INTO notifications (
+//                 utilisateur_id, 
+//                 type_utilisateur, 
+//                 titre, 
+//                 message, 
+//                 type_notification,
+//                 reference_id,
+//                 reference_type
+//             ) VALUES ($1, 'collecteur', $2, $3, 'gain_recu', $4, 'gain')
+//         `, [
+//             mission.collecteur_id,
+//             'Mission validée',
+//             `Votre mission a été validée. Vous avez reçu ${montantTotal} FCFA pour ${poidsDepose} kg à ${prixParKg} FCFA/kg.`,
+//             gainResult.rows[0].id
+//         ]);
+        
+//         await client.query('COMMIT');
+        
+//         console.log(`✅ Stock mis à jour: +${poidsDepose} kg de ${mission.type_dechet} au point ${mission.point_depot_id}`);
+        
+//         return { 
+//             id: missionId, 
+//             poidsDepose,
+//             prixParKg,
+//             montantTotal,
+//             collecteurId: mission.collecteur_id,
+//             collecteurNom: mission.collecteur_nom,
+//             valideePar: gestionnaireId,
+//             pointDepotId: mission.point_depot_id
+//         };
+        
+//     } catch (erreur) {
+//         await client.query('ROLLBACK');
+//         console.error('❌ Erreur dans validerMission:', erreur);
+//         throw erreur;
+//     } finally {
+//         client.release();
+//     }
+// }
 
-// models/GestionnairePoint.js - Méthode validerMission avec prix personnalisé
+
+
 static async validerMission(missionId, gestionnaireId, data) {
     const client = await pool.connect();
     
@@ -175,7 +330,8 @@ static async validerMission(missionId, gestionnaireId, data) {
         // Récupérer les détails de la mission
         const missionCheck = await client.query(`
             SELECT m.*, d.type_dechet, d.quantite, c.id as collecteur_id,
-                   c.nom_complet as collecteur_nom
+                   c.nom_complet as collecteur_nom,
+                   m.point_depot_id
             FROM missions m
             JOIN declarations_dechets d ON m.declaration_id = d.id
             JOIN collecteurs c ON m.collecteur_id = c.id
@@ -192,14 +348,22 @@ static async validerMission(missionId, gestionnaireId, data) {
             throw new Error('Cette mission n\'est pas en attente de validation');
         }
         
+        // ✅ Vérifier que le point de dépôt est bien défini
+        if (!mission.point_depot_id) {
+            throw new Error('Cette mission n\'a pas de point de dépôt associé');
+        }
+        
         // ✅ Utiliser le prix fourni par le gestionnaire
         const poidsDepose = data.poidsDepose;
-        const prixParKg = data.prixParKg; // PRIX PERSONNALISÉ
-        const montantTotal = data.montantTotal; // DÉJÀ CALCULÉ
+        const prixParKg = data.prixParKg;
+        const montantTotal = data.montantTotal;
+        const campagneId = data.campagneId || null;
         
         console.log(`💰 Calcul des crédits: ${poidsDepose} kg × ${prixParKg} FCFA = ${montantTotal} FCFA`);
+        console.log(`📦 Mise à jour du stock pour le point ${mission.point_depot_id}, type ${mission.type_dechet}, +${poidsDepose} kg`);
+        console.log(`🎯 Campagne associée: ${campagneId || 'Aucune'}`);
         
-        // ✅ 1. Mettre à jour la mission
+        // ✅ 1. Mettre à jour la mission (avec campagne_id)
         await client.query(`
             UPDATE missions 
             SET statut = 'validee',
@@ -207,17 +371,79 @@ static async validerMission(missionId, gestionnaireId, data) {
                 date_validation = NOW(),
                 validation_notes = $2,
                 validee_par = $3,
-                gains_attribues = $4  -- AJOUTER LE MONTANT DANS LA MISSION
-            WHERE id = $5
+                gains_attribues = $4,
+                campagne_id = $5
+            WHERE id = $6
         `, [
             poidsDepose, 
             data.validationNotes || null, 
             gestionnaireId, 
             montantTotal,
+            campagneId,
             missionId
         ]);
         
-        // ✅ 2. Attribuer les crédits au collecteur avec le montant calculé
+        // ✅ 2. Mettre à jour le stock du point de dépôt
+        await client.query(`
+            INSERT INTO stocks_dechets (
+                point_depot_id,
+                type_dechet,
+                quantite_disponible,
+                dernier_mouvement
+            ) VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+            ON CONFLICT (point_depot_id, type_dechet) 
+            DO UPDATE SET 
+                quantite_disponible = stocks_dechets.quantite_disponible + $3,
+                dernier_mouvement = CURRENT_TIMESTAMP,
+                modifie_le = CURRENT_TIMESTAMP
+        `, [mission.point_depot_id, mission.type_dechet, poidsDepose]);
+        
+        // ✅ 3. Si une campagne est associée, mettre à jour son suivi
+        // if (campagneId) {
+        //     const Campagne = (await import('./Campagne.js')).default;
+        //     await Campagne.mettreAJourDepuisMission(
+        //         campagneId,
+        //         missionId,
+        //         mission.point_depot_id,
+        //         mission.type_dechet,
+        //         poidsDepose,
+        //         montantTotal
+        //     );
+        // }
+        
+        if (campagneId) {
+    const Campagne = (await import('./Campagne.js')).default;
+    
+    // Mettre à jour l'objectif spécifique pour ce type de déchet
+     await Campagne.mettreAJourObjectif(
+        campagneId,
+        mission.type_dechet,
+        poidsDepose,
+        montantTotal
+      );
+      }
+        // ✅ 4. Journaliser l'action dans historique_actions
+        await client.query(`
+            INSERT INTO historique_actions (
+                utilisateur_id,
+                action,
+                details,
+                cree_le
+            ) VALUES ($1, 'validation_mission', $2, CURRENT_TIMESTAMP)
+        `, [
+            gestionnaireId,
+            JSON.stringify({
+                mission_id: missionId,
+                point_depot_id: mission.point_depot_id,
+                type_dechet: mission.type_dechet,
+                poids: poidsDepose,
+                collecteur_id: mission.collecteur_id,
+                montant: montantTotal,
+                campagne_id: campagneId
+            })
+        ]);
+        
+        // ✅ 5. Attribuer les crédits au collecteur
         const gainResult = await client.query(`
             INSERT INTO gains_collecteurs (
                 collecteur_id, 
@@ -230,14 +456,14 @@ static async validerMission(missionId, gestionnaireId, data) {
             RETURNING *
         `, [mission.collecteur_id, missionId, montantTotal]);
         
-        // ✅ 3. Mettre à jour le total des gains du collecteur
+        // ✅ 6. Mettre à jour le total des gains du collecteur
         await client.query(`
             UPDATE collecteurs 
             SET gains_total = COALESCE(gains_total, 0) + $1
             WHERE id = $2
         `, [montantTotal, mission.collecteur_id]);
         
-        // ✅ 4. Notification au collecteur
+        // ✅ 7. Notification au collecteur
         await client.query(`
             INSERT INTO notifications (
                 utilisateur_id, 
@@ -257,6 +483,8 @@ static async validerMission(missionId, gestionnaireId, data) {
         
         await client.query('COMMIT');
         
+        console.log(`✅ Stock mis à jour: +${poidsDepose} kg de ${mission.type_dechet} au point ${mission.point_depot_id}`);
+        
         return { 
             id: missionId, 
             poidsDepose,
@@ -264,7 +492,9 @@ static async validerMission(missionId, gestionnaireId, data) {
             montantTotal,
             collecteurId: mission.collecteur_id,
             collecteurNom: mission.collecteur_nom,
-            valideePar: gestionnaireId
+            valideePar: gestionnaireId,
+            pointDepotId: mission.point_depot_id,
+            campagneId: campagneId
         };
         
     } catch (erreur) {
@@ -273,26 +503,137 @@ static async validerMission(missionId, gestionnaireId, data) {
         throw erreur;
     } finally {
         client.release();
-    } ; 
-
-      await client.query(`
-        INSERT INTO notifications (
-            utilisateur_id, 
-            type_utilisateur, 
-            titre, 
-            message, 
-            type_notification,
-            reference_id,
-            reference_type
-        ) VALUES ($1, 'collecteur', $2, $3, 'validation_collecte', $4, 'mission')
-    `, [
-        mission.collecteur_id,
-        'Mission validée ✓',
-        `Votre mission a été validée par le gestionnaire. Vous avez gagné ${gainsAttribues} FCFA.`,
-        missionId
-    ]);
-
+    }
 }
+
+// // models/GestionnairePoint.js - Méthode validerMission avec prix personnalisé
+// static async validerMission(missionId, gestionnaireId, data) {
+//     const client = await pool.connect();
+    
+//     try {
+//         await client.query('BEGIN');
+        
+//         // Récupérer les détails de la mission
+//         const missionCheck = await client.query(`
+//             SELECT m.*, d.type_dechet, d.quantite, c.id as collecteur_id,
+//                    c.nom_complet as collecteur_nom
+//             FROM missions m
+//             JOIN declarations_dechets d ON m.declaration_id = d.id
+//             JOIN collecteurs c ON m.collecteur_id = c.id
+//             WHERE m.id = $1
+//         `, [missionId]);
+        
+//         if (missionCheck.rows.length === 0) {
+//             throw new Error('Mission non trouvée');
+//         }
+        
+//         const mission = missionCheck.rows[0];
+        
+//         if (mission.statut !== 'deposee') {
+//             throw new Error('Cette mission n\'est pas en attente de validation');
+//         }
+        
+//         // ✅ Utiliser le prix fourni par le gestionnaire
+//         const poidsDepose = data.poidsDepose;
+//         const prixParKg = data.prixParKg; // PRIX PERSONNALISÉ
+//         const montantTotal = data.montantTotal; // DÉJÀ CALCULÉ
+        
+//         console.log(`💰 Calcul des crédits: ${poidsDepose} kg × ${prixParKg} FCFA = ${montantTotal} FCFA`);
+        
+//         // ✅ 1. Mettre à jour la mission
+//         await client.query(`
+//             UPDATE missions 
+//             SET statut = 'validee',
+//                 poids_depose = $1,
+//                 date_validation = NOW(),
+//                 validation_notes = $2,
+//                 validee_par = $3,
+//                 gains_attribues = $4  -- AJOUTER LE MONTANT DANS LA MISSION
+//             WHERE id = $5
+//         `, [
+//             poidsDepose, 
+//             data.validationNotes || null, 
+//             gestionnaireId, 
+//             montantTotal,
+//             missionId
+//         ]);
+        
+//         // ✅ 2. Attribuer les crédits au collecteur avec le montant calculé
+//         const gainResult = await client.query(`
+//             INSERT INTO gains_collecteurs (
+//                 collecteur_id, 
+//                 mission_id, 
+//                 montant, 
+//                 type_gain, 
+//                 statut,
+//                 date_validation
+//             ) VALUES ($1, $2, $3, 'collecte', 'valide', CURRENT_TIMESTAMP)
+//             RETURNING *
+//         `, [mission.collecteur_id, missionId, montantTotal]);
+        
+//         // ✅ 3. Mettre à jour le total des gains du collecteur
+//         await client.query(`
+//             UPDATE collecteurs 
+//             SET gains_total = COALESCE(gains_total, 0) + $1
+//             WHERE id = $2
+//         `, [montantTotal, mission.collecteur_id]);
+        
+//         // ✅ 4. Notification au collecteur
+//         await client.query(`
+//             INSERT INTO notifications (
+//                 utilisateur_id, 
+//                 type_utilisateur, 
+//                 titre, 
+//                 message, 
+//                 type_notification,
+//                 reference_id,
+//                 reference_type
+//             ) VALUES ($1, 'collecteur', $2, $3, 'gain_recu', $4, 'gain')
+//         `, [
+//             mission.collecteur_id,
+//             'Mission validée',
+//             `Votre mission a été validée. Vous avez reçu ${montantTotal} FCFA pour ${poidsDepose} kg à ${prixParKg} FCFA/kg.`,
+//             gainResult.rows[0].id
+//         ]);
+        
+//         await client.query('COMMIT');
+        
+//         return { 
+//             id: missionId, 
+//             poidsDepose,
+//             prixParKg,
+//             montantTotal,
+//             collecteurId: mission.collecteur_id,
+//             collecteurNom: mission.collecteur_nom,
+//             valideePar: gestionnaireId
+//         };
+        
+//     } catch (erreur) {
+//         await client.query('ROLLBACK');
+//         console.error('❌ Erreur dans validerMission:', erreur);
+//         throw erreur;
+//     } finally {
+//         client.release();
+//     } ; 
+
+//       await client.query(`
+//         INSERT INTO notifications (
+//             utilisateur_id, 
+//             type_utilisateur, 
+//             titre, 
+//             message, 
+//             type_notification,
+//             reference_id,
+//             reference_type
+//         ) VALUES ($1, 'collecteur', $2, $3, 'validation_collecte', $4, 'mission')
+//     `, [
+//         mission.collecteur_id,
+//         'Mission validée ✓',
+//         `Votre mission a été validée par le gestionnaire. Vous avez gagné ${gainsAttribues} FCFA.`,
+//         missionId
+//     ]);
+
+// }
     // }
 
     // ✅ Attribuer des crédits supplémentaires (bonus) - VERSION CORRIGÉE
@@ -378,6 +719,9 @@ static async attribuerCredits(collecteurId, missionId, montant, gestionnaireId) 
     }
   
  }
+
+
+ 
 
 //  tableauBord avec stats personnalisées
 static async tableauBord(gestionnaireId) {
@@ -949,6 +1293,187 @@ static async mettreAJourComplet(id, donnees, superviseurId) {
     const resultat = await pool.query(requete, valeurs);
     return resultat.rows[0];
 }
+
+// ✅ NOUVEAU: Créer un achat de déchets
+static async creerAchat(gestionnaireId, donneesAchat) {
+    try {
+        // Import dynamique pour éviter les dépendances circulaires
+        const { default: AchatGestionnaire } = await import('./AchatGestionnaire.js');
+        return await AchatGestionnaire.creerAchat(donneesAchat, gestionnaireId);
+    } catch (error) {
+        console.error('❌ Erreur dans GestionnairePoint.creerAchat:', error);
+        throw error;
+    }
+}
+
+// ✅ NOUVEAU: Obtenir l'historique des achats
+static async historiqueAchats(gestionnaireId, limite = 50, offset = 0) {
+    try {
+        const { default: AchatGestionnaire } = await import('./AchatGestionnaire.js');
+        return await AchatGestionnaire.historiqueAchats(gestionnaireId, limite, offset);
+    } catch (error) {
+        console.error('❌ Erreur dans GestionnairePoint.historiqueAchats:', error);
+        throw error;
+    }
+}
+
+// ✅ NOUVEAU: Obtenir les stocks du point
+static async stocksDuPoint(gestionnaireId) {
+    try {
+        const gestionnaire = await this.trouverParId(gestionnaireId);
+        if (!gestionnaire || !gestionnaire.point_collecte_id) {
+            return [];
+        }
+        
+        const { default: StockDechet } = await import('./StockDechet.js');
+        return await StockDechet.obtenirStocks(gestionnaire.point_collecte_id);
+    } catch (error) {
+        console.error('❌ Erreur dans GestionnairePoint.stocksDuPoint:', error);
+        throw error;
+    }
+}
+
+// ✅ NOUVEAU: Ajuster un stock manuellement
+static async ajusterStock(gestionnaireId, typeDechet, nouvelleQuantite, raison) {
+    try {
+        const gestionnaire = await this.trouverParId(gestionnaireId);
+        if (!gestionnaire || !gestionnaire.point_collecte_id) {
+            throw new Error('Gestionnaire non associé à un point de collecte');
+        }
+        
+        const { default: StockDechet } = await import('./StockDechet.js');
+        return await StockDechet.ajusterStock(
+            gestionnaire.point_collecte_id, 
+            typeDechet, 
+            nouvelleQuantite, 
+            raison,
+            gestionnaireId
+        );
+    } catch (error) {
+        console.error('❌ Erreur dans GestionnairePoint.ajusterStock:', error);
+        throw error;
+    }
+}
+
+// ✅ NOUVEAU: Statistiques complètes incluant les achats
+static async statistiquesAvecAchats(gestionnaireId) {
+    try {
+        const gestionnaire = await this.trouverParId(gestionnaireId);
+        
+        if (!gestionnaire || !gestionnaire.point_collecte_id) {
+            return {
+                point_collecte: null,
+                missions: {
+                    total: 0,
+                    en_attente: 0,
+                    validees: 0,
+                    poids_total: 0
+                },
+                achats: {
+                    total_achats: 0,
+                    poids_total_achete: 0,
+                    montant_total_depense: 0,
+                    par_type: []
+                },
+                stocks: []
+            };
+        }
+        
+        const { default: AchatGestionnaire } = await import('./AchatGestionnaire.js');
+        const { default: StockDechet } = await import('./StockDechet.js');
+        
+        // Statistiques des missions
+        const missionsStats = await pool.query(`
+            SELECT 
+                COUNT(*) as total_missions,
+                COUNT(CASE WHEN statut = 'deposee' THEN 1 END) as en_attente,
+                COUNT(CASE WHEN statut = 'validee' THEN 1 END) as validees,
+                COALESCE(SUM(CASE WHEN statut = 'validee' THEN poids_depose ELSE 0 END), 0) as poids_total_valide
+            FROM missions
+            WHERE point_depot_id = $1
+        `, [gestionnaire.point_collecte_id]);
+        
+        // Statistiques des achats
+        const achatsStats = await AchatGestionnaire.statistiquesAchats(gestionnaireId);
+        const achatsParType = await AchatGestionnaire.statistiquesParType(gestionnaireId);
+        
+        // Stocks actuels
+        const stocks = await StockDechet.obtenirStocks(gestionnaire.point_collecte_id);
+        
+        return {
+            point_collecte: {
+                id: gestionnaire.point_collecte_id,
+                nom: gestionnaire.point_collecte_nom
+            },
+            missions: {
+                total: parseInt(missionsStats.rows[0]?.total_missions) || 0,
+                en_attente: parseInt(missionsStats.rows[0]?.en_attente) || 0,
+                validees: parseInt(missionsStats.rows[0]?.validees) || 0,
+                poids_total: parseFloat(missionsStats.rows[0]?.poids_total_valide) || 0
+            },
+            achats: {
+                total_achats: parseInt(achatsStats?.nombre_achats) || 0,
+                poids_total_achete: parseFloat(achatsStats?.poids_total_achete) || 0,
+                montant_total_depense: parseFloat(achatsStats?.montant_total_depense) || 0,
+                prix_moyen: parseFloat(achatsStats?.prix_moyen_kg) || 0,
+                par_type: achatsParType || []
+            },
+            stocks: stocks
+        };
+    } catch (error) {
+        console.error('❌ Erreur dans GestionnairePoint.statistiquesAvecAchats:', error);
+        throw error;
+    }
+}
+
+// ✅ NOUVEAU: Tableau de bord complet avec achats et stocks
+static async tableauBordComplet(gestionnaireId) {
+    try {
+        const stats = await this.statistiquesAvecAchats(gestionnaireId);
+        
+        // Missions récentes
+        const missionsRecentes = await pool.query(`
+            SELECT 
+                m.id,
+                m.statut,
+                m.date_depot_point,
+                m.date_validation,
+                m.poids_depose,
+                d.type_dechet,
+                c.nom_complet as collecteur_nom,
+                CASE WHEN m.validee_par = $1 THEN true ELSE false END as validee_par_moi
+            FROM missions m
+            JOIN declarations_dechets d ON m.declaration_id = d.id
+            LEFT JOIN collecteurs c ON m.collecteur_id = c.id
+            WHERE m.point_depot_id = (SELECT point_collecte_id FROM gestionnaires_points WHERE id = $1)
+            ORDER BY COALESCE(m.date_validation, m.date_depot_point, m.cree_le) DESC
+            LIMIT 10
+        `, [gestionnaireId]);
+        
+        // Achats récents
+        const { default: AchatGestionnaire } = await import('./AchatGestionnaire.js');
+        const achatsRecents = await AchatGestionnaire.historiqueAchats(gestionnaireId, 10);
+        
+        return {
+            ...stats,
+            dernieres_activites: {
+                missions: missionsRecentes.rows,
+                achats: achatsRecents
+            },
+            resume: {
+                total_entrees_stock: stats.missions.poids_total + stats.achats.poids_total_achete,
+                pourcentage_achats: stats.achats.poids_total_achete / 
+                    (stats.missions.poids_total + stats.achats.poids_total_achete || 1) * 100,
+                pourcentage_collectes: stats.missions.poids_total / 
+                    (stats.missions.poids_total + stats.achats.poids_total_achete || 1) * 100
+            }
+        };
+    } catch (error) {
+        console.error('❌ Erreur dans GestionnairePoint.tableauBordComplet:', error);
+        throw error;
+    }
+}
+
 
 }
 

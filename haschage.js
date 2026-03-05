@@ -19,6 +19,30 @@ async function hashPassword(password) {
     }
 }
 
+INSERT INTO admins (
+    id,
+    email, 
+    telephone, 
+    mot_de_passe_hash, 
+    nom_complet, 
+    role, 
+    est_actif,
+    cree_le,
+    modifie_le
+) VALUES (
+    uuid_generate_v4(),
+    'admin.principal@ecotrace.com',
+    '+221771234567',
+    '$2b$10$ebz0hUzV8M/XxsYQO9O3qOOcvE.oQ0vnjv.6xXsydTSRgWRwFdXTm', 
+    'Mamadou Diallo',
+    'admin',
+    true,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+);
+
+
+
 async function main() {
     console.log('🔐 Générateur de hash de mot de passe\n');
     

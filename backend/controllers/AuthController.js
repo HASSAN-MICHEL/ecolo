@@ -8,12 +8,14 @@ import Producteur from '../models/Producteur.js';
 import Collecteur from '../models/Collecteur.js';
 import Gestionnaire from '../models/GestionnairePoint.js';
 import Superviseur from '../models/Superviseur.js';
+import Recycleur from '../models/Recycleur.js';
+import Sponsor from '../models/Sponsor.js';
+import Ong from '../models/Ong.js';
+import Admin from '../models/Admin.js';
 import EmailService from '../services/EmailService.js';
 
 class AuthController {
-    // ============================================
-    // INSCRIPTIONS
-    // ============================================
+    
     
     // Inscription producteur
     static async inscrireProducteur(req, res) {
@@ -316,81 +318,6 @@ class AuthController {
     }
 
    
-    
-    // static verifierToken(req, res, next) {
-    //     // Routes publiques (ne nécessitent pas de token)
-    //     const publicRoutes = [
-    //         '/api/collecteurs/connexion',
-    //         '/api/collecteurs/inscription',
-    //         '/api/collecteurs/LOHION',
-    //         '/api/collecteurs/test-public',
-    //         '/api/gestionnaires/connexion',
-    //         '/api/superviseurs/connexion',
-    //         '/api/producteurs/connexion',
-    //         '/api/producteurs/inscription'
-    //     ];
-
-    //     // Vérifier si c'est une route publique
-    //     if (publicRoutes.includes(req.path) || publicRoutes.includes(req.originalUrl)) {
-    //         console.log('🔓 Route publique - accès autorisé:', req.path);
-    //         return next();
-    //     }
-
-    //     // Récupérer le token
-    //     const authHeader = req.headers.authorization;
-        
-    //     if (!authHeader) {
-    //         console.log('❌ Token manquant - Header Authorization absent');
-    //         return res.status(401).json({ 
-    //             success: false,
-    //             message: 'Token manquant',
-    //             code: 'TOKEN_MISSING'
-    //         });
-    //     }
-
-    //     // Vérifier le format
-    //     const parts = authHeader.split(' ');
-    //     if (parts.length !== 2 || parts[0] !== 'Bearer') {
-    //         console.log('❌ Format de token invalide');
-    //         return res.status(401).json({ 
-    //             success: false,
-    //             message: 'Format de token invalide. Utilisez: Bearer [token]',
-    //             code: 'INVALID_FORMAT'
-    //         });
-    //     }
-
-    //     const token = parts[1];
-
-    //     try {
-    //         // Vérifier et décoder le token
-    //         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            
-    //         // Ajouter les infos à la requête
-    //         req.utilisateurId = decoded.id;
-    //         req.utilisateurEmail = decoded.email;
-    //         req.utilisateurType = decoded.type;
-            
-    //         console.log(`✅ Token valide - ${decoded.email} (${decoded.type})`);
-            
-    //         next();
-    //     } catch (error) {
-    //         if (error.name === 'TokenExpiredError') {
-    //             return res.status(401).json({ 
-    //                 success: false,
-    //                 message: 'Token expiré',
-    //                 code: 'TOKEN_EXPIRED'
-    //             });
-    //         }
-            
-    //         console.error('❌ Token invalide:', error.message);
-    //         return res.status(401).json({ 
-    //             success: false,
-    //             message: 'Token invalide',
-    //             code: 'INVALID_TOKEN'
-    //         });
-    //     }
-    // }
-
     static verifierToken(req, res, next) {
     // Routes publiques
     const publicRoutes = [
@@ -483,56 +410,6 @@ class AuthController {
         next();
     };
 }
-
-    
-    // // ============================================
-    
-    // static async demanderReinitialisationMdp(req, res) {
-    //     try {
-    //         const { email } = req.body;
-
-    //         const resultat = await AuthController._trouverUtilisateurParIdentifiant(email);
-            
-    //         if (!resultat || !resultat.utilisateur) {
-    //             return res.json({ 
-    //                 success: true,
-    //                 message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation' 
-    //             });
-    //         }
-
-    //         const { utilisateur, type } = resultat;
-
-    //         // Générer un token de réinitialisation
-    //         const token = crypto.randomBytes(32).toString('hex');
-    //         const expireLe = new Date();
-    //         expireLe.setHours(expireLe.getHours() + 1);
-
-    //         // Sauvegarder le token
-    //         const requete = `
-    //             INSERT INTO tokens 
-    //             (utilisateur_id, type_utilisateur, token, type_token, expire_le)
-    //             VALUES ($1, $2, $3, 'reset_password', $4)
-    //         `;
-    //         await pool.query(requete, [utilisateur.id, type, token, expireLe]);
-
-    //         const lienReinitialisation = `${process.env.FRONTEND_URL}/reinitialiser-mot-de-passe?token=${token}`;
-            
-    //         console.log(`🔐 Lien de réinitialisation: ${lienReinitialisation}`);
-
-    //         res.json({ 
-    //             success: true,
-    //             message: 'Lien de réinitialisation envoyé avec succès'
-    //         });
-    //     } catch (erreur) {
-    //         console.error('❌ Erreur demande réinitialisation:', erreur);
-    //         res.status(500).json({ 
-    //             success: false,
-    //             message: 'Erreur lors de la demande',
-    //             erreur: erreur.message 
-    //         });
-    //     }
-    // }
-//Version de reinitialisation de mot de passe avec TOKen plus haut:
 
     static async reinitialiserMdp(req, res) {
         try {            const { token, nouveauMotDePasse } = req.body;
@@ -673,6 +550,9 @@ class AuthController {
         return results.some(result => result !== null);
     }
 
+
+
+    
     static async _trouverUtilisateurParIdentifiant(identifiant) {
         // Par email
         let utilisateur = await Producteur.trouverParEmail(identifiant);
@@ -687,6 +567,28 @@ class AuthController {
         utilisateur = await Superviseur.trouverParEmail(identifiant);
         if (utilisateur) return { utilisateur, type: 'superviseur' };
 
+         utilisateur = await Recycleur.trouverParEmail(identifiant);
+        if (utilisateur) return { utilisateur, type: 'recycleur' };
+
+        utilisateur = await Sponsor.trouverParEmail(identifiant);
+        if (utilisateur) return { utilisateur, type: 'sponsor' };
+
+       utilisateur = await Ong.trouverParEmail(identifiant);
+       if (utilisateur) return { utilisateur, type: 'ong' };
+
+       utilisateur = await Admin.trouverParEmail(identifiant);
+      if (utilisateur) return { utilisateur, type: 'admin' };
+
+    // Par téléphone
+      utilisateur = await Recycleur.trouverParTelephone(identifiant);
+      if (utilisateur) return { utilisateur, type: 'recycleur' };
+
+      utilisateur = await Sponsor.trouverParTelephone(identifiant);
+      if (utilisateur) return { utilisateur, type: 'sponsor' };
+
+      utilisateur = await Ong.trouverParTelephone(identifiant);
+      if (utilisateur) return { utilisateur, type: 'ong' };
+
         // Par téléphone
         utilisateur = await Producteur.trouverParTelephone(identifiant);
         if (utilisateur) return { utilisateur, type: 'producteur' };
@@ -694,37 +596,178 @@ class AuthController {
         return null;
     }
 
-    static _verifierStatutUtilisateur(utilisateur, type) {
-        switch(type) {
-            case 'producteur':
-                if (!utilisateur.est_actif) {
-                    return { valide: false, message: 'Compte désactivé' };
-                }
-                break;
-            
-            case 'collecteur':
-                if (utilisateur.statut === 'en_attente') {
-                    return { valide: false, message: 'Compte en attente de validation' };
-                }
-                if (utilisateur.statut === 'suspendu') {
-                    return { valide: false, message: 'Compte suspendu' };
-                }
-                if (utilisateur.statut !== 'actif') {
-                    return { valide: false, message: 'Compte non actif' };
-                }
-                break;
-            
-            case 'gestionnaire':
-            case 'superviseur':
-                if (!utilisateur.est_actif) {
-                    return { valide: false, message: 'Compte désactivé' };
-                }
-                break;
-        }
 
-        return { valide: true };
+    // static _verifierStatutUtilisateur(utilisateur, type) {
+    //     switch(type) {
+    //         case 'producteur':
+    //             if (!utilisateur.est_actif) {
+    //                 return { valide: false, message: 'Compte désactivé' };
+    //             }
+    //             break;
+            
+    //         case 'collecteur':
+    //             if (utilisateur.statut === 'en_attente') {
+    //                 return { valide: false, message: 'Compte en attente de validation' };
+    //             }
+    //             if (utilisateur.statut === 'suspendu') {
+    //                 return { valide: false, message: 'Compte suspendu' };
+    //             }
+    //             if (utilisateur.statut !== 'actif') {
+    //                 return { valide: false, message: 'Compte non actif' };
+    //             }
+    //             break;
+            
+    //         case 'gestionnaire':
+    //         case 'superviseur':
+    //             if (!utilisateur.est_actif) {
+    //                 return { valide: false, message: 'Compte désactivé' };
+    //             }
+    //             break;
+    //     }
+
+    //     return { valide: true };
+    // }
+
+
+static _verifierStatutUtilisateur(utilisateur, type) {
+    // Vérification générique pour tous les types
+    if (!utilisateur) {
+        return { valide: false, message: 'Utilisateur inexistant' };
     }
 
+    switch(type) {
+        // ===== PRODUCTEURS =====
+        case 'producteur':
+            if (utilisateur.est_actif === false) {
+                return { valide: false, message: 'Compte producteur désactivé' };
+            }
+            break;
+
+        // ===== COLLECTEURS =====
+        case 'collecteur':
+            if (utilisateur.statut === 'en_attente') {
+                return { valide: false, message: 'Compte collecteur en attente de validation' };
+            }
+            if (utilisateur.statut === 'suspendu') {
+                return { valide: false, message: 'Compte collecteur suspendu' };
+            }
+            if (utilisateur.statut === 'rejete') {
+                return { valide: false, message: 'Compte collecteur rejeté' };
+            }
+            if (utilisateur.statut !== 'actif') {
+                return { valide: false, message: 'Compte collecteur non actif' };
+            }
+            if (utilisateur.est_actif === false) {
+                return { valide: false, message: 'Compte collecteur désactivé' };
+            }
+            break;
+
+        // ===== GESTIONNAIRES =====
+        case 'gestionnaire':
+            if (utilisateur.est_actif === false) {
+                return { valide: false, message: 'Compte gestionnaire désactivé' };
+            }
+            // Vérifier si le point de collecte est actif
+            if (utilisateur.point_collecte_id) {
+                // Optionnel: vérifier le statut du point de collecte
+            }
+            break;
+
+        // ===== SUPERVISEURS =====
+        case 'superviseur':
+            if (utilisateur.est_actif === false) {
+                return { valide: false, message: 'Compte superviseur désactivé' };
+            }
+            break;
+
+        // ===== RECYCLEURS =====
+        case 'recycleur':
+            if (utilisateur.statut === 'en_attente') {
+                return { valide: false, message: 'Compte recycleur en attente de validation' };
+            }
+            if (utilisateur.statut === 'suspendu') {
+                return { valide: false, message: 'Compte recycleur suspendu' };
+            }
+            if (utilisateur.statut === 'rejete') {
+                return { valide: false, message: 'Compte recycleur rejeté' };
+            }
+            if (utilisateur.statut !== 'actif') {
+                return { valide: false, message: 'Compte recycleur non actif' };
+            }
+            if (utilisateur.est_actif === false) {
+                return { valide: false, message: 'Compte recycleur désactivé' };
+            }
+            break;
+
+        // ===== SPONSORS =====
+        case 'sponsor':
+            if (utilisateur.est_actif === false) {
+                return { valide: false, message: 'Compte sponsor désactivé' };
+            }
+            if (utilisateur.statut && utilisateur.statut === 'suspendu') {
+                return { valide: false, message: 'Compte sponsor suspendu' };
+            }
+            break;
+
+        // ===== ONG =====
+        case 'ong':
+            if (utilisateur.est_actif === false) {
+                return { valide: false, message: 'Compte ONG désactivé' };
+            }
+            if (utilisateur.statut && utilisateur.statut === 'suspendu') {
+                return { valide: false, message: 'Compte ONG suspendu' };
+            }
+            break;
+
+        // ===== ADMINS =====
+        case 'admin':
+            if (utilisateur.est_actif === false) {
+                return { valide: false, message: 'Compte administrateur désactivé' };
+            }
+            break;
+
+        // ===== TYPE INCONNU =====
+        default:
+            console.warn(`⚠️ Type d'utilisateur inconnu: ${type}`);
+            return { valide: false, message: 'Type de compte non reconnu' };
+    }
+
+    return { valide: true };
+}
+
+    // static async _mettreAJourDerniereConnexion(id, type) {
+    //     try {
+    //         const date = new Date();
+    //         let table;
+            
+    //         switch(type) {
+    //             case 'producteur':
+    //                 table = 'producteurs';
+    //                 break;
+    //             case 'collecteur':
+    //                 table = 'collecteurs';
+    //                 break;
+    //             case 'gestionnaire':
+    //                 table = 'gestionnaires_points';
+    //                 break;
+    //             case 'superviseur':
+    //                 table = 'superviseurs';
+    //                 break;
+    //             default:
+    //                 return;
+    //         }
+            
+    //         await pool.query(
+    //             `UPDATE ${table} SET derniere_connexion = $1 WHERE id = $2`,
+    //             [date, id]
+    //         );
+    //     } catch (erreur) {
+    //         console.error('⚠️ Erreur mise à jour connexion:', erreur);
+    //     }
+    // }
+
+
+    
     static async _mettreAJourDerniereConnexion(id, type) {
         try {
             const date = new Date();
@@ -743,6 +786,18 @@ class AuthController {
                 case 'superviseur':
                     table = 'superviseurs';
                     break;
+                 case 'recycleur':
+                table = 'recycleurs';
+                break;
+            case 'sponsor':
+                table = 'sponsors';
+                break;
+            case 'ong':
+                table = 'ongs';
+                break;
+            case 'admin':
+                table = 'admins';
+                break;
                 default:
                     return;
             }
@@ -756,6 +811,8 @@ class AuthController {
         }
     }
 
+
+    
     static async _mettreAJourMotDePasse(id, type, nouveauMotDePasseHash) {
         switch(type) {
             case 'producteur':
@@ -782,11 +839,35 @@ class AuthController {
                     [nouveauMotDePasseHash, id]
                 );
                 break;
+             case 'recycleur':
+            await pool.query(
+                'UPDATE recycleurs SET mot_de_passe_hash = $1 WHERE id = $2',
+                [nouveauMotDePasseHash, id]
+            );
+            break;
+        case 'sponsor':
+            await pool.query(
+                'UPDATE sponsors SET mot_de_passe_hash = $1 WHERE id = $2',
+                [nouveauMotDePasseHash, id]
+            );
+            break;
+        case 'ong':
+            await pool.query(
+                'UPDATE ongs SET mot_de_passe_hash = $1 WHERE id = $2',
+                [nouveauMotDePasseHash, id]
+            );
+            break;
+        case 'admin':
+            await pool.query(
+                'UPDATE admins SET mot_de_passe_hash = $1 WHERE id = $2',
+                [nouveauMotDePasseHash, id]
+            );
+            break;
+    
         }
     }
 
 
-    // controllers/AuthController.js - Ajoutez ces méthodes
 
 // Générer un code aléatoire à 6 chiffres
 static _genererCode6Chiffres() {
@@ -794,82 +875,6 @@ static _genererCode6Chiffres() {
 }
 
 
-
-// // ✅ NOUVELLE VERSION - Demander réinitialisation par CODE
-// static async demanderReinitialisationMdp(req, res) {
-//     try {
-//         const { email } = req.body;
-
-//         if (!email) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Email requis'
-//             });
-//         }
-
-//         // Chercher l'utilisateur par email
-//         const resultat = await AuthController._trouverUtilisateurParIdentifiant(email);
-        
-//         if (!resultat || !resultat.utilisateur) {
-//             // Pour des raisons de sécurité, on renvoie le même message
-//             return res.json({ 
-//                 success: true,
-//                 message: 'Si un compte existe avec cet email, vous recevrez un code de réinitialisation'
-//             });
-//         }
-
-//         const { utilisateur, type } = resultat;
-
-//         // Vérifier les demandes récentes (anti-spam)
-//         const checkRecent = await pool.query(`
-//             SELECT COUNT(*) FROM codes_reinitialisation 
-//             WHERE email = $1 
-//             AND cree_le > NOW() - INTERVAL '5 minutes'
-//         `, [email]);
-
-//         if (parseInt(checkRecent.rows[0].count) >= 3) {
-//             return res.status(429).json({
-//                 success: false,
-//                 message: 'Trop de demandes. Veuillez attendre quelques minutes.'
-//             });
-//         }
-
-//         // Générer un code à 6 chiffres
-//         const code = AuthController._genererCode6Chiffres();
-//         const expireLe = new Date();
-//         expireLe.setMinutes(expireLe.getMinutes() + 15); // Valable 15 minutes
-
-//         // Sauvegarder le code en base de données
-//         await pool.query(`
-//             INSERT INTO codes_reinitialisation 
-//             (utilisateur_id, type_utilisateur, code, email, expire_le)
-//             VALUES ($1, $2, $3, $4, $5)
-//         `, [utilisateur.id, type, code, email, expireLe]);
-
-//         // Envoyer le code par email
-//         const emailEnvoye = await EmailService.envoyerCodeDev(email, code, utilisateur.nom_complet);
-
-//         if (!emailEnvoye) {
-//             return res.status(500).json({
-//                 success: false,
-//                 message: 'Erreur lors de l\'envoi du code'
-//             });
-//         }
-
-//         res.json({ 
-//             success: true,
-//             message: 'Code de réinitialisation envoyé avec succès'
-//         });
-
-//     } catch (erreur) {
-//         console.error('❌ Erreur demande réinitialisation:', erreur);
-//         res.status(500).json({ 
-//             success: false,
-//             message: 'Erreur lors de la demande',
-//             erreur: erreur.message 
-//         });
-//     }
-// }
 
 // ✅ NOUVELLE VERSION - Demander réinitialisation par CODE
 static async demanderReinitialisationMdp(req, res) {
@@ -936,7 +941,7 @@ static async demanderReinitialisationMdp(req, res) {
             console.log('📧 À:', email);
             console.log('🔐 Code:', code);
             console.log('='.repeat(50) + '\n');
-            
+            console.log(`📩 Demande de réinitialisation pour ${email}`);
             return res.status(500).json({
                 success: false,
                 message: 'Erreur lors de l\'envoi du code. Veuillez réessayer.'
@@ -1090,6 +1095,7 @@ static async reinitialiserMdpAvecCode(req, res) {
     }
 }
 
+    
     static _preparerDonneesUtilisateur(utilisateur, type) {
         const base = {
             id: utilisateur.id,
@@ -1131,7 +1137,27 @@ static async reinitialiserMdpAvecCode(req, res) {
                     ...base,
                     role: utilisateur.role
                 };
-            
+            case 'recycleur':
+                return {
+                    ...base,
+                    role: utilisateur.role,
+                    };
+            case 'sponsor':
+                return {
+                    ...base,
+                    role: utilisateur.role,
+                    };
+            case 'ong':
+                return {
+                    ...base,
+                    role: utilisateur.role,
+                    };
+            case 'admin':
+                return {
+                    ...base,
+                    role: utilisateur.role,
+                    };
+
             default:
                 return base;
         }

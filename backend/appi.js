@@ -16,6 +16,13 @@
 // import PointDepotRoutes from './routes/PointDepotRoutes.js';
 // import { serveStatic } from './middleware/uploads.js';
 // import NotificationRoutes from './routes/NotificationRoutes.js';
+// import adminRoutes from './routes/adminRoutes.js';
+// import sponsorRoutes from './routes/sponsorRoutes.js';
+// import campagneRoutes from './routes/campagneRoutes.js';
+// import ongRoutes from './routes/ongRoutes.js';
+// import RecycleurRoutes from './routes/recycleurRoutes.js';
+// import gestionnaireAchatsRoutes from './routes/gestionnaireAchatsRoute.js';
+
 
 // // Configuration
 // dotenv.config();
@@ -54,14 +61,22 @@
 
 // // Routes API
 // app.use('/api/notifications', NotificationRoutes);
+// app.use('/api/admin', adminRoutes);
+// app.use('/api/sponsors', sponsorRoutes);
+// app.use('/api/campagnes', campagneRoutes);
+// app.use('/api/ongs', ongRoutes);
 // app.use('/api/points-depot', PointDepotRoutes);
+// app.use('/api/recycleurs' , RecycleurRoutes);
+
+// app.use('/api/collecteurs', collecteurRoutes);
+// app.use('/api/gestionnaires', gestionnaireRoutes);
+// app.use('/api/achatsGestionnaire' ,  gestionnaireAchatsRoutes );
+// app.use('/api/superviseurs', superviseurRoutes);
+
 // app.use('/api/auth', authRoutes);
 // app.use('/api', declarationRoutes);
 // app.use('/api' , dashboardRoutes);
 // app.use('/api' , profileRoutes);
-// app.use('/api/collecteurs', collecteurRoutes);
-// app.use('/api/gestionnaires', gestionnaireRoutes);
-// app.use('/api/superviseurs', superviseurRoutes);
 
 
 // // Route 404
@@ -102,6 +117,7 @@
 // demarrerServeur();
 
 // export default app;
+
 
 // // // ICI EN DESSOUS VERSION DEJA OPERATIONNEL POUR VERCEL EN PRODUCTION
 // // import express from 'express';
@@ -229,7 +245,6 @@
 
 
 
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -245,9 +260,15 @@ import profileRoutes from './routes/profileRoutes.js';
 import collecteurRoutes from './routes/collecteurRoute.js';
 import gestionnaireRoutes from './routes/gestionnaireRoute.js';
 import superviseurRoutes from './routes/superviseurRoute.js';
-import { serveStatic } from './middleware/uploads.js';
 import PointDepotRoutes from './routes/PointDepotRoutes.js';
+import { serveStatic } from './middleware/uploads.js';
 import NotificationRoutes from './routes/NotificationRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import sponsorRoutes from './routes/sponsorRoutes.js';
+import campagneRoutes from './routes/campagneRoutes.js';
+import ongRoutes from './routes/ongRoutes.js';
+import RecycleurRoutes from './routes/recycleurRoutes.js';
+import gestionnaireAchatsRoutes from './routes/gestionnaireAchatsRoute.js';
 
 
 // Configuration
@@ -286,21 +307,34 @@ app.get('/', (req, res) => {
             profile: '/api/profile',
             collecteurs: '/api/collecteurs',
             gestionnaires: '/api/gestionnaires',
-            superviseurs: '/api/superviseurs'
+            superviseurs: '/api/superviseurs',
+            ong:'/api/ongs',
+            sponsor: '/api/sponsors',
+            recycleurs: '/api/recycleurs',
+            admin:'/api/admin'
         }
     });
 });
 
 // Routes API
+// Routes API
 app.use('/api/notifications', NotificationRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/sponsors', sponsorRoutes);
+app.use('/api/campagnes', campagneRoutes);
+app.use('/api/ongs', ongRoutes);
 app.use('/api/points-depot', PointDepotRoutes);
+app.use('/api/recycleurs' , RecycleurRoutes);
+
+app.use('/api/collecteurs', collecteurRoutes);
+app.use('/api/gestionnaires', gestionnaireRoutes);
+app.use('/api/achatsGestionnaire' ,  gestionnaireAchatsRoutes );
+app.use('/api/superviseurs', superviseurRoutes);
+
 app.use('/api/auth', authRoutes);
 app.use('/api', declarationRoutes);
 app.use('/api' , dashboardRoutes);
 app.use('/api' , profileRoutes);
-app.use('/api/collecteurs', collecteurRoutes);
-app.use('/api/gestionnaires', gestionnaireRoutes);
-app.use('/api/superviseurs', superviseurRoutes);
 
 // Route 404
 app.use('*', (req, res) => {

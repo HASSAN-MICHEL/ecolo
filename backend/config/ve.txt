@@ -1,0 +1,458 @@
+🆕 NOUVEAUX RÔLES À AJOUTER
+1. ADMIN (Nouveau rôle)
+Crée les superviseurs
+
+Super-utilisateur avec tous les droits
+
+Valide les suppressions demandées par les superviseurs
+
+Vue complète de la plateforme
+
+2. RECYCLEUR (Usine/Unité de valorisation)
+Compte avec activation par superviseur
+
+Consultation des stocks disponibles
+
+Demandes d'enlèvement
+
+Traçabilité aval et reporting recyclage
+
+3. SPONSOR / INSTITUTION
+Compte séparé
+
+Définit des objectifs (zone, type déchet, volume)
+
+Définit le prix (FCFA/kg)
+
+Active des campagnes
+
+Dashboard KPI et reporting
+
+4. ONG / SOCIÉTÉ CIVILE
+Compte séparé
+
+Accès lecture seule
+
+Visualisation des zones et indicateurs
+
+Dépôt de rapports/alertes
+
+Participation aux campagnes
+
+📊 NOUVELLES TABLES À CRÉER
+sql
+
+-- 1. TABLE ADMIN
+CREATE TABLE admins (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    telephone VARCHAR(20) UNIQUE,
+    mot_de_passe_hash VARCHAR(255) NOT NULL,
+    nom_complet VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'admin',
+    est_actif BOOLEAN DEFAULT true,
+    derniere_connexion TIMESTAMP,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. TABLE RECYCLEURS
+CREATE TABLE recycleurs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    telephone VARCHAR(20) UNIQUE NOT NULL,
+    mot_de_passe_hash VARCHAR(255) NOT NULL,
+    nom_entreprise VARCHAR(255) NOT NULL,
+    nom_responsable VARCHAR(255) NOT NULL,
+    adresse TEXT NOT NULL,
+    localisation_gps GEOGRAPHY(POINT, 4326),
+    quartier VARCHAR(100),
+    commune VARCHAR(100),
+    numero_identite VARCHAR(50),
+    photo_cni_recto_url TEXT,
+    photo_cni_verso_url TEXT,
+    photo_profil_url TEXT,
+    statut VARCHAR(50) DEFAULT 'en_attente', -- en_attente, actif, suspendu
+    est_actif BOOLEAN DEFAULT false,
+    notes_validation TEXT,
+    valide_par UUID, -- ID du superviseur
+    valide_le TIMESTAMP,
+    cgu_acceptees BOOLEAN DEFAULT false,
+    cgu_acceptees_le TIMESTAMP,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    derniere_connexion TIMESTAMP,
+    FOREIGN KEY (valide_par) REFERENCES superviseurs(id)
+);
+
+-- 3. TABLE SPONSORS/INSTITUTIONS
+CREATE TABLE sponsors (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    telephone VARCHAR(20) UNIQUE,
+    mot_de_passe_hash VARCHAR(255) NOT NULL,
+    nom_organisation VARCHAR(255) NOT NULL,
+    type_organisation VARCHAR(50), -- sponsor, institution, entreprise
+    nom_responsable VARCHAR(255),
+    adresse TEXT,
+    localisation_gps GEOGRAPHY(POINT, 4326),
+    photo_logo_url TEXT,
+    statut VARCHAR(50) DEFAULT 'actif',
+    est_actif BOOLEAN DEFAULT true,
+    cgu_acceptees BOOLEAN DEFAULT false,
+    cgu_acceptees_le TIMESTAMP,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    derniere_connexion TIMESTAMP
+);
+
+-- 4. TABLE ONG/SOCIETE CIVILE
+CREATE TABLE ongs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    telephone VARCHAR(20) UNIQUE,
+    mot_de_passe_hash VARCHAR(255) NOT NULL,
+    nom_ong VARCHAR(255) NOT NULL,
+    numero_agrement VARCHAR(100),
+    domaine_intervention TEXT[],
+    nom_responsable VARCHAR(255),
+    adresse TEXT,
+    localisation_gps GEOGRAPHY(POINT, 4326),
+    photo_logo_url TEXT,
+    statut VARCHAR(50) DEFAULT 'actif',
+    est_actif BOOLEAN DEFAULT true,
+    cgu_acceptees BOOLEAN DEFAULT false,
+    cgu_acceptees_le TIMESTAMP,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    derniere_connexion TIMESTAMP
+);
+
+-- 5. TABLE CAMPAGNES
+CREATE TABLE campagnes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nom VARCHAR(255) NOT NULL,
+    description TEXT,
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    types_dechets type_dechet[] NOT NULL, -- Un ou plusieurs types
+    zones_intervention TEXT[], -- Liste des zones/communes
+    poids_attendue NUMERIC(10, 2) NOT NULL, -- En kg
+    prix_par_kg NUMERIC(10, 2) NOT NULL, -- En FCFA
+    budget_total NUMERIC(15, 2) GENERATED ALWAYS AS (poids_attendue * prix_par_kg) STORED,
+    statut VARCHAR(50) DEFAULT 'planifiee', -- planifiee, active, terminee, suspendue
+    createur_id UUID NOT NULL, -- Qui a créé la campagne (superviseur)
+    createur_type VARCHAR(50) NOT NULL, -- 'superviseur'
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT campagnes_dates_check CHECK (date_fin >= date_debut)
+);
+
+-- 6. TABLE PROMOTEURS_CAMPAGNE (Sponsors/ONG associés à une campagne)
+CREATE TABLE promoteurs_campagne (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    campagne_id UUID NOT NULL,
+    promoteur_id UUID NOT NULL,
+    promoteur_type VARCHAR(50) NOT NULL, -- 'sponsor', 'ong'
+    contribution_financiere NUMERIC(15, 2), -- Optionnel
+    objectif_specifique TEXT,
+    date_ajout TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (campagne_id) REFERENCES campagnes(id) ON DELETE CASCADE,
+    UNIQUE(campagne_id, promoteur_id, promoteur_type)
+);
+
+-- 7. TABLE SUIVI_CAMPAGNE
+CREATE TABLE suivi_campagne (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    campagne_id UUID NOT NULL,
+    date_suivi DATE NOT NULL,
+    poids_collecte NUMERIC(10, 2) DEFAULT 0,
+    montant_utilise NUMERIC(15, 2) DEFAULT 0,
+    points_concernes INTEGER DEFAULT 0, -- Nombre de points de collecte participants
+    details JSONB, -- Détails par point de collecte
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (campagne_id) REFERENCES campagnes(id) ON DELETE CASCADE,
+    UNIQUE(campagne_id, date_suivi)
+);
+
+-- 8. TABLE DEMANDES_SUPPRESSION (Pour les superviseurs)
+CREATE TABLE demandes_suppression (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    superviseur_id UUID NOT NULL,
+    type_entite VARCHAR(50) NOT NULL, -- 'gestionnaire', 'point_collecte', 'promoteur', etc.
+    entite_id UUID NOT NULL,
+    raison TEXT NOT NULL,
+    statut VARCHAR(50) DEFAULT 'en_attente', -- en_attente, approuvee, rejetee
+    traitee_par UUID, -- ID de l'admin qui a traité
+    traitee_le TIMESTAMP,
+    notes_traitement TEXT,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (superviseur_id) REFERENCES superviseurs(id),
+    FOREIGN KEY (traitee_par) REFERENCES admins(id)
+);
+
+-- 9. TABLE STOCKS_DECHETS (Pour les recycleurs)
+CREATE TABLE stocks_dechets (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    point_depot_id UUID NOT NULL,
+    type_dechet type_dechet NOT NULL,
+    quantite_disponible NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    unite VARCHAR(20) DEFAULT 'kg',
+    prix_estime NUMERIC(10, 2), -- Prix estimé par kg
+    dernier_mouvement TIMESTAMP,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (point_depot_id) REFERENCES points_depot_volontaire(id),
+    UNIQUE(point_depot_id, type_dechet)
+);
+
+-- 10. TABLE DEMANDES_ENLEVEMENT (Pour recycleurs)
+CREATE TABLE demandes_enlevement (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    recycleur_id UUID NOT NULL,
+    point_depot_id UUID NOT NULL,
+    type_dechet type_dechet NOT NULL,
+    quantite_demandee NUMERIC(10, 2) NOT NULL,
+    date_souhaitee DATE NOT NULL,
+    statut VARCHAR(50) DEFAULT 'en_attente', -- en_attente, acceptee, refusee, realisee
+    valide_par UUID, -- Superviseur qui valide
+    date_validation TIMESTAMP,
+    notes TEXT,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (recycleur_id) REFERENCES recycleurs(id),
+    FOREIGN KEY (point_depot_id) REFERENCES points_depot_volontaire(id),
+    FOREIGN KEY (valide_par) REFERENCES superviseurs(id)
+);
+
+-- 11. TABLE DECLARATIONS_RECYCLAGE
+CREATE TABLE declarations_recyclage (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    recycleur_id UUID NOT NULL,
+    demande_enlevement_id UUID, -- Optionnel, si lié à une demande
+    type_dechet type_dechet NOT NULL,
+    quantite_recyclee NUMERIC(10, 2) NOT NULL,
+    date_recyclage DATE NOT NULL,
+    certificat_url TEXT, -- Lien vers document justificatif
+    statut VARCHAR(50) DEFAULT 'en_attente', -- en_attente, validee
+    valide_par UUID,
+    date_validation TIMESTAMP,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (recycleur_id) REFERENCES recycleurs(id),
+    FOREIGN KEY (demande_enlevement_id) REFERENCES demandes_enlevement(id),
+    FOREIGN KEY (valide_par) REFERENCES superviseurs(id)
+);
+
+-- 12. TABLE RAPPORTS_ONG
+CREATE TABLE rapports_ong (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ong_id UUID NOT NULL,
+    titre VARCHAR(255) NOT NULL,
+    description TEXT,
+    fichier_url TEXT,
+    type_rapport VARCHAR(50), -- alerte, observation, rapport
+    zone_concernee TEXT,
+    date_evenement DATE,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ong_id) REFERENCES ongs(id)
+);
+
+-- 13. TABLE PRODUCTEURS_PREMIUM (Abonnement)
+CREATE TABLE producteurs_premium (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    producteur_id UUID NOT NULL UNIQUE,
+    type_abonnement VARCHAR(50) NOT NULL, -- mensuel, trimestriel, annuel
+    frequence_collecte VARCHAR(50) NOT NULL, -- hebdomadaire, bi-mensuelle, mensuelle
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    montant_abonnement NUMERIC(10, 2) NOT NULL,
+    statut VARCHAR(50) DEFAULT 'actif',
+    prochaine_collecte DATE,
+    cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (producteur_id) REFERENCES producteurs(id),
+    CONSTRAINT producteurs_premium_dates_check CHECK (date_fin >= date_debut)
+);
+
+-- 14. TABLE ACHATS_GESTIONNAIRES (Achat direct sans inscription)
+CREATE TABLE achats_gestionnaires (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    gestionnaire_id UUID NOT NULL,
+    point_depot_id UUID NOT NULL,
+    nom_vendeur VARCHAR(255), -- Personne non inscrite
+    telephone_vendeur VARCHAR(20),
+    type_dechet type_dechet NOT NULL,
+    poids NUMERIC(10, 2) NOT NULL,
+    prix_par_kg NUMERIC(10, 2) NOT NULL,
+    total NUMERIC(15, 2) GENERATED ALWAYS AS (poids * prix_par_kg) STORED,
+    date_achat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reçu_url TEXT, -- Lien vers le reçu/justificatif
+    notes TEXT,
+    FOREIGN KEY (gestionnaire_id) REFERENCES gestionnaires_points(id),
+    FOREIGN KEY (point_depot_id) REFERENCES points_depot_volontaire(id)
+);
+🔄 MODIFICATIONS DES TABLES EXISTANTES
+sql
+-- Ajouter type_producteur pour distinguer premium/standard
+ALTER TABLE producteurs 
+ADD COLUMN IF NOT EXISTS type_compte VARCHAR(50) DEFAULT 'standard', -- standard, premium
+ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255), -- Pour paiements
+ADD COLUMN IF NOT EXISTS mode_paiement VARCHAR(50); -- carte, mobile_money, etc.
+
+-- Ajouter traçabilité des créations
+ALTER TABLE points_depot_volontaire
+ADD COLUMN IF NOT EXISTS cree_par UUID,
+ADD COLUMN IF NOT EXISTS cree_par_type VARCHAR(50); -- 'superviseur', 'admin'
+
+ALTER TABLE gestionnaires_points
+ADD COLUMN IF NOT EXISTS cree_par UUID,
+ADD COLUMN IF NOT EXISTS cree_par_type VARCHAR(50); -- 'superviseur', 'admin'
+
+-- Ajouter statut pour les campagnes dans missions (optionnel)
+ALTER TABLE missions
+ADD COLUMN IF NOT EXISTS campagne_id UUID,
+ADD COLUMN IF NOT EXISTS prix_campagne NUMERIC(10, 2),
+ADD FOREIGN KEY (campagne_id) REFERENCES campagnes(id);
+🎯 RÉSUMÉ DES FONCTIONNALITÉS PAR RÔLE
+ADMIN (Nouveau)
+Créer des superviseurs
+
+Vue complète de tous les tableaux de bord
+
+Voir les producteurs (standard et premium)
+
+Suivre les actions des superviseurs
+
+Traiter les demandes de suppression
+
+Statistiques globales
+
+Historique complet
+
+RECYCLEUR
+Inscription avec validation superviseur
+
+Consultation des stocks disponibles
+
+Demande d'enlèvement
+
+Validation par ECOCOLLECT
+
+Confirmation de réception
+
+Déclaration des volumes recyclés
+
+Dashboard de suivi
+
+SPONSOR/INSTITUTION
+Définition d'objectifs (zone, type, volume)
+
+Définition du prix (FCFA/kg)
+
+Participation aux campagnes
+
+Dashboard avec KPIs
+
+Reporting PDF/Excel
+
+Suivi des fonds utilisés
+
+ONG/SOCIÉTÉ CIVILE
+Accès lecture seule
+
+Visualisation des zones couvertes
+
+Indicateurs environnementaux
+
+Dépôt de rapports/alertes
+
+Participation aux campagnes (observation)
+
+CAMPAGNES (Gérées par superviseurs)
+Date début/fin
+
+Types de déchets (un ou plusieurs)
+
+Zone d'intervention
+
+Poids attendu
+
+Prix par kilogramme
+
+Promoteurs multiples (sponsors, ONG)
+
+Suivi en temps réel (poids restant)
+
+Dashboard par promoteur
+
+PRODUCTEURS
+Deux catégories :
+
+Standard : Déclaration gratuite
+
+Premium : Abonnement avec collecte programmée
+
+Paiement via la plateforme (Stripe/Mobile Money)
+
+GESTIONNAIRES
+Achat direct sans inscription
+
+Enregistrement des achats (type, poids, prix)
+
+Calcul automatique du total
+
+📋 PLAN DE DÉVELOPPEMENT
+Étape 1: Structure de base
+Créer les nouvelles tables SQL
+
+Ajouter les types ENUM nécessaires
+
+Mettre à jour les tables existantes
+
+Étape 2: Authentification et rôles
+Créer les modèles (Admin, Recycleur, Sponsor, ONG)
+
+Implémenter l'inscription/connexion
+
+Middleware d'autorisation par rôle
+
+Étape 3: Gestion des campagnes
+CRUD des campagnes (superviseur)
+
+Association des promoteurs
+
+Suivi en temps réel
+
+Dashboard sponsors
+
+Étape 4: Module Recycleur
+Consultation des stocks
+
+Demandes d'enlèvement
+
+Déclarations de recyclage
+
+Dashboard
+
+Étape 5: Module Admin
+Gestion des superviseurs
+
+Demandes de suppression
+
+Vue globale
+
+Statistiques
+
+Étape 6: Paiements et abonnements
+Intégration paiement (Stripe/Mobile Money)
+
+Gestion des abonnements premium
+
+Achats gestionnaires
+
+Étape 7: Reporting
+Génération de rapports PDF/Excel
+
+Tableaux de bord par rôle
+
+Indicateurs environnementaux
