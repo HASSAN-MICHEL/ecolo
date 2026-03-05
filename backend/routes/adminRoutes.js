@@ -134,7 +134,7 @@ router.post('/campagnes', CampagneController.creer);
 router.get('/campagnes', CampagneController.lister);
 router.get('/campagnes/:id', AdminController.detailsCampagne);
 router.put('/campagnes/:id', AdminController.modifierCampagne);
-//router.delete('/campagnes/:id', AdminController.supprimerCampagne);
+//router.delete('/campagnes/:id', AdminController.supprimerCampagne); // sou
 router.post('/campagnes/:id/promoteurs', AdminController.ajouterPromoteurCampagne);
 router.delete('/campagnes/:id/promoteurs/:promoteurId/:promoteurType', AdminController.retirerPromoteurCampagne);
 router.post('/campagnes/:id/suivi', AdminController.ajouterSuiviCampagne);
