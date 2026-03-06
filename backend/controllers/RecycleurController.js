@@ -907,7 +907,129 @@ static async consulterStocks(req, res) {
 // }
 
 
-// controllers/RecycleurController.js - Version avec logs détaillés
+// // controllers/RecycleurController.js - Version avec logs détaillés
+
+// static async declarerRecyclage(req, res) {
+//     const client = await pool.connect();
+    
+//     try {
+//         console.log('='.repeat(50));
+//         console.log('📥 DÉBUT DÉCLARATION RECYCLAGE');
+//         console.log('📥 req.utilisateurId:', req.utilisateurId);
+//         console.log('📥 req.body:', req.body);
+//         console.log('📥 req.file:', req.file);
+        
+//         const recycleurId = req.utilisateurId;
+//         const { demandeId, typeDechet, quantite, dateRecyclage } = req.body;
+//         const certificatUrl = req.file ? `/uploads/recyclage/${req.file.filename}` : null;
+
+//         // Validations
+//         if (!typeDechet) {
+//             console.log('❌ Type de déchet manquant');
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Le type de déchet est requis'
+//             });
+//         }
+
+//         if (!quantite) {
+//             console.log('❌ Quantité manquante');
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'La quantité est requise'
+//             });
+//         }
+
+//         const quantiteValue = parseFloat(quantite);
+//         if (isNaN(quantiteValue) || quantiteValue <= 0) {
+//             console.log('❌ Quantité invalide:', quantite);
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'La quantité doit être un nombre positif'
+//             });
+//         }
+
+//         if (!dateRecyclage) {
+//             console.log('❌ Date manquante');
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'La date de recyclage est requise'
+//             });
+//         }
+
+//         await client.query('BEGIN');
+
+//         // Importer StockRecycleur
+//         const StockRecycleur = (await import('../models/StockRecycleur.js')).default;
+
+//         // Vérifier le stock disponible
+//         const stocks = await StockRecycleur.getStocksRecycleur(recycleurId);
+//         const stockDispo = stocks.find(s => s.type_dechet === typeDechet)?.quantite_disponible || 0;
+        
+//         console.log(`📊 Stock disponible pour ${typeDechet}: ${stockDispo} kg`);
+//         console.log(`📊 Quantité demandée: ${quantiteValue} kg`);
+
+//         if (stockDispo < quantiteValue) {
+//             await client.query('ROLLBACK');
+//             return res.status(400).json({
+//                 success: false,
+//                 message: `Stock insuffisant. Vous avez ${stockDispo.toFixed(2)} kg de ${typeDechet} disponibles`
+//             });
+//         }
+
+//         // Créer la déclaration
+//         console.log('📝 Création de la déclaration...');
+//         const DeclarationRecyclage = (await import('../models/DeclarationRecyclage.js')).default;
+        
+//         const declaration = await DeclarationRecyclage.creer({
+//             recycleurId,
+//             demandeId,
+//             typeDechet,
+//             quantite: quantiteValue,
+//             dateRecyclage: dateRecyclage || new Date(),
+//             certificatUrl
+//         });
+
+//         console.log('✅ Déclaration créée:', declaration.id);
+
+//         // Retirer du stock du recycleur
+//         console.log('📝 Mise à jour du stock...');
+//         const stockResult = await StockRecycleur.retirerPourRecyclage(
+//             recycleurId,
+//             typeDechet,
+//             quantiteValue,
+//             declaration.id
+//         );
+
+//         console.log('✅ Stock mis à jour:', stockResult);
+
+//         await client.query('COMMIT');
+//         console.log('✅ Transaction COMMIT réussie');
+
+//         res.status(201).json({
+//             success: true,
+//             message: 'Déclaration de recyclage enregistrée avec succès',
+//             declaration,
+//             stock_restant: stockResult.stockApres.toFixed(2)
+//         });
+
+//     } catch (erreur) {
+//         await client.query('ROLLBACK');
+//         console.error('❌ Erreur déclaration recyclage:', erreur);
+//         console.error('❌ Stack trace:', erreur.stack);
+        
+//         res.status(500).json({
+//             success: false,
+//             message: erreur.message || 'Erreur lors de la déclaration',
+//             erreur: erreur.message
+//         });
+//     } finally {
+//         client.release();
+//         console.log('='.repeat(50));
+//     }
+// }
+
+// controllers/RecycleurController.js - Version corrigée avec Supabase
 
 static async declarerRecyclage(req, res) {
     const client = await pool.connect();
@@ -918,10 +1040,13 @@ static async declarerRecyclage(req, res) {
         console.log('📥 req.utilisateurId:', req.utilisateurId);
         console.log('📥 req.body:', req.body);
         console.log('📥 req.file:', req.file);
+        console.log('📥 req.body.certificatUrl:', req.body.certificatUrl); // ← AJOUTÉ PAR UPLOADTOSUPABASE
         
         const recycleurId = req.utilisateurId;
         const { demandeId, typeDechet, quantite, dateRecyclage } = req.body;
-        const certificatUrl = req.file ? `/uploads/recyclage/${req.file.filename}` : null;
+        
+        // ✅ CORRECTION: Utiliser l'URL de Supabase au lieu du chemin local
+        const certificatUrl = req.body.certificatUrl || null;
 
         // Validations
         if (!typeDechet) {
@@ -987,10 +1112,11 @@ static async declarerRecyclage(req, res) {
             typeDechet,
             quantite: quantiteValue,
             dateRecyclage: dateRecyclage || new Date(),
-            certificatUrl
+            certificatUrl  // ✅ Maintenant c'est l'URL Supabase
         });
 
         console.log('✅ Déclaration créée:', declaration.id);
+        console.log('✅ Certificat URL stockée:', certificatUrl);
 
         // Retirer du stock du recycleur
         console.log('📝 Mise à jour du stock...');
@@ -1009,7 +1135,10 @@ static async declarerRecyclage(req, res) {
         res.status(201).json({
             success: true,
             message: 'Déclaration de recyclage enregistrée avec succès',
-            declaration,
+            declaration: {
+                ...declaration,
+                certificat_url: certificatUrl  // Retourner l'URL pour vérification
+            },
             stock_restant: stockResult.stockApres.toFixed(2)
         });
 
