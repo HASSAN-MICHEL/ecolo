@@ -3,7 +3,7 @@
 // routes/sponsorRoute.js
 import express from 'express';
 import SponsorController from '../controllers/SponsorController.js';
-import { uploadLogo } from '../middleware/uploads.js';
+import { uploadLogo } from  '../middleware/uploadToSupabase.js';
 import AuthController from '../controllers/AuthController.js';
 import AdminController  from '../controllers/AdminController.js';  
 
