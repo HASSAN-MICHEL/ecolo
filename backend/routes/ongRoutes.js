@@ -58,7 +58,7 @@
 import express from 'express';
 import OngController from '../controllers/OngController.js';
 import AuthController from '../controllers/AuthController.js';
-import { uploadLogo, uploadRapport } from '../middleware/uploads.js';   
+import { uploadLogo, uploadRapport } from '../middleware/uploadToSupabase.js';   
 
 const router = express.Router();
 
