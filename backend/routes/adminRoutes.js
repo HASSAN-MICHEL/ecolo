@@ -69,7 +69,7 @@ import AdminController from '../controllers/AdminController.js';
 import AuthController from '../controllers/AuthController.js';
 
 import { uploadLogo } from '../middleware/uploadToSupabase.js';  
-import { uploadRecycleurFiles } from '../middleware/uploadToSupabase.js'; 
+import { uploadRecycleurFiles } from '../middleware/uploadToSupabase.js';
 import CampagneController from '../controllers/CampagneController.js'; 
 const router = express.Router();
 
