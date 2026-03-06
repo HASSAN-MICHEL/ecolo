@@ -385,14 +385,18 @@ export const uploadOngRapport = (req, res, next) => {
 };
 
 // Supprimer l'ancien serveStatic car on n'utilise plus de fichiers locaux
+// export const serveStatic = (app) => {
+//     console.log('📁 Les fichiers sont servis via Supabase Storage');
+//     // Optionnel: Ajouter une route pour vérifier la configuration
+//     app.get('/api/storage/status', (req, res) => {
+//         res.json({
+//             success: true,
+//             message: 'Storage configuré avec Supabase',
+//             bucket: 'ecocollect'
+//         });
+//     });
+// };
+
 export const serveStatic = (app) => {
-    console.log('📁 Les fichiers sont servis via Supabase Storage');
-    // Optionnel: Ajouter une route pour vérifier la configuration
-    app.get('/api/storage/status', (req, res) => {
-        res.json({
-            success: true,
-            message: 'Storage configuré avec Supabase',
-            bucket: 'ecocollect'
-        });
-    });
+    app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 };
