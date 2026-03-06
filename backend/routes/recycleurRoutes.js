@@ -1,9 +1,11 @@
 
 
+
+// // routes/recycleurRoutes.js
 // import express from 'express';
 // import RecycleurController from '../controllers/RecycleurController.js';
-// import { uploadRecycleurFiles } from '../middleware/uploads.js';
-// import AuthController from '../controllers/authController.js';
+// import { uploadRecycleurFiles , uploadCertificat } from '../middleware/uploads.js';
+// import AuthController from '../controllers/AuthController.js';
 
 // const router = express.Router();
 
@@ -14,11 +16,11 @@
 // // Vérification token pour toutes les routes suivantes
 // router.use(AuthController.verifierToken);
 
-
 // // Vérification spécifique pour les recycleurs
 // const verifierRecycleur = (req, res, next) => {
 //     if (req.utilisateurType !== 'recycleur') {
 //         return res.status(403).json({ 
+//             success: false,
 //             message: 'Accès réservé aux recycleurs' 
 //         });
 //     }
@@ -27,33 +29,35 @@
 
 // router.use(verifierRecycleur);
 
-// // Profil
+// // 📊 Tableau de bord
+// router.get('/tableau-bord', RecycleurController.tableauBord);
+
+// // 👤 Profil
 // router.get('/profil', RecycleurController.monProfil);
-// router.put('/profil', RecycleurController.mettreAJourProfil);
+// router.put('/profil', uploadRecycleurFiles, RecycleurController.mettreAJourProfil);
 
-// // Stocks
-// // router.get('/stocks', RecycleurController.consulterStocks);
+// // 📦 Stocks disponibles
+// router.get('/stocks', RecycleurController.consulterStocks);
 
-// // Demandes d'enlèvement
+// // 📝 Demandes d'enlèvement
 // router.post('/demandes', RecycleurController.demanderEnlevement);
 // router.get('/demandes', RecycleurController.mesDemandes);
+// router.get('/demandes/:demandeId', RecycleurController.detailsDemande);
 // router.put('/demandes/:demandeId/confirmer', RecycleurController.confirmerReception);
+// router.get('/mon-stock', RecycleurController.monStockPersonnel);
+// router.get('/mon-stock/historique', RecycleurController.monStock);
 
-// // Déclarations de recyclage
-// router.post('/declarations', RecycleurController.declarerRecyclage);
+// // ♻️ Déclarations de recyclage
+// router.post('/declarations', uploadCertificat ,  RecycleurController.declarerRecyclage);
 // router.get('/declarations', RecycleurController.mesDeclarations);
-
-// // Tableau de bord
-// router.get('/tableau-bord', RecycleurController.tableauBord);
 
 // export default router;
 
 
-
-// routes/recycleurRoutes.js
+// routes/recycleurRoutes.js - CORRIGÉ
 import express from 'express';
 import RecycleurController from '../controllers/RecycleurController.js';
-import { uploadRecycleurFiles , uploadCertificat } from '../middleware/uploads.js';
+import { uploadRecycleurFiles, uploadCertificat } from '../middleware/uploadToSupabase.js';
 import AuthController from '../controllers/AuthController.js';
 
 const router = express.Router();
@@ -78,17 +82,17 @@ const verifierRecycleur = (req, res, next) => {
 
 router.use(verifierRecycleur);
 
-// 📊 Tableau de bord
+// Tableau de bord
 router.get('/tableau-bord', RecycleurController.tableauBord);
 
 // 👤 Profil
 router.get('/profil', RecycleurController.monProfil);
 router.put('/profil', uploadRecycleurFiles, RecycleurController.mettreAJourProfil);
 
-// 📦 Stocks disponibles
+// tocks disponibles
 router.get('/stocks', RecycleurController.consulterStocks);
 
-// 📝 Demandes d'enlèvement
+// Demandes d'enlèvement
 router.post('/demandes', RecycleurController.demanderEnlevement);
 router.get('/demandes', RecycleurController.mesDemandes);
 router.get('/demandes/:demandeId', RecycleurController.detailsDemande);
@@ -96,8 +100,9 @@ router.put('/demandes/:demandeId/confirmer', RecycleurController.confirmerRecept
 router.get('/mon-stock', RecycleurController.monStockPersonnel);
 router.get('/mon-stock/historique', RecycleurController.monStock);
 
-// ♻️ Déclarations de recyclage
-router.post('/declarations', uploadCertificat ,  RecycleurController.declarerRecyclage);
+// Déclarations de recyclage
+// Utilise uploadCertificat depuis uploadToSupabase.js
+router.post('/declarations', uploadCertificat, RecycleurController.declarerRecyclage);
 router.get('/declarations', RecycleurController.mesDeclarations);
 
 export default router;
