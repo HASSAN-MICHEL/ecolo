@@ -53,11 +53,10 @@
 
 // export default router;
 
-
 // routes/recycleurRoutes.js - CORRIGÉ
 import express from 'express';
 import RecycleurController from '../controllers/RecycleurController.js';
-import { uploadRecycleurFiles, uploadCertificat } from '../middleware/uploadToSupabase.js';
+import {   uploadRecycleurFiles,   uploadCertificat,  uploadDeclarationsRecyclage  } from '../middleware/uploadToSupabase.js';
 import AuthController from '../controllers/AuthController.js';
 
 const router = express.Router();
@@ -82,14 +81,14 @@ const verifierRecycleur = (req, res, next) => {
 
 router.use(verifierRecycleur);
 
-// Tableau de bord
+//  Tableau de bord
 router.get('/tableau-bord', RecycleurController.tableauBord);
 
-// 👤 Profil
+//  Profil
 router.get('/profil', RecycleurController.monProfil);
 router.put('/profil', uploadRecycleurFiles, RecycleurController.mettreAJourProfil);
 
-// tocks disponibles
+//  Stocks disponibles
 router.get('/stocks', RecycleurController.consulterStocks);
 
 // Demandes d'enlèvement
@@ -101,8 +100,11 @@ router.get('/mon-stock', RecycleurController.monStockPersonnel);
 router.get('/mon-stock/historique', RecycleurController.monStock);
 
 // Déclarations de recyclage
-// Utilise uploadCertificat depuis uploadToSupabase.js
+//  Utilisez soit uploadCertificat soit uploadDeclarationsRecyclage
 router.post('/declarations', uploadCertificat, RecycleurController.declarerRecyclage);
+// OU
+// router.post('/declarations', uploadDeclarationsRecyclage, RecycleurController.declarerRecyclage);
+
 router.get('/declarations', RecycleurController.mesDeclarations);
 
 export default router;
