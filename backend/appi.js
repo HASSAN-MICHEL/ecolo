@@ -263,7 +263,7 @@ import collecteurRoutes from './routes/collecteurRoute.js';
 import gestionnaireRoutes from './routes/gestionnaireRoute.js';
 import superviseurRoutes from './routes/superviseurRoute.js';
 import PointDepotRoutes from './routes/PointDepotRoutes.js';
-import { serveStatic } from './middleware/uploadToSupabase.js';
+import { serveStatic } from './middleware/uploadToSupabase.js'; // Bien venue
 import NotificationRoutes from './routes/NotificationRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import sponsorRoutes from './routes/sponsorRoutes.js';
