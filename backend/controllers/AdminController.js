@@ -1520,126 +1520,255 @@ static async tableauBord(req, res) {
         }
     }
 
-    // ===== GESTION DES RECYCLEURS =====
-    static async creerRecycleur(req, res) {
-        try {
-            console.log('📦 Données reçues:', req.body);
-            console.log('📁 Fichiers reçus:', req.files);
+    // Dans AdminController.js - méthode creerRecycleur CORRIGÉE
+static async creerRecycleur(req, res) {
+    try {
+        console.log('📦 Données reçues:', req.body);
+        console.log('📁 Fichiers reçus:', req.files);
 
-            const {
-                email,
-                telephone,
-                motDePasse,
-                nomEntreprise,
-                nomResponsable,
-                adresse,
-                quartier,
-                commune,
-                numeroIdentite
-            } = req.body;
+        const {
+            email,
+            telephone,
+            motDePasse,
+            nomEntreprise,
+            nomResponsable,
+            adresse,
+            quartier,
+            commune,
+            numeroIdentite,
+            // ⚠️ IMPORTANT: Ces champs sont ajoutés par uploadToSupabase.js
+            photoProfilUrl,      // ← URL Supabase
+            photoCniRectoUrl,    // ← URL Supabase
+            photoCniVersoUrl     // ← URL Supabase
+        } = req.body;
 
-            // Validation
-            const champsManquants = [];
-            if (!email) champsManquants.push('email');
-            if (!telephone) champsManquants.push('telephone');
-            if (!motDePasse) champsManquants.push('motDePasse');
-            if (!nomEntreprise) champsManquants.push('nomEntreprise');
-            if (!nomResponsable) champsManquants.push('nomResponsable');
+        // Validation
+        const champsManquants = [];
+        if (!email) champsManquants.push('email');
+        if (!telephone) champsManquants.push('telephone');
+        if (!motDePasse) champsManquants.push('motDePasse');
+        if (!nomEntreprise) champsManquants.push('nomEntreprise');
+        if (!nomResponsable) champsManquants.push('nomResponsable');
 
-            if (champsManquants.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Champs obligatoires manquants: ${champsManquants.join(', ')}`
-                });
-            }
-
-            // Vérifier existence
-            const existantEmail = await Recycleur.trouverParEmail(email);
-            if (existantEmail) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Un recycleur avec cet email existe déjà'
-                });
-            }
-
-            const existantTel = await Recycleur.trouverParTelephone(telephone);
-            if (existantTel) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Un recycleur avec ce téléphone existe déjà'
-                });
-            }
-
-            // Hasher le mot de passe
-            const salt = await bcrypt.genSalt(10);
-            const motDePasseHash = await bcrypt.hash(motDePasse, salt);
-
-            // Récupérer les URLs des fichiers
-            let photoProfilUrl = null;
-            let photoCniRectoUrl = null;
-            let photoCniVersoUrl = null;
-
-            if (req.files) {
-                if (req.files.photoProfil) {
-                    photoProfilUrl = `/uploads/profils/${req.files.photoProfil[0].filename}`;
-                }
-                if (req.files.photoCniRecto) {
-                    photoCniRectoUrl = `/uploads/cnis/${req.files.photoCniRecto[0].filename}`;
-                }
-                if (req.files.photoCniVerso) {
-                    photoCniVersoUrl = `/uploads/cnis/${req.files.photoCniVerso[0].filename}`;
-                }
-            }
-
-            // Créer le recycleur (actif directement car créé par admin)
-            const recycleurData = {
-                email,
-                telephone,
-                motDePasseHash,
-                nomEntreprise,
-                nomResponsable,
-                adresse: adresse || null,
-                quartier: quartier || null,
-                commune: commune || null,
-                numeroIdentite: numeroIdentite || null,
-                photoProfilUrl,
-                photoCniRectoUrl,
-                photoCniVersoUrl,
-                cguAcceptees: true,
-                statut: 'actif',
-                est_actif: true,
-                valide_par: req.utilisateurId,
-                valide_le: new Date()
-            };
-
-            const nouveauRecycleur = await Recycleur.creer(recycleurData);
-
-            // Journaliser
-            await pool.query(`
-                INSERT INTO historique_actions (utilisateur_id, action, details, adresse_ip)
-                VALUES ($1, $2, $3, $4)
-            `, [req.utilisateurId, 'CREATION_RECYCLEUR', JSON.stringify({ email, nomEntreprise }), req.ip]);
-
-            res.status(201).json({
-                success: true,
-                message: 'Recycleur créé et activé avec succès',
-                recycleur: {
-                    id: nouveauRecycleur.id,
-                    email: nouveauRecycleur.email,
-                    telephone: nouveauRecycleur.telephone,
-                    nomEntreprise: nouveauRecycleur.nom_entreprise,
-                    statut: nouveauRecycleur.statut
-                }
-            });
-
-        } catch (erreur) {
-            console.error('❌ Erreur création recycleur:', erreur);
-            res.status(500).json({
+        if (champsManquants.length > 0) {
+            return res.status(400).json({
                 success: false,
-                message: 'Erreur lors de la création'
+                message: `Champs obligatoires manquants: ${champsManquants.join(', ')}`
             });
         }
+
+        // Vérifier les photos CNI
+        if (!photoCniRectoUrl || !photoCniVersoUrl) {
+            return res.status(400).json({
+                success: false,
+                message: 'Les photos recto et verso de la CNI sont requises'
+            });
+        }
+
+        // Vérifier existence
+        const existantEmail = await Recycleur.trouverParEmail(email);
+        if (existantEmail) {
+            return res.status(400).json({
+                success: false,
+                message: 'Un recycleur avec cet email existe déjà'
+            });
+        }
+
+        const existantTel = await Recycleur.trouverParTelephone(telephone);
+        if (existantTel) {
+            return res.status(400).json({
+                success: false,
+                message: 'Un recycleur avec ce téléphone existe déjà'
+            });
+        }
+
+        // Hasher le mot de passe
+        const salt = await bcrypt.genSalt(10);
+        const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+
+        // ✅ Les URLs sont déjà dans req.body, plus besoin de les construire
+        console.log('📸 URLs des photos:');
+        console.log('  - Profil:', photoProfilUrl || 'non fourni');
+        console.log('  - CNI Recto:', photoCniRectoUrl);
+        console.log('  - CNI Verso:', photoCniVersoUrl);
+
+        // Créer le recycleur
+        const recycleurData = {
+            email,
+            telephone,
+            motDePasseHash,
+            nomEntreprise,
+            nomResponsable,
+            adresse: adresse || null,
+            quartier: quartier || null,
+            commune: commune || null,
+            numeroIdentite: numeroIdentite || null,
+            photoProfilUrl: photoProfilUrl || null,  // ← URL Supabase
+            photoCniRectoUrl: photoCniRectoUrl,      // ← URL Supabase
+            photoCniVersoUrl: photoCniVersoUrl,      // ← URL Supabase
+            cguAcceptees: true,
+            statut: 'actif',
+            est_actif: true,
+            valide_par: req.utilisateurId,
+            valide_le: new Date()
+        };
+
+        const nouveauRecycleur = await Recycleur.creer(recycleurData);
+
+        // Journaliser
+        await pool.query(`
+            INSERT INTO historique_actions (utilisateur_id, action, details, adresse_ip)
+            VALUES ($1, $2, $3, $4)
+        `, [req.utilisateurId, 'CREATION_RECYCLEUR', JSON.stringify({ email, nomEntreprise }), req.ip]);
+
+        res.status(201).json({
+            success: true,
+            message: 'Recycleur créé et activé avec succès',
+            recycleur: {
+                id: nouveauRecycleur.id,
+                email: nouveauRecycleur.email,
+                telephone: nouveauRecycleur.telephone,
+                nomEntreprise: nouveauRecycleur.nom_entreprise,
+                statut: nouveauRecycleur.statut,
+                // Retourner aussi les URLs pour vérification
+                photos: {
+                    profil: photoProfilUrl,
+                    cniRecto: photoCniRectoUrl,
+                    cniVerso: photoCniVersoUrl
+                }
+            }
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur création recycleur:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la création',
+            erreur: erreur.message
+        });
     }
+}
+
+    // // ===== GESTION DES RECYCLEURS =====
+    // static async creerRecycleur(req, res) {
+    //     try {
+    //         console.log('📦 Données reçues:', req.body);
+    //         console.log('📁 Fichiers reçus:', req.files);
+
+    //         const {
+    //             email,
+    //             telephone,
+    //             motDePasse,
+    //             nomEntreprise,
+    //             nomResponsable,
+    //             adresse,
+    //             quartier,
+    //             commune,
+    //             numeroIdentite
+    //         } = req.body;
+
+    //         // Validation
+    //         const champsManquants = [];
+    //         if (!email) champsManquants.push('email');
+    //         if (!telephone) champsManquants.push('telephone');
+    //         if (!motDePasse) champsManquants.push('motDePasse');
+    //         if (!nomEntreprise) champsManquants.push('nomEntreprise');
+    //         if (!nomResponsable) champsManquants.push('nomResponsable');
+
+    //         if (champsManquants.length > 0) {
+    //             return res.status(400).json({
+    //                 success: false,
+    //                 message: `Champs obligatoires manquants: ${champsManquants.join(', ')}`
+    //             });
+    //         }
+
+    //         // Vérifier existence
+    //         const existantEmail = await Recycleur.trouverParEmail(email);
+    //         if (existantEmail) {
+    //             return res.status(400).json({
+    //                 success: false,
+    //                 message: 'Un recycleur avec cet email existe déjà'
+    //             });
+    //         }
+
+    //         const existantTel = await Recycleur.trouverParTelephone(telephone);
+    //         if (existantTel) {
+    //             return res.status(400).json({
+    //                 success: false,
+    //                 message: 'Un recycleur avec ce téléphone existe déjà'
+    //             });
+    //         }
+
+    //         // Hasher le mot de passe
+    //         const salt = await bcrypt.genSalt(10);
+    //         const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+
+    //         // Récupérer les URLs des fichiers
+    //         let photoProfilUrl = null;
+    //         let photoCniRectoUrl = null;
+    //         let photoCniVersoUrl = null;
+
+    //         if (req.files) {
+    //             if (req.files.photoProfil) {
+    //                 photoProfilUrl = `/uploads/profils/${req.files.photoProfil[0].filename}`;
+    //             }
+    //             if (req.files.photoCniRecto) {
+    //                 photoCniRectoUrl = `/uploads/cnis/${req.files.photoCniRecto[0].filename}`;
+    //             }
+    //             if (req.files.photoCniVerso) {
+    //                 photoCniVersoUrl = `/uploads/cnis/${req.files.photoCniVerso[0].filename}`;
+    //             }
+    //         }
+
+    //         // Créer le recycleur (actif directement car créé par admin)
+    //         const recycleurData = {
+    //             email,
+    //             telephone,
+    //             motDePasseHash,
+    //             nomEntreprise,
+    //             nomResponsable,
+    //             adresse: adresse || null,
+    //             quartier: quartier || null,
+    //             commune: commune || null,
+    //             numeroIdentite: numeroIdentite || null,
+    //             photoProfilUrl,
+    //             photoCniRectoUrl,
+    //             photoCniVersoUrl,
+    //             cguAcceptees: true,
+    //             statut: 'actif',
+    //             est_actif: true,
+    //             valide_par: req.utilisateurId,
+    //             valide_le: new Date()
+    //         };
+
+    //         const nouveauRecycleur = await Recycleur.creer(recycleurData);
+
+    //         // Journaliser
+    //         await pool.query(`
+    //             INSERT INTO historique_actions (utilisateur_id, action, details, adresse_ip)
+    //             VALUES ($1, $2, $3, $4)
+    //         `, [req.utilisateurId, 'CREATION_RECYCLEUR', JSON.stringify({ email, nomEntreprise }), req.ip]);
+
+    //         res.status(201).json({
+    //             success: true,
+    //             message: 'Recycleur créé et activé avec succès',
+    //             recycleur: {
+    //                 id: nouveauRecycleur.id,
+    //                 email: nouveauRecycleur.email,
+    //                 telephone: nouveauRecycleur.telephone,
+    //                 nomEntreprise: nouveauRecycleur.nom_entreprise,
+    //                 statut: nouveauRecycleur.statut
+    //             }
+    //         });
+
+    //     } catch (erreur) {
+    //         console.error('❌ Erreur création recycleur:', erreur);
+    //         res.status(500).json({
+    //             success: false,
+    //             message: 'Erreur lors de la création'
+    //         });
+    //     }
+    // }
 
     // Dans AdminController.js
 static async supprimerRecycleur(req, res) {

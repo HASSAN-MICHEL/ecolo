@@ -2,61 +2,98 @@ import { pool } from '../config/database.js';
 
 class Recycleur {
     // Créer un nouveau recycleur
-    static async creer(donnees) {
-        const requete = `
-            INSERT INTO recycleurs (
-                email, 
-                telephone, 
-                mot_de_passe_hash, 
-                nom_entreprise,
-                nom_responsable, 
-                adresse, 
-                quartier,
-                commune, 
-                numero_identite, 
-                photo_profil_url,
-                photo_cni_recto_url,
-                photo_cni_verso_url, 
-                statut,
-                est_actif, 
-                cgu_acceptees,
-                cgu_acceptees_le
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP)
-            RETURNING *
-        `;
+    // static async creer(donnees) {
+    //     const requete = `
+    //         INSERT INTO recycleurs (
+    //             email, 
+    //             telephone, 
+    //             mot_de_passe_hash, 
+    //             nom_entreprise,
+    //             nom_responsable, 
+    //             adresse, 
+    //             quartier,
+    //             commune, 
+    //             numero_identite, 
+    //             photo_profil_url,
+    //             photo_cni_recto_url,
+    //             photo_cni_verso_url, 
+    //             statut,
+    //             est_actif, 
+    //             cgu_acceptees,
+    //             cgu_acceptees_le
+    //         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP)
+    //         RETURNING *
+    //     `;
         
-        const valeurs = [
-            donnees.email,
-            donnees.telephone,
-            donnees.motDePasseHash,
-            donnees.nomEntreprise,
-            donnees.nomResponsable,
-            donnees.adresse,
-            donnees.quartier,
-            donnees.commune,
-            donnees.numeroIdentite,
-            donnees.photoProfilUrl,
-            donnees.photoCniRectoUrl,
-            donnees.photoCniVersoUrl,
-            donnees.statut || 'en_attente',
-            donnees.est_actif || false,
-            donnees.cguAcceptees || false
-        ];
+    //     const valeurs = [
+    //         donnees.email,
+    //         donnees.telephone,
+    //         donnees.motDePasseHash,
+    //         donnees.nomEntreprise,
+    //         donnees.nomResponsable,
+    //         donnees.adresse,
+    //         donnees.quartier,
+    //         donnees.commune,
+    //         donnees.numeroIdentite,
+    //         donnees.photoProfilUrl,
+    //         donnees.photoCniRectoUrl,
+    //         donnees.photoCniVersoUrl,
+    //         donnees.statut || 'en_attente',
+    //         donnees.est_actif || false,
+    //         donnees.cguAcceptees || false
+    //     ];
 
-        try {
-            console.log('📝 Exécution requête SQL avec valeurs:', {
-                ...valeurs,
-                motDePasseHash: '[HIDDEN]'
-            });
+    //     try {
+    //         console.log('📝 Exécution requête SQL avec valeurs:', {
+    //             ...valeurs,
+    //             motDePasseHash: '[HIDDEN]'
+    //         });
             
-            const resultat = await pool.query(requete, valeurs);
-            console.log('✅ Recycleur créé avec succès:', resultat.rows[0].id);
-            return resultat.rows[0];
-        } catch (error) {
-            console.error('❌ Erreur SQL création recycleur:', error);
-            throw error;
-        }
-    }
+    //         const resultat = await pool.query(requete, valeurs);
+    //         console.log('✅ Recycleur créé avec succès:', resultat.rows[0].id);
+    //         return resultat.rows[0];
+    //     } catch (error) {
+    //         console.error('❌ Erreur SQL création recycleur:', error);
+    //         throw error;
+    //     }
+    // }
+
+    // models/Recycleur.js
+static async creer(donnees) {
+    const requete = `
+        INSERT INTO recycleurs (
+            email, telephone, mot_de_passe_hash, nom_entreprise,
+            nom_responsable, adresse, quartier, commune,
+            numero_identite, photo_profil_url, photo_cni_recto_url,
+            photo_cni_verso_url, cgu_acceptees, statut,
+            est_actif, valide_par, valide_le
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        RETURNING *
+    `;
+
+    const valeurs = [
+        donnees.email,
+        donnees.telephone,
+        donnees.motDePasseHash,
+        donnees.nomEntreprise,
+        donnees.nomResponsable,
+        donnees.adresse,
+        donnees.quartier,
+        donnees.commune,
+        donnees.numeroIdentite,
+        donnees.photoProfilUrl,      // ← URL Supabase
+        donnees.photoCniRectoUrl,    // ← URL Supabase
+        donnees.photoCniVersoUrl,    // ← URL Supabase
+        donnees.cguAcceptees || false,
+        donnees.statut || 'en_attente',
+        donnees.est_actif || false,
+        donnees.valide_par || null,
+        donnees.valide_le || null
+    ];
+
+    const resultat = await pool.query(requete, valeurs);
+    return resultat.rows[0];
+}
 
     static async trouverParEmail(email) {
         const requete = 'SELECT * FROM recycleurs WHERE email = $1';
