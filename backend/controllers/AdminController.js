@@ -1649,127 +1649,6 @@ static async creerRecycleur(req, res) {
     }
 }
 
-    // // ===== GESTION DES RECYCLEURS =====
-    // static async creerRecycleur(req, res) {
-    //     try {
-    //         console.log('📦 Données reçues:', req.body);
-    //         console.log('📁 Fichiers reçus:', req.files);
-
-    //         const {
-    //             email,
-    //             telephone,
-    //             motDePasse,
-    //             nomEntreprise,
-    //             nomResponsable,
-    //             adresse,
-    //             quartier,
-    //             commune,
-    //             numeroIdentite
-    //         } = req.body;
-
-    //         // Validation
-    //         const champsManquants = [];
-    //         if (!email) champsManquants.push('email');
-    //         if (!telephone) champsManquants.push('telephone');
-    //         if (!motDePasse) champsManquants.push('motDePasse');
-    //         if (!nomEntreprise) champsManquants.push('nomEntreprise');
-    //         if (!nomResponsable) champsManquants.push('nomResponsable');
-
-    //         if (champsManquants.length > 0) {
-    //             return res.status(400).json({
-    //                 success: false,
-    //                 message: `Champs obligatoires manquants: ${champsManquants.join(', ')}`
-    //             });
-    //         }
-
-    //         // Vérifier existence
-    //         const existantEmail = await Recycleur.trouverParEmail(email);
-    //         if (existantEmail) {
-    //             return res.status(400).json({
-    //                 success: false,
-    //                 message: 'Un recycleur avec cet email existe déjà'
-    //             });
-    //         }
-
-    //         const existantTel = await Recycleur.trouverParTelephone(telephone);
-    //         if (existantTel) {
-    //             return res.status(400).json({
-    //                 success: false,
-    //                 message: 'Un recycleur avec ce téléphone existe déjà'
-    //             });
-    //         }
-
-    //         // Hasher le mot de passe
-    //         const salt = await bcrypt.genSalt(10);
-    //         const motDePasseHash = await bcrypt.hash(motDePasse, salt);
-
-    //         // Récupérer les URLs des fichiers
-    //         let photoProfilUrl = null;
-    //         let photoCniRectoUrl = null;
-    //         let photoCniVersoUrl = null;
-
-    //         if (req.files) {
-    //             if (req.files.photoProfil) {
-    //                 photoProfilUrl = `/uploads/profils/${req.files.photoProfil[0].filename}`;
-    //             }
-    //             if (req.files.photoCniRecto) {
-    //                 photoCniRectoUrl = `/uploads/cnis/${req.files.photoCniRecto[0].filename}`;
-    //             }
-    //             if (req.files.photoCniVerso) {
-    //                 photoCniVersoUrl = `/uploads/cnis/${req.files.photoCniVerso[0].filename}`;
-    //             }
-    //         }
-
-    //         // Créer le recycleur (actif directement car créé par admin)
-    //         const recycleurData = {
-    //             email,
-    //             telephone,
-    //             motDePasseHash,
-    //             nomEntreprise,
-    //             nomResponsable,
-    //             adresse: adresse || null,
-    //             quartier: quartier || null,
-    //             commune: commune || null,
-    //             numeroIdentite: numeroIdentite || null,
-    //             photoProfilUrl,
-    //             photoCniRectoUrl,
-    //             photoCniVersoUrl,
-    //             cguAcceptees: true,
-    //             statut: 'actif',
-    //             est_actif: true,
-    //             valide_par: req.utilisateurId,
-    //             valide_le: new Date()
-    //         };
-
-    //         const nouveauRecycleur = await Recycleur.creer(recycleurData);
-
-    //         // Journaliser
-    //         await pool.query(`
-    //             INSERT INTO historique_actions (utilisateur_id, action, details, adresse_ip)
-    //             VALUES ($1, $2, $3, $4)
-    //         `, [req.utilisateurId, 'CREATION_RECYCLEUR', JSON.stringify({ email, nomEntreprise }), req.ip]);
-
-    //         res.status(201).json({
-    //             success: true,
-    //             message: 'Recycleur créé et activé avec succès',
-    //             recycleur: {
-    //                 id: nouveauRecycleur.id,
-    //                 email: nouveauRecycleur.email,
-    //                 telephone: nouveauRecycleur.telephone,
-    //                 nomEntreprise: nouveauRecycleur.nom_entreprise,
-    //                 statut: nouveauRecycleur.statut
-    //             }
-    //         });
-
-    //     } catch (erreur) {
-    //         console.error('❌ Erreur création recycleur:', erreur);
-    //         res.status(500).json({
-    //             success: false,
-    //             message: 'Erreur lors de la création'
-    //         });
-    //     }
-    // }
-
     // Dans AdminController.js
 static async supprimerRecycleur(req, res) {
     try {
@@ -3365,6 +3244,347 @@ static async modifierOng(req, res) {
         });
     }
 }
+
+
+
+
+static async statistiquesAchats(req, res) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                COALESCE(SUM(poids), 0) as poids_total_achete,
+                COALESCE(SUM(total), 0) as montant_total_achete,
+                COUNT(*) as nombre_achats
+            FROM achats_gestionnaires
+        `);
+        const global = result.rows[0];
+
+        // Par gestionnaire
+        const parGestionnaire = await pool.query(`
+            SELECT 
+                g.id,
+                g.nom_complet,
+                pdv.nom as point_depot_nom,
+                COUNT(a.id) as nombre_achats,
+                COALESCE(SUM(a.poids), 0) as poids_total,
+                COALESCE(SUM(a.total), 0) as montant_total
+            FROM gestionnaires_points g
+            JOIN achats_gestionnaires a ON g.id = a.gestionnaire_id
+            JOIN points_depot_volontaire pdv ON a.point_depot_id = pdv.id
+            GROUP BY g.id, g.nom_complet, pdv.nom
+            ORDER BY poids_total DESC
+        `);
+
+        // Par point de collecte
+        const parPoint = await pool.query(`
+            SELECT 
+                pdv.id,
+                pdv.nom,
+                COUNT(a.id) as nombre_achats,
+                COALESCE(SUM(a.poids), 0) as poids_total,
+                COALESCE(SUM(a.total), 0) as montant_total
+            FROM points_depot_volontaire pdv
+            JOIN achats_gestionnaires a ON pdv.id = a.point_depot_id
+            GROUP BY pdv.id, pdv.nom
+            ORDER BY poids_total DESC
+        `);
+
+        // Évolution mensuelle
+        const evolution = await pool.query(`
+            SELECT 
+                DATE_TRUNC('month', date_achat) as mois,
+                COALESCE(SUM(poids), 0) as poids_total,
+                COALESCE(SUM(total), 0) as montant_total,
+                COUNT(*) as nombre_achats
+            FROM achats_gestionnaires
+            WHERE date_achat >= NOW() - INTERVAL '12 months'
+            GROUP BY DATE_TRUNC('month', date_achat)
+            ORDER BY mois DESC
+        `);
+
+        res.json({
+            success: true,
+            global,
+            par_gestionnaire: parGestionnaire.rows,
+            par_point: parPoint.rows,
+            evolution_mensuelle: evolution.rows
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur stats achats:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+static async statistiquesCollectes(req, res) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                COALESCE(SUM(poids_depose), 0) as poids_total_collecte,
+                COALESCE(SUM(gains_attribues), 0) as gains_total,
+                COUNT(*) as nombre_missions
+            FROM missions
+            WHERE statut = 'validee'
+        `);
+        const global = result.rows[0];
+
+        // Par collecteur
+        const parCollecteur = await pool.query(`
+            SELECT 
+                c.id,
+                c.nom_complet,
+                COUNT(m.id) as nombre_missions,
+                COALESCE(SUM(m.poids_depose), 0) as poids_total,
+                COALESCE(SUM(m.gains_attribues), 0) as gains_total
+            FROM collecteurs c
+            JOIN missions m ON c.id = m.collecteur_id AND m.statut = 'validee'
+            GROUP BY c.id, c.nom_complet
+            ORDER BY poids_total DESC
+        `);
+
+        // Par point de collecte (dépôt)
+        const parPoint = await pool.query(`
+            SELECT 
+                pdv.id,
+                pdv.nom,
+                COUNT(m.id) as nombre_missions,
+                COALESCE(SUM(m.poids_depose), 0) as poids_total,
+                COALESCE(SUM(m.gains_attribues), 0) as gains_total
+            FROM points_depot_volontaire pdv
+            JOIN missions m ON pdv.id = m.point_depot_id AND m.statut = 'validee'
+            GROUP BY pdv.id, pdv.nom
+            ORDER BY poids_total DESC
+        `);
+
+        // Par gestionnaire (celui qui a validé)
+        const parGestionnaire = await pool.query(`
+            SELECT 
+                g.id,
+                g.nom_complet,
+                pdv.nom as point_depot_nom,
+                COUNT(m.id) as nombre_validations,
+                COALESCE(SUM(m.poids_depose), 0) as poids_total_valide,
+                COALESCE(SUM(m.gains_attribues), 0) as gains_total_valide
+            FROM gestionnaires_points g
+            JOIN missions m ON g.id = m.validee_par AND m.statut = 'validee'
+            JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
+            GROUP BY g.id, g.nom_complet, pdv.nom
+            ORDER BY poids_total_valide DESC
+        `);
+
+        // Évolution mensuelle
+        const evolution = await pool.query(`
+            SELECT 
+                DATE_TRUNC('month', date_validation) as mois,
+                COALESCE(SUM(poids_depose), 0) as poids_total,
+                COALESCE(SUM(gains_attribues), 0) as gains_total,
+                COUNT(*) as nombre_missions
+            FROM missions
+            WHERE statut = 'validee' AND date_validation >= NOW() - INTERVAL '12 months'
+            GROUP BY DATE_TRUNC('month', date_validation)
+            ORDER BY mois DESC
+        `);
+
+        res.json({
+            success: true,
+            global,
+            par_collecteur: parCollecteur.rows,
+            par_point: parPoint.rows,
+            par_gestionnaire: parGestionnaire.rows,
+            evolution_mensuelle: evolution.rows
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur stats collectes:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+// Récupérer les statistiques détaillées d'un collecteur
+static async getCollecteurStats(req, res) {
+    try {
+        const { id } = req.params;
+        // Missions validées du collecteur
+        const missions = await pool.query(`
+            SELECT 
+                COUNT(*) as nb_missions,
+                COALESCE(SUM(poids_depose), 0) as total_kg
+            FROM missions
+            WHERE collecteur_id = $1 AND statut = 'validee'
+        `, [id]);
+
+        // Poids par type de déchet
+        const parType = await pool.query(`
+            SELECT 
+                d.type_dechet,
+                COALESCE(SUM(m.poids_depose), 0) as kg
+            FROM missions m
+            JOIN declarations_dechets d ON m.declaration_id = d.id
+            WHERE m.collecteur_id = $1 AND m.statut = 'validee'
+            GROUP BY d.type_dechet
+        `, [id]);
+
+        res.json({
+            success: true,
+            nb_missions: parseInt(missions.rows[0].nb_missions),
+            total_kg: parseFloat(missions.rows[0].total_kg),
+            par_type: parType.rows
+        });
+    } catch (erreur) {
+        console.error('Erreur getCollecteurStats:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur serveur' });
+    }
+}
+
+// Récupérer les détails d'un gestionnaire (achats + collectes validées)
+static async getGestionnaireDetails(req, res) {
+    try {
+        const { id } = req.params;
+
+        // Achats du gestionnaire
+        const achats = await pool.query(`
+            SELECT 
+                COUNT(*) as nombre,
+                COALESCE(SUM(poids), 0) as poids_total,
+                json_agg(
+                    json_build_object(
+                        'id', id,
+                        'date_achat', date_achat,
+                        'type_dechet', type_dechet,
+                        'poids', poids,
+                        'total', total
+                    ) ORDER BY date_achat DESC
+                ) as liste
+            FROM achats_gestionnaires
+            WHERE gestionnaire_id = $1
+        `, [id]);
+
+        // Collectes validées par ce gestionnaire
+        const collectes = await pool.query(`
+            SELECT 
+                COUNT(*) as nombre,
+                COALESCE(SUM(m.poids_depose), 0) as poids_total,
+                json_agg(
+                    json_build_object(
+                        'id', m.id,
+                        'date_validation', m.date_validation,
+                        'type_dechet', d.type_dechet,
+                        'poids_depose', m.poids_depose,
+                        'gains_attribues', m.gains_attribues
+                    ) ORDER BY m.date_validation DESC
+                ) as liste
+            FROM missions m
+            JOIN declarations_dechets d ON m.declaration_id = d.id
+            WHERE m.validee_par = $1 AND m.statut = 'validee'
+        `, [id]);
+
+        res.json({
+            success: true,
+            achats: {
+                nombre: parseInt(achats.rows[0].nombre),
+                poids_total: parseFloat(achats.rows[0].poids_total),
+                liste: achats.rows[0].liste || []
+            },
+            collectes: {
+                nombre: parseInt(collectes.rows[0].nombre),
+                poids_total: parseFloat(collectes.rows[0].poids_total),
+                liste: collectes.rows[0].liste || []
+            }
+        });
+    } catch (erreur) {
+        console.error('Erreur getGestionnaireDetails:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur serveur' });
+    }
+}
+static async stocksPoints(req, res) {
+    try {
+        const stocks = await pool.query(`
+            SELECT 
+                pdv.id,
+                pdv.nom,
+                pdv.commune,
+                pdv.quartier,
+                json_agg(
+                    json_build_object(
+                        'type_dechet', s.type_dechet,
+                        'quantite_disponible', s.quantite_disponible,
+                        'unite', s.unite,
+                        'prix_estime', s.prix_estime,
+                        'dernier_mouvement', s.dernier_mouvement
+                    )
+                ) as stocks
+            FROM points_depot_volontaire pdv
+            LEFT JOIN stocks_dechets s ON pdv.id = s.point_depot_id
+            WHERE s.quantite_disponible > 0
+            GROUP BY pdv.id, pdv.nom, pdv.commune, pdv.quartier
+            ORDER BY pdv.nom
+        `);
+
+        // Total global par type
+        const totalParType = await pool.query(`
+            SELECT 
+                type_dechet,
+                SUM(quantite_disponible) as total_disponible
+            FROM stocks_dechets
+            GROUP BY type_dechet
+            ORDER BY total_disponible DESC
+        `);
+
+        res.json({
+            success: true,
+            stocks: stocks.rows,
+            total_par_type: totalParType.rows
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur stocks points:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+static async listerProducteurs(req, res) {
+    try {
+        const producteurs = await pool.query(`
+            SELECT id, email, telephone, nom_complet, type_producteur,
+                   quartier, commune, est_actif, type_compte, points, cree_le
+            FROM producteurs
+            ORDER BY cree_le DESC
+        `);
+        res.json({ success: true, producteurs: producteurs.rows });
+    } catch (erreur) {
+        console.error('❌ Erreur liste producteurs:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+static async listerCollecteurs(req, res) {
+    try {
+        const collecteurs = await pool.query(`
+            SELECT id, email, telephone, nom_complet, type_collecteur,
+                   statut, est_actif, points_total, gains_total, cree_le
+            FROM collecteurs
+            ORDER BY cree_le DESC
+        `);
+        res.json({ success: true, collecteurs: collecteurs.rows });
+    } catch (erreur) {
+        console.error('❌ Erreur liste collecteurs:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+static async listerGestionnaires(req, res) {
+    try {
+        const gestionnaires = await pool.query(`
+            SELECT g.id, g.email, g.telephone, g.nom_complet, g.fonction,
+                   g.est_actif, pdv.nom as point_depot_nom, g.cree_le
+            FROM gestionnaires_points g
+            LEFT JOIN points_depot_volontaire pdv ON g.point_collecte_id = pdv.id
+            ORDER BY g.cree_le DESC
+        `);
+        res.json({ success: true, gestionnaires: gestionnaires.rows });
+    } catch (erreur) {
+        console.error('❌ Erreur liste gestionnaires:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
 }
 
 export default AdminController;

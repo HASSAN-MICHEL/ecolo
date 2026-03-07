@@ -135,22 +135,34 @@ router.post('/campagnes', CampagneController.creer);
 router.get('/campagnes', CampagneController.lister);
 router.get('/campagnes/:id', AdminController.detailsCampagne);
 router.put('/campagnes/:id', AdminController.modifierCampagne);
-//router.delete('/campagnes/:id', AdminController.supprimerCampagne); // sou
+
 router.post('/campagnes/:id/promoteurs', AdminController.ajouterPromoteurCampagne);
 router.delete('/campagnes/:id/promoteurs/:promoteurId/:promoteurType', AdminController.retirerPromoteurCampagne);
 router.post('/campagnes/:id/suivi', AdminController.ajouterSuiviCampagne);
 router.get('/campagnes/:id/rapport', AdminController.rapportCampagne);
 router.delete('/campagnes/:id', AdminController.supprimerCampagne);
 
-// ===== GESTION DES DEMANDES =====
+//  GESTION DES DEMANDES 
 router.get('/demandes-suppression', AdminController.listerDemandesSuppression);
 router.get('/demandes-suppression/:id', AdminController.detailsDemandeSuppression);
 router.put('/demandes-suppression/:demandeId', AdminController.traiterDemandeSuppression);
 
-// ===== GESTION DES PRODUCTEURS PREMIUM =====
+// GESTION DES PRODUCTEURS PREMIUM 
 router.get('/producteurs-premium', AdminController.listerProducteursPremium);
 router.get('/producteurs-premium/:id', AdminController.detailsProducteurPremium);
 router.post('/producteurs/:producteurId/convertir-premium', AdminController.convertirEnPremium);
 router.post('/producteurs-premium/:id/resilier', AdminController.resilierAbonnement);
+
+// STATISTIQUES ACHATS ET COLLECTES 
+router.get('/statistiques/achats', AdminController.statistiquesAchats);
+router.get('/statistiques/collectes', AdminController.statistiquesCollectes);
+router.get('/stocks-points', AdminController.stocksPoints);
+router.get('/collecteurs/:id/stats', AdminController.getCollecteurStats);
+router.get('/gestionnaires/:id/details', AdminController.getGestionnaireDetails);
+
+// LISTES DES UTILISATEURS
+router.get('/producteurs', AdminController.listerProducteurs);
+router.get('/collecteurs', AdminController.listerCollecteurs);
+router.get('/gestionnaires', AdminController.listerGestionnaires);
 
 export default router;
