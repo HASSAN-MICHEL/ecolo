@@ -271,6 +271,7 @@ import campagneRoutes from './routes/campagneRoutes.js';
 import ongRoutes from './routes/ongRoutes.js';
 import RecycleurRoutes from './routes/recycleurRoutes.js';
 import gestionnaireAchatsRoutes from './routes/gestionnaireAchatsRoute.js';
+import producteurpremiumRoutes from './routes/producteurPremiumRoutes.js';
 
 
 // Configuration
@@ -321,6 +322,7 @@ app.get('/', (req, res) => {
 // Routes API
 // Routes API
 app.use('/api/notifications', NotificationRoutes);
+app.use('/api/producteur-premium', producteurpremiumRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/sponsors', sponsorRoutes);
 app.use('/api/campagnes', campagneRoutes);
