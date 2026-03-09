@@ -326,7 +326,11 @@ app.get('/', (req, res) => {
 // Routes API
 // Routes API
 app.use('/api/notifications', NotificationRoutes);
+<<<<<<< HEAD
 app.use('/api/producteur-premium', producteurPremiumRoutes);
+=======
+app.use('/api/producteur-premium', producteurpremiumRoutes);
+>>>>>>> 7b84c5a5b36bcff83b58b83fb4cdcd3bc30b052b
 app.use('/api/admin', adminRoutes);
 app.use('/api/sponsors', sponsorRoutes);
 app.use('/api/campagnes', campagneRoutes);
