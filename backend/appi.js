@@ -10,6 +10,7 @@
 // import declarationRoutes from './routes/declarationRoute.js';
 // import dashboardRoutes from './routes/dashboardRoutes.js';
 // import profileRoutes from './routes/profileRoutes.js';
+// import producteurpremiumRoutes from './routes/producteurPremiumRoutes.js';
 // import collecteurRoutes from './routes/collecteurRoute.js';
 // import gestionnaireRoutes from './routes/gestionnaireRoute.js';
 // import superviseurRoutes from './routes/superviseurRoute.js';
@@ -22,6 +23,7 @@
 // import ongRoutes from './routes/ongRoutes.js';
 // import RecycleurRoutes from './routes/recycleurRoutes.js';
 // import gestionnaireAchatsRoutes from './routes/gestionnaireAchatsRoute.js';
+
 
 
 // // Configuration
@@ -61,12 +63,14 @@
 
 // // Routes API
 // app.use('/api/notifications', NotificationRoutes);
+// app.use('/api/producteur-premium', producteurpremiumRoutes);
 // app.use('/api/admin', adminRoutes);
 // app.use('/api/sponsors', sponsorRoutes);
 // app.use('/api/campagnes', campagneRoutes);
 // app.use('/api/ongs', ongRoutes);
 // app.use('/api/points-depot', PointDepotRoutes);
 // app.use('/api/recycleurs' , RecycleurRoutes);
+
 
 // app.use('/api/collecteurs', collecteurRoutes);
 // app.use('/api/gestionnaires', gestionnaireRoutes);
@@ -271,6 +275,7 @@ import campagneRoutes from './routes/campagneRoutes.js';
 import ongRoutes from './routes/ongRoutes.js';
 import RecycleurRoutes from './routes/recycleurRoutes.js';
 import gestionnaireAchatsRoutes from './routes/gestionnaireAchatsRoute.js';
+import producteurpremiumRoutes from './routes/producteurPremiumRoutes.js';
 
 
 // Configuration
@@ -321,6 +326,7 @@ app.get('/', (req, res) => {
 // Routes API
 // Routes API
 app.use('/api/notifications', NotificationRoutes);
+app.use('/api/producteur-premium', producteurPremiumRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/sponsors', sponsorRoutes);
 app.use('/api/campagnes', campagneRoutes);

@@ -106,10 +106,7 @@ router.get('/demandes-recycleurs/:demandeId', SuperviseurController.detailsDeman
 // Valider une demande
 router.post('/demandes-recycleurs/:demandeId/valider', SuperviseurController.validerDemandeEnlevement);
 
-// Refuser une demande
-// router.post('/demandes-recycleurs/:demandeId/refuser', SuperviseurController.refuserDemandeEnlevement);
-// router.get('/declarations-recyclage', SuperviseurController.getAllDeclarations);
-// router.put('/declarations-recyclage/:declarationId/valider', SuperviseurController.validerDeclaration);
+
 
 router.get('/declarations-recyclage', SuperviseurController.getAllDeclarations);
 router.put('/declarations-recyclage/:declarationId/valider', SuperviseurController.validerDeclaration);
