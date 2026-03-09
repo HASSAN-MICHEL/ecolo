@@ -3,11 +3,14 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo, useDeferredValue } from 'react';
 import { useNavigate, Routes, Route, Link } from 'react-router-dom';
+import DemandesRecycleursPage from './DemandesRecycleursPage';
+import CampagnesPage from './CampagnesPage';
+import DeclarationsRecyclagePage from './DeclarationsRecyclagePage';
 import {
   // Icônes principales
   User, Users, UserPlus, UserCheck, UserX, UserCog,
   Building, MapPin, Phone, Mail, Calendar, Clock,
-  CheckCircle, XCircle, AlertCircle, Info, Eye,
+  CheckCircle, XCircle, AlertCircle, Info, Eye,  Target, 
   Edit2, Trash2, Save, X, Plus, Search, Filter,
   RefreshCw, Download, Upload, FileText, Printer,
   BarChart3, PieChart, TrendingUp, Award, Star,
@@ -181,8 +184,18 @@ const GestionnaireModal = ({ isOpen, onClose, gestionnaire, pointsDepot, onSubmi
   );
 };
 
-// ==================== COMPOSANT MODAL POINT DÉPÔT CORRIGÉ ====================
+// ==================== COMPOSANT MODAL POINT DÉPÔT AVEC CHECKBOX ====================
 const PointDepotModal = ({ isOpen, onClose, point, onSubmit }) => {
+  // Types de déchets correspondant à l'ENUM PostgreSQL
+  const WASTE_TYPES = [
+    { id: 'plastique_pet', label: 'Plastique PET' },
+    { id: 'plastique_pehd', label: 'Plastique PEHD' },
+    { id: 'papier_carton', label: 'Papier / Carton' },
+    { id: 'metal', label: 'Métal' },
+    { id: 'verre', label: 'Verre' },
+    { id: 'organique', label: 'Organique' }
+  ];
+
   const [formData, setFormData] = useState({
     nom: '',
     adresse: '',
@@ -242,9 +255,18 @@ const PointDepotModal = ({ isOpen, onClose, point, onSubmit }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (e) => {
-    const values = Array.from(e.target.selectedOptions, option => option.value);
-    setFormData(prev => ({ ...prev, typesDechetsAcceptes: values }));
+  // Gestion des cases à cocher
+  const handleCheckboxChange = (typeId) => {
+    setFormData(prev => {
+      const currentTypes = prev.typesDechetsAcceptes;
+      if (currentTypes.includes(typeId)) {
+        // Décocher : retirer le type
+        return { ...prev, typesDechetsAcceptes: currentTypes.filter(t => t !== typeId) };
+      } else {
+        // Cocher : ajouter le type
+        return { ...prev, typesDechetsAcceptes: [...currentTypes, typeId] };
+      }
+    });
   };
 
   const handleSubmit = (e) => {
@@ -321,35 +343,37 @@ const PointDepotModal = ({ isOpen, onClose, point, onSubmit }) => {
             </div>
 
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Types de déchets acceptés</label>
-              <select
-                multiple
-                value={formData.typesDechetsAcceptes}
-                onChange={handleSelectChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600"
-                size="6"
-              >
-                <option value="plastique">Plastique</option>
-                <option value="verre">Verre</option>
-                <option value="papier">Papier</option>
-                <option value="carton">Carton</option>
-                <option value="metal">Métal</option>
-                <option value="organique">Organique</option>
-                <option value="electronique">Électronique</option>
-                <option value="textile">Textile</option>
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs types
-              </p>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Types de déchets acceptés
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {WASTE_TYPES.map(type => (
+                  <label key={type.id} className="flex items-center space-x-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.typesDechetsAcceptes.includes(type.id)}
+                      onChange={() => handleCheckboxChange(type.id)}
+                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                    />
+                    <span className="text-sm text-gray-700">{type.label}</span>
+                  </label>
+                ))}
+              </div>
               
-              {/* Vérification de sécurité avant d'utiliser map */}
+              {/* Résumé des types sélectionnés */}
               {formData.typesDechetsAcceptes && Array.isArray(formData.typesDechetsAcceptes) && formData.typesDechetsAcceptes.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {formData.typesDechetsAcceptes.map((type, index) => (
-                    <span key={index} className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
-                      {type}
-                    </span>
-                  ))}
+                <div className="mt-3 p-3 bg-purple-50 rounded-lg">
+                  <p className="text-xs font-medium text-purple-700 mb-2">Types sélectionnés :</p>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.typesDechetsAcceptes.map(typeId => {
+                      const type = WASTE_TYPES.find(t => t.id === typeId);
+                      return (
+                        <span key={typeId} className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                          {type ? type.label : typeId}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -398,6 +422,9 @@ const DashboardSuperviseur = () => {
     totalGestionnaires: 0,
     gestionnairesActifs: 0,
     totalMissions: 0,
+    demandesEnAttente: 0,  
+    demandesValidees: 0,   
+    demandesTotal: 0  ,
     missionsValidees: 0,
     totalDechetsCollectes: 0,
     totalGainsDistribues: 0
@@ -455,8 +482,10 @@ const DashboardSuperviseur = () => {
   const intervalRef = useRef(null);
   const formTimeouts = useRef({});
 
-//   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const API_URL = 'https://ecobackend-y6nd.vercel.app';
+  // const API_URL =  'http://localhost:3000';
+
+  const API_URL = 'https://ecobackend-zeds.vercel.app';
+
   const STORAGE_KEYS = {
     TOKEN: 'ecocollect_token',
     USER: 'ecocollect_user',
@@ -591,7 +620,7 @@ const API_URL = 'https://ecobackend-y6nd.vercel.app';
           headers: { 'Authorization': `Bearer ${token}` }
         }).then(res => res.ok ? res.json() : { evolution: [] })
       );
-
+    
       const [statsRes, collecteursAttenteRes, collecteursRes, gestionnairesRes, pointsRes, missionsRes, evolutionRes] = await Promise.all(promises);
 
       // Statistiques
@@ -626,9 +655,23 @@ const API_URL = 'https://ecobackend-y6nd.vercel.app';
       }
 
       // Points de dépôt
-      if (pointsRes?.success) {
-        setPointsDepot(pointsRes.points || []);
-      }
+         if (pointsRes) {
+  console.log('📦 Réponse brute de /api/points-depot :', pointsRes);
+  if (pointsRes.success && Array.isArray(pointsRes.points)) {
+    console.log('✅ Points reçus avec succès, nombre :', pointsRes.points.length);
+    // Vérifier la structure du premier point
+    if (pointsRes.points.length > 0) {
+      console.log('Exemple du premier point :', pointsRes.points[0]);
+      console.log('types_dechets_acceptes :', pointsRes.points[0].types_dechets_acceptes);
+    }
+    setPointsDepot(pointsRes.points);
+  } else {
+    console.warn('⚠️ Réponse points invalide, utilisation des données existantes');
+    // Si la réponse n'est pas valide, on ne change pas l'état
+  }
+} else {
+  console.error('❌ Aucune réponse pour les points de dépôt');
+}
 
       // Missions disponibles
       if (missionsRes?.success) {
@@ -893,74 +936,158 @@ const API_URL = 'https://ecobackend-y6nd.vercel.app';
     }
   };
 
-  const handleCreerPointDepot = async (formData) => {
-    const token = getToken();
+  // const handleCreerPointDepot = async (formData) => {
+  //   const token = getToken();
     
-    if (!formData.nom || !formData.adresse) {
-      alert('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
+  //   if (!formData.nom || !formData.adresse) {
+  //     alert('Veuillez remplir tous les champs obligatoires');
+  //     return;
+  //   }
     
-    try {
-      const response = await fetch(`${API_URL}/api/points-depot`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
+  //   try {
+  //     const response = await fetch(`${API_URL}/api/points-depot`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${token}`
+  //       },
+  //       body: JSON.stringify(formData)
+  //     });
 
-      const result = await response.json();
+  //     const result = await response.json();
 
-      if (result.success) {
-        alert('✅ Point de collecte créé avec succès');
-        setShowPointDepotModal(false);
-        setEditingPointDepot(null);
-        await loadAllData();
-      } else {
-        throw new Error(result.message || 'Erreur lors de la création');
-      }
-    } catch (error) {
-      console.error('❌ Erreur:', error);
-      alert(error.message);
+  //     if (result.success) {
+  //       alert('✅ Point de collecte créé avec succès');
+  //       setShowPointDepotModal(false);
+  //       setEditingPointDepot(null);
+  //       await loadAllData();
+  //     } else {
+  //       throw new Error(result.message || 'Erreur lors de la création');
+  //     }
+  //   } catch (error) {
+  //     console.error('❌ Erreur:', error);
+  //     alert(error.message);
+  //   }
+  // };
+const handleCreerPointDepot = async (formData) => {
+  const token = getToken();
+  if (!formData.nom || !formData.adresse) {
+    alert('Veuillez remplir tous les champs obligatoires');
+    return;
+  }
+
+  try {
+    const payload = {
+      nom: formData.nom,
+      adresse: formData.adresse,
+      quartier: formData.quartier || '',
+      commune: formData.commune || '',
+      types_dechets_acceptes: formData.typesDechetsAcceptes // ← clé snake_case
+    };
+
+    console.log('📤 Envoi payload :', payload);
+
+    const response = await fetch(`${API_URL}/api/points-depot`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    console.log('📥 Réponse création :', result);
+
+    if (result.success) {
+      alert('✅ Point de collecte créé avec succès');
+      setShowPointDepotModal(false);
+      setEditingPointDepot(null);
+      await loadAllData(); // ou mettre à jour l'état local directement
+    } else {
+      throw new Error(result.message || 'Erreur lors de la création');
     }
-  };
+  } catch (error) {
+    console.error('❌ Erreur:', error);
+    alert(error.message);
+  }
+};
+
+  // const handleModifierPointDepot = async (formData) => {
+  //   const token = getToken();
+    
+  //   if (!editingPointDepot || !editingPointDepot.id) {
+  //     alert('Erreur : Aucun point de collecte sélectionné');
+  //     return;
+  //   }
+    
+  //   try {
+  //     const response = await fetch(`${API_URL}/api/points-depot/${editingPointDepot.id}`, {
+  //       method: 'PUT',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${token}`
+  //       },
+  //       body: JSON.stringify(formData)
+  //     });
+
+  //     const result = await response.json();
+
+  //     if (result.success) {
+  //       alert('✅ Point de collecte modifié avec succès');
+  //       setShowPointDepotModal(false);
+  //       setEditingPointDepot(null);
+  //       await loadAllData();
+  //     } else {
+  //       throw new Error(result.message || 'Erreur lors de la modification');
+  //     }
+  //   } catch (error) {
+  //     console.error('❌ Erreur:', error);
+  //     alert(error.message);
+  //   }
+  // };
 
   const handleModifierPointDepot = async (formData) => {
-    const token = getToken();
-    
-    if (!editingPointDepot || !editingPointDepot.id) {
-      alert('Erreur : Aucun point de collecte sélectionné');
-      return;
+  const token = getToken();
+  
+  if (!editingPointDepot || !editingPointDepot.id) {
+    alert('Erreur : Aucun point de collecte sélectionné');
+    return;
+  }
+  
+  try {
+    const payload = {
+      nom: formData.nom,
+      adresse: formData.adresse,
+      quartier: formData.quartier || '',
+      commune: formData.commune || '',
+      types_dechets_acceptes: formData.typesDechetsAcceptes // ← snake_case
+    };
+
+    const response = await fetch(`${API_URL}/api/points-depot/${editingPointDepot.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      alert('✅ Point de collecte modifié avec succès');
+      setShowPointDepotModal(false);
+      setEditingPointDepot(null);
+      await loadAllData();
+    } else {
+      throw new Error(result.message || 'Erreur lors de la modification');
     }
-    
-    try {
-      const response = await fetch(`${API_URL}/api/points-depot/${editingPointDepot.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert('✅ Point de collecte modifié avec succès');
-        setShowPointDepotModal(false);
-        setEditingPointDepot(null);
-        await loadAllData();
-      } else {
-        throw new Error(result.message || 'Erreur lors de la modification');
-      }
-    } catch (error) {
-      console.error('❌ Erreur:', error);
-      alert(error.message);
-    }
-  };
-
+  } catch (error) {
+    console.error('❌ Erreur:', error);
+    alert(error.message);
+  }
+};
   const handleSupprimerPointDepot = async (id) => {
     if (!window.confirm('Êtes-vous sûr de vouloir désactiver ce point de collecte ?')) return;
     
@@ -1038,13 +1165,16 @@ const API_URL = 'https://ecobackend-y6nd.vercel.app';
   // ==================== COMPOSANT SIDEBAR ====================
   const Sidebar = () => {
     const menuItems = {
-      principal: [
-        { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, path: '/superviseur' },
-        { id: 'collecteurs', label: 'Gestion collecteurs', icon: Users, path: '/superviseur/collecteurs', badge: stats.collecteursEnAttente },
-        { id: 'gestionnaires', label: 'Gestion gestionnaires', icon: UserCog, path: '/superviseur/gestionnaires' },
-        { id: 'points-depot', label: 'Points de collecte', icon: Building, path: '/superviseur/points-depot' },
-        { id: 'missions', label: 'Gestion missions', icon: Package, path: '/superviseur/missions' }
-      ],
+  principal: [
+    { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, path: '/superviseur' },
+    { id: 'collecteurs', label: 'Gestion collecteurs', icon: Users, path: '/superviseur/collecteurs', badge: stats.collecteursEnAttente },
+    { id: 'gestionnaires', label: 'Gestion gestionnaires', icon: UserCog, path: '/superviseur/gestionnaires' },
+    { id: 'points-depot', label: 'Points de collecte', icon: Building, path: '/superviseur/points-depot' },
+    { id: 'missions', label: 'Gestion missions', icon: Package, path: '/superviseur/missions' },
+    { id: 'demandes-recycleurs', label: 'Demandes recycleurs', icon: Package, path: '/superviseur/demandes-recycleurs', badge: stats?.demandesEnAttente || 0 },
+    {id: 'declarations-recyclage',label: 'Déclarations recyclage',icon: FileText,path: '/superviseur/declarations-recyclage',badge: stats?.en_attente || 0},
+    {id: 'campagnes' , label:'Campagnes' , icon: Target, path: '/superviseur/campagnes'}
+  ],
       compte: [
         { id: 'profil', label: 'Mon profil', icon: User, path: '/superviseur/profil' },
         { id: 'securite', label: 'Sécurité', icon: Shield, path: '/superviseur/securite' },
@@ -1785,6 +1915,7 @@ const API_URL = 'https://ecobackend-y6nd.vercel.app';
     );
   };
 
+  
   // ==================== PAGE POINTS DE COLLECTE ====================
   const PointsDepotPage = () => {
     const [localEditingPoint, setLocalEditingPoint] = useState(null);
@@ -1925,17 +2056,42 @@ const API_URL = 'https://ecobackend-y6nd.vercel.app';
 
                 <div className="mt-4">
                   <p className="text-xs font-medium text-gray-500 mb-2">Déchets acceptés</p>
-                  <div className="flex flex-wrap gap-2">
-                    {point.types_dechets_acceptes && Array.isArray(point.types_dechets_acceptes) && point.types_dechets_acceptes.length > 0 ? (
-                      point.types_dechets_acceptes.map((type, i) => (
-                        <span key={i} className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
-                          {type}
-                        </span>
-                      ))
-                    ) : (
-                      <p className="text-xs text-gray-400">Aucun type spécifié</p>
-                    )}
-                  </div>
+                    <div className="flex flex-wrap gap-2">
+  {(() => {
+    const typesRaw = point.types_dechets_acceptes;
+    let typesArray = [];
+
+    if (!typesRaw) {
+      // rien
+    } else if (Array.isArray(typesRaw)) {
+      typesArray = typesRaw;
+    } else if (typeof typesRaw === 'string') {
+      // Essayer de parser JSON
+      try {
+        typesArray = JSON.parse(typesRaw);
+      } catch {
+        // Si ce n'est pas du JSON valide, vérifier si c'est au format PostgreSQL {a,b,c}
+        const pgMatch = typesRaw.match(/^\{(.*)\}$/);
+        if (pgMatch) {
+          // Extraire le contenu entre accolades et splitter par virgule
+          typesArray = pgMatch[1].split(',').map(item => item.trim()).filter(item => item !== '');
+        } else {
+          typesArray = [];
+        }
+      }
+    }
+
+    return typesArray.length > 0 ? (
+      typesArray.map((type, i) => (
+        <span key={i} className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
+          {type}
+        </span>
+      ))
+    ) : (
+      <p className="text-xs text-gray-400">Aucun type spécifié</p>
+    );
+  })()}
+</div>
                 </div>
               </div>
             ))
@@ -2154,6 +2310,9 @@ const API_URL = 'https://ecobackend-y6nd.vercel.app';
           <Route path="/missions" element={<MissionsPage />} />
           <Route path="/profil" element={<ProfilPage />} />
           <Route path="/securite" element={<SecuritePage />} />
+           <Route path="/demandes-recycleurs" element={<DemandesRecycleursPage />} />
+           <Route path="/declarations-recyclage" element={<DeclarationsRecyclagePage />} />
+           <Route path="/campagnes" element={<CampagnesPage />} />
           <Route path="/aide" element={<AidePage />} />
         </Routes>
       </div>

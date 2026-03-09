@@ -25,6 +25,9 @@ const ProducteurDashboard = () => {
   const [refreshInterval, setRefreshInterval] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [dataLoaded, setDataLoaded] = useState(false);
+ 
+ 
+
 
   // Données du tableau de bord
   const [dashboardData, setDashboardData] = useState({
@@ -52,6 +55,15 @@ const ProducteurDashboard = () => {
     totalWeight: 0,
     totalPoints: 0
   });
+
+  // Dans ProducteurDashboard.jsx, après les autres useState
+const [showPremiumModal, setShowPremiumModal] = useState(false);
+const [userSubscription, setUserSubscription] = useState(null);
+const [premiumBenefits, setPremiumBenefits] = useState({
+  priorityCollection: true,
+  bonusPoints: 20,
+  supportPrioritaire: true
+});
 
   // Formulaire de déclaration
   const [declarationForm, setDeclarationForm] = useState({
@@ -94,14 +106,49 @@ const ProducteurDashboard = () => {
 
 
 
-  // const API_URL = 'https://ecobackend-7tuh.vercel.app';
-   const API_URL = 'https://ecobackend-y6nd.vercel.app';
-  // const API_URL = 'http://localhost:3000';
+  
+  //  const API_URL = 'http://localhost:3000';
+  const API_URL = 'https://ecobackend-zeds.vercel.app';
   const STORAGE_KEYS = {
     TOKEN: 'ecocollect_token',
     USER: 'ecocollect_user',
     ROLE: 'ecocollect_role'
   };
+
+
+  useEffect(() => {
+  if (currentToken && currentUser) {
+    checkSubscription();
+  }
+}, [currentToken, currentUser]);
+
+// Dans ProducteurDashboard.jsx, après loadDashboard
+const checkSubscription = async () => {
+  if (!currentToken) return;
+  
+  try {
+    const response = await fetch(`${API_URL}/api/producteur-premium/mon-abonnement`, {
+      headers: { 'Authorization': `Bearer ${currentToken}` }
+    });
+    const data = await response.json();
+    if (data.success && data.abonnement) {
+      setUserSubscription(data.abonnement);
+      // Mettre à jour currentUser avec type_compte premium
+      if (currentUser) {
+        setCurrentUser({...currentUser, type_compte: 'premium'});
+      }
+    }
+  } catch (error) {
+    console.error('Erreur vérification abonnement:', error);
+  }
+};
+
+// Appeler checkSubscription après chargement du user
+useEffect(() => {
+  if (currentToken && currentUser) {
+    checkSubscription();
+  }
+}, [currentToken, currentUser]);
 
   // ========== TYPES DE DÉCHETS ==========
   const wasteTypes = {
@@ -727,6 +774,7 @@ const ProducteurDashboard = () => {
       year: 'numeric'
     });
   };
+  
 
   const formatDateTime = (dateString) => {
     if (!dateString) return 'Non spécifiée';
@@ -891,6 +939,7 @@ const ProducteurDashboard = () => {
               wasteTypes={wasteTypes}
               isLoading={isLoading}
               dataLoaded={dataLoaded}
+              setShowPremiumModal={setShowPremiumModal}  
               setActiveSection={setActiveSection}
             />
           )}
@@ -1003,7 +1052,19 @@ const ProducteurDashboard = () => {
           wasteTypes={wasteTypes}
         />
       )}
-
+// Dans ProducteurDashboard.jsx, lors de l'appel du modal
+{showPremiumModal && (
+  <PremiumSubscriptionModal
+    isOpen={showPremiumModal}
+    onClose={() => setShowPremiumModal(false)}
+    onSubscribe={(abonnement) => {
+      setUserSubscription(abonnement);
+      setCurrentUser({...currentUser, type_compte: 'premium'});
+    }}
+    currentToken={currentToken}
+    apiUrl={API_URL}  // ← AJOUTEZ CETTE LIGNE
+  />
+)}
       {/* Modal Suivi en temps réel */}
       {showTrackingModal && trackingDeclaration && (
         <TrackingModal
@@ -1169,17 +1230,24 @@ const Sidebar = ({ isOpen, toggleSidebar, currentPage, setActivePage, menuItems,
        
 
         <div className="p-4 border-b">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
-              {getInitials(currentUser?.nomComplet)}
-            </div>
-            <div>
-              <p className="font-medium text-gray-900">{currentUser?.nomComplet || 'Producteur'}</p>
-              <p className="text-xs text-gray-500">{currentUser?.email || 'producteur@ecocollect.cm'}</p>
-            </div>
-          </div>
-        </div>
-
+  <div className="flex items-center gap-3">
+    <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
+      {getInitials(currentUser?.nomComplet)}
+    </div>
+    <div>
+      <p className="font-medium text-gray-900 flex items-center gap-2">
+        {currentUser?.nomComplet || 'Producteur'}
+        {currentUser?.type_compte === 'premium' && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+            <Star className="w-3 h-3 fill-current" />
+            PREMIUM
+          </span>
+        )}
+      </p>
+      <p className="text-xs text-gray-500">{currentUser?.email || 'producteur@ecocollect.cm'}</p>
+    </div>
+  </div>
+</div>
         <nav className="flex-1 p-4 overflow-y-auto">
           <div className="mb-6">
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
@@ -1272,6 +1340,377 @@ const Sidebar = ({ isOpen, toggleSidebar, currentPage, setActivePage, menuItems,
   );
 };
 
+// ========== COMPOSANT ABONNEMENT PREMIUM AMÉLIORÉ - CORRIGÉ ==========
+const PremiumSubscriptionModal = ({ isOpen, onClose, onSubscribe, currentToken, apiUrl }) => {
+  const [operateur, setOperateur] = useState('ORANGE');
+  const [montant, setMontant] = useState(5000);
+  const [telephone, setTelephone] = useState('');
+  const [codeUSSD, setCodeUSSD] = useState('');
+  const [numeroDestinataire, setNumeroDestinataire] = useState('');
+  const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [transactionId, setTransactionId] = useState(null);
+  const [error, setError] = useState('');
+
+  // Numéros de l'entreprise (fixes)
+  const NUMEROS_ENTREPRISE = {
+    ORANGE: '656739704',
+    MTN: '677003287'
+  };
+
+  // Fonction pour générer le code USSD avec le numéro de l'entreprise (PAS celui du client)
+  const genererCodeUSSDEntreprise = (op, montant) => {
+    if (op === 'ORANGE') {
+      return `#150*1*1*${NUMEROS_ENTREPRISE.ORANGE}*${montant}#`;
+    } else if (op === 'MTN') {
+      return `*126*1*1*${NUMEROS_ENTREPRISE.MTN}*${montant}#`;
+    }
+    return '';
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    // Validation du téléphone
+    const telephonePropre = telephone.replace(/[^0-9]/g, '');
+    if (telephonePropre.length < 9) {
+      setError('Numéro de téléphone invalide');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log('📤 Envoi de la requête à:', `${apiUrl}/api/paiements/initier-abonnement`);
+      
+      const response = await fetch(`${apiUrl}/api/paiements/initier-abonnement`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentToken}`
+        },
+        body: JSON.stringify({ 
+          operateur, 
+          montant: parseInt(montant), 
+          telephone: telephonePropre 
+        })
+      });
+
+      const data = await response.json();
+      console.log('📦 Réponse du serveur:', data);
+
+      if (data.success) {
+        // IMPORTANT: On utilise NOTRE propre génération de code USSD avec le numéro de l'entreprise
+        // et NON celui du serveur qui pourrait contenir le numéro du client
+        const codeEntreprise = genererCodeUSSDEntreprise(operateur, montant);
+        
+        setCodeUSSD(codeEntreprise);
+        setNumeroDestinataire(NUMEROS_ENTREPRISE[operateur]);
+        setTransactionId(data.transactionId);
+        setStep(2);
+        startPolling(data.transactionId);
+      } else {
+        setError(data.message || 'Erreur lors de l\'initiation du paiement');
+      }
+    } catch (error) {
+      console.error('❌ Erreur:', error);
+      setError('Erreur de connexion au serveur');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startPolling = (txId) => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`${apiUrl}/api/paiements/transaction/${txId}`, {
+          headers: {
+            'Authorization': `Bearer ${currentToken}`
+          }
+        });
+        const data = await response.json();
+
+        if (data.success && data.transaction.statut === 'reussi') {
+          clearInterval(interval);
+          setStep(3);
+          if (onSubscribe) {
+            onSubscribe(data.abonnement);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur polling:', error);
+      }
+    }, 3000);
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(codeUSSD);
+    alert('Code copié !');
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
+          <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            <Award className="w-5 h-5 text-yellow-500" />
+            Abonnement Premium
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg border border-red-200">
+              {error}
+            </div>
+          )}
+
+          {step === 1 && (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                <h4 className="font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+                  <Star className="w-4 h-4 fill-current" />
+                  Avantages Premium
+                </h4>
+                <ul className="space-y-2 text-sm text-yellow-700">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-yellow-600" />
+                    Collecte prioritaire
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-yellow-600" />
+                    +20% de points bonus sur toutes les collectes
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-yellow-600" />
+                    Badge Premium exclusif ⭐
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-yellow-600" />
+                    Support prioritaire 24/7
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Opérateur de paiement
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setOperateur('ORANGE')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      operateur === 'ORANGE'
+                        ? 'border-orange-500 bg-orange-50'
+                        : 'border-gray-200 hover:border-orange-200'
+                    }`}
+                  >
+                    <span className="text-3xl block mb-2">📱</span>
+                    <span className="font-medium text-sm">Orange Money</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOperateur('MTN')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      operateur === 'MTN'
+                        ? 'border-yellow-500 bg-yellow-50'
+                        : 'border-gray-200 hover:border-yellow-200'
+                    }`}
+                  >
+                    <span className="text-3xl block mb-2">📱</span>
+                    <span className="font-medium text-sm">MTN Mobile Money</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Montant de l'abonnement mensuel (FCFA)
+                </label>
+                <input
+                  type="number"
+                  min="10"
+                  step="10"
+                  value={montant}
+                  onChange={(e) => setMontant(parseInt(e.target.value))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Minimum: 1000 FCFA - Maximum: 100000 FCFA
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Votre numéro de téléphone {operateur === 'ORANGE' ? 'Orange Money' : 'MTN Money'}
+                </label>
+                <input
+                  type="tel"
+                  value={telephone}
+                  onChange={(e) => setTelephone(e.target.value)}
+                  placeholder="612345678"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Le numéro avec lequel vous allez payer
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Traitement...
+                  </span>
+                ) : (
+                  'Générer le code de paiement'
+                )}
+              </button>
+            </form>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                <h4 className="font-semibold text-blue-800 mb-2">
+                  Instructions de paiement
+                </h4>
+                
+                <div className="bg-white p-4 rounded-lg mb-4">
+                  <p className="text-sm text-gray-600 mb-2">
+                    Composez le code suivant sur votre téléphone {operateur === 'ORANGE' ? 'Orange Money' : 'MTN Money'} :
+                  </p>
+                  <div className="flex items-center justify-between bg-gray-100 p-3 rounded-lg">
+                    <code className="font-mono text-lg font-bold text-gray-800">
+                      {codeUSSD}
+                    </code>
+                    <button
+                      onClick={handleCopyCode}
+                      className="ml-2 p-2 bg-white hover:bg-gray-200 rounded-lg transition-colors"
+                      title="Copier le code"
+                    >
+                      <Copy className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 p-4 rounded-lg mb-4">
+                  <p className="text-sm text-yellow-700 font-medium mb-2">
+                    📝 Détails du paiement :
+                  </p>
+                  <ul className="text-sm text-yellow-700 space-y-2">
+                    <li className="flex items-center gap-2">
+                      <span className="font-medium">Montant:</span> {montant} FCFA
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="font-medium">Destinataire:</span> {numeroDestinataire}
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="font-medium">Opérateur:</span> {operateur === 'ORANGE' ? 'Orange Money' : 'MTN Mobile Money'}
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-blue-100 p-4 rounded-lg mb-4">
+                  <p className="text-sm text-blue-800 font-medium mb-2">
+                    📱 Étapes à suivre :
+                  </p>
+                  <ol className="text-sm text-blue-700 list-decimal list-inside space-y-2">
+                    <li>Ouvrez l'application {operateur === 'ORANGE' ? 'Orange Money' : 'MTN Money'}</li>
+                    <li>Composez le code <span className="font-mono font-bold">{codeUSSD}</span></li>
+                    <li>Confirmez le paiement de <span className="font-bold">{montant} FCFA</span></li>
+                    <li>Le paiement sera envoyé au numéro <span className="font-bold">{numeroDestinataire}</span></li>
+                    <li>Patientez quelques instants pour la confirmation</li>
+                  </ol>
+                </div>
+
+                <div className="text-center">
+                  <div className="flex justify-center mb-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                  <p className="text-sm text-blue-600 font-medium">
+                    En attente de confirmation du paiement...
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Cette page se mettra à jour automatiquement dès que le paiement sera confirmé
+                  </p>
+                </div>
+
+                <button
+                  onClick={onClose}
+                  className="w-full mt-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-6">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-10 h-10 text-green-600" />
+                </div>
+                <h4 className="font-semibold text-green-800 text-lg mb-2">
+                  Félicitations !
+                </h4>
+                <p className="text-green-600 mb-4">
+                  Votre abonnement premium est maintenant actif. Profitez de vos avantages exclusifs !
+                </p>
+                
+                <div className="bg-white rounded-lg p-4 mb-4 text-left">
+                  <h5 className="font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <Star className="w-4 h-4 fill-yellow-500" />
+                    Vos avantages activés :
+                  </h5>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-center gap-2 text-gray-600">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      Collecte prioritaire
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-600">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      +20% de points bonus
+                    </li>
+                    <li className="flex items-center gap-2 text-gray-600">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      Badge Premium sur votre profil ⭐
+                    </li>
+                  </ul>
+                </div>
+
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800"
+                >
+                  Commencer à profiter
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ========== COMPOSANT TABLEAU DE BORD ==========
 const Dashboard = ({ currentUser,
    dashboardData,
@@ -1280,6 +1719,7 @@ const Dashboard = ({ currentUser,
     getStatusIcon,
     formatDate,
     formatWasteType, 
+    setShowPremiumModal,
     showDeclarationDetail,
     showTracking, 
     setShowDeclarationModal, wasteTypes, isLoading, dataLoaded , setActiveSection 
@@ -1486,21 +1926,41 @@ const Dashboard = ({ currentUser,
             </h2>
             
             <div className="space-y-3">
-              <button
-                onClick={() => setShowDeclarationModal(true)}
-                className="block w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-center font-medium flex items-center justify-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Déclarer des déchets
-              </button>
-              
-              <button
-                onClick={goToHistory}  // UTILISER LA FONCTION
-                className="block w-full py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center font-medium"
-              >
-                Voir l'historique complet
-              </button>
-            </div>
+  <button
+    onClick={() => setShowDeclarationModal(true)}
+    className="block w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-center font-medium flex items-center justify-center gap-2"
+  >
+    <Trash2 className="w-4 h-4" />
+    Déclarer des déchets
+  </button>
+  
+  {/* BOUTON PREMIUM */}
+     {currentUser?.type_compte !== 'premium' ? (
+             <button
+             onClick={() => setShowPremiumModal(true)} 
+            className="block w-full py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-center font-medium flex items-center justify-center gap-2 relative overflow-hidden group"
+             >
+               <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-yellow-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+             <Star className="w-4 h-4 relative z-10" />
+              <span className="relative z-10">Passer à Premium ⭐</span>
+             </button>
+          ) : (
+            <div className="block w-full py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white rounded-lg text-center font-medium flex items-center justify-center gap-2">
+      <Star className="w-4 h-4 fill-current" />
+      <span>Premium Actif</span>
+      <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded-full">
+        {userSubscription?.date_fin ? `Jusqu'au ${new Date(userSubscription.date_fin).toLocaleDateString()}` : ''}
+      </span>
+           </div>
+          )}
+  
+            <button
+           onClick={goToHistory}
+              className="block w-full py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center font-medium"
+           >
+            Voir l'historique complet
+         </button>
+         </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -2078,6 +2538,8 @@ const DeclarationDetailsModal = ({ declaration, onClose, getStatusColor, getStat
   );
 };
 
+
+
 // ========== COMPOSANT MODAL SUIVI EN TEMPS RÉEL ==========
 const TrackingModal = ({ declaration, onClose, getStatusColor, getStatusText, formatWasteType, formatCollectionMode, formatDateTime, wasteTypes }) => {
   const statusTimeline = [
@@ -2540,6 +3002,13 @@ const ProfileSection = ({
                     </>
                   )}
                 </button>
+                {/* Dans la section des informations personnelles */}
+       {currentUser?.type_compte === 'premium' && (
+           <div className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+          <Star className="w-3 h-3 fill-current" />
+    Premium
+        </div>
+        )}
               </>
             )}
           </div>

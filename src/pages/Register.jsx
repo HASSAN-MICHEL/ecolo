@@ -66,7 +66,7 @@ const Register = () => {
   // CONFIGURATION ==========
   // const API_URL = 'https://ecobackend-7tuh.vercel.app';
 
-   const API_URL = 'https://ecobackend-y6nd.vercel.app';
+   const API_URL = 'https://ecobackend-zeds.vercel.app';
 
   const selectRole = (role) => {
     setSelectedRole(role);

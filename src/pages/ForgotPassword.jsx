@@ -9,10 +9,10 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [serverMessage, setServerMessage] = useState({ type: '', text: '' });
 
-  const API_URL = 'https://ecobackend-y6nd.vercel.app';
+  // const API_URL = 'https://ecobackend-y6nd.vercel.app';
 
   // const API_URL = 'http://localhost:3000';
-
+const API_URL = 'https://ecobackend-zeds.vercel.app';
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));

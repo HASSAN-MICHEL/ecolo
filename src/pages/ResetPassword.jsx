@@ -15,8 +15,9 @@ const ResetPassword = () => {
   const [serverMessage, setServerMessage] = useState({ type: '', text: '' });
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '–' });
 
-  // const API_URL = 'https://ecobackend-7tuh.vercel.app';
-const API_URL = 'http://localhost:3000';
+ 
+// const API_URL = 'http://localhost:3000';
+const API_URL = 'https://ecobackend-zeds.vercel.app';
   useEffect(() => {
     const storedEmail = sessionStorage.getItem('reset_email');
     const storedCode = sessionStorage.getItem('reset_code');

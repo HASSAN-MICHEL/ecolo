@@ -25,7 +25,7 @@ const NotificationsCollector = () => {
   const [filterStatus, setFilterStatus] = useState('all')
   const [isLoading, setIsLoading] = useState(true)
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://ecobackend-7tuh.vercel.app'
+  const API_URL = import.meta.env.VITE_API_URL ||  'https://ecobackend-zeds.vercel.app';
   const STORAGE_KEYS = {
     TOKEN: 'ecocollect_token',
     USER: 'ecocollect_user',

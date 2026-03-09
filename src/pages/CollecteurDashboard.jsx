@@ -86,7 +86,8 @@ const [gainsFilter, setGainsFilter] = useState('all');
   const [locationLoading, setLocationLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '–' });
 
-  const API_URL = 'https://ecobackend-7tuh.vercel.app';
+ const API_URL = 'https://ecobackend-zeds.vercel.app';
+  // const API_URL = 'http://localhost:3000';
   const STORAGE_KEYS = {
     TOKEN: 'ecocollect_token',
     USER: 'ecocollect_user',
@@ -337,20 +338,6 @@ useEffect(() => {
   };
 
 
-//   const loadProfil = async () => {
-//     if (!currentToken || !currentUser) return;
-
-//     setProfileForm({
-//       nomComplet: currentUser.nomComplet || '',
-//       telephone: currentUser.telephone || '',
-//       zoneIntervention: currentUser.zoneIntervention || '',
-//       quartiers: currentUser.quartiers || '',
-//       communes: currentUser.communes || ''
-//     });
-//   };
-
-
-  // MODIFIEZ la fonction loadProfil dans CollecteurDashboard.jsx
 
 const loadProfil = async () => {
   if (!currentToken || !currentUser) return;
@@ -811,6 +798,7 @@ const filterGains = () => {
               wasteTypes={wasteTypes}
               isLoading={isLoading}
               dataLoaded={dataLoaded}
+              
               setActiveSection={setActiveSection}
             />
           )}

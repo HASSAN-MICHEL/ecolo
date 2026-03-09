@@ -12,7 +12,9 @@ const VerifyCode = () => {
 
   // ANCIENNE API : const API_URL = 'https://ecobackend-7tuh.vercel.app';
 
- const API_URL = 'https://ecobackend-y6nd.vercel.app';
+
+// const API_URL = 'http://localhost:3000';
+const API_URL = 'https://ecobackend-zeds.vercel.app';
   useEffect(() => {
     const storedEmail = sessionStorage.getItem('reset_email');
     if (storedEmail) {
