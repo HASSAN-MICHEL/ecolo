@@ -94,7 +94,7 @@ router.use(verifierRoleAdmin);
 
 // ===== DASHBOARD & STATISTIQUES =====
 router.get('/tableau-bord', AdminController.tableauBord);
-router.get('/statistiques-avancees', AdminController.statistiquesAvancees);
+router.get('/statistiques-avancees', AdminController.statistiquesAvancees); // Bien venue
 router.get('/historique', AdminController.historiqueComplet);
 
 // ===== GESTION DES SUPERVISEURS =====
