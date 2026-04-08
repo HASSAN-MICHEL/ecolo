@@ -69,7 +69,7 @@ import AdminController from '../controllers/AdminController.js';
 import AuthController from '../controllers/AuthController.js';
 
 import { uploadLogo } from '../middleware/uploadToSupabase.js';  
-import { uploadRecycleurFiles } from '../middleware/uploadToSupabase.js';
+import { uploadRecycleurFiles } from '../middleware/upload.js';
 import CampagneController from '../controllers/CampagneController.js'; 
 const router = express.Router();
 
@@ -92,7 +92,9 @@ const verifierRoleAdmin = (req, res, next) => {
 
 router.use(verifierRoleAdmin);
 
-// ===== DASHBOARD & STATISTIQUES =====
+router.get('/profil',  AdminController.getProfil);
+router.put('/profil',  AdminController.modifierProfil);
+
 router.get('/tableau-bord', AdminController.tableauBord);
 router.get('/statistiques-avancees', AdminController.statistiquesAvancees); // Bien venue
 router.get('/historique', AdminController.historiqueComplet);

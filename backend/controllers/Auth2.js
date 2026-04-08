@@ -1,3115 +1,2840 @@
-// import bcrypt from 'bcrypt';
-// import jwt from 'jsonwebtoken';
-// import crypto from 'crypto';
-// import { pool } from '../config/database.js';
-
-// // Importer tous les modèles
-// import Producteur from '../models/Producteur.js';
-// import Collecteur from '../models/Collecteur.js';
-// import Gestionnaire from '../models/GestionnairePoint.js';
-// import Superviseur from '../models/Superviseur.js';
-
-// class AuthController {
-//     // ============================================
-//     // INSCRIPTIONS
-//     // ============================================
-    
-//     // Inscription producteur
-//     static async inscrireProducteur(req, res) {
-//         try {
-//             const { 
-//                 email, 
-//                 telephone, 
-//                 motDePasse, 
-//                 typeProducteur, 
-//                 nomComplet, 
-//                 adresse, 
-//                 longitude, 
-//                 latitude, 
-//                 quartier, 
-//                 commune,
-//                 cguAcceptees 
-//             } = req.body;
-
-//             // Vérifier si l'utilisateur existe déjà
-//             const utilisateurExistant = await AuthController._verifierExistenceEmail(email);
-//             if (utilisateurExistant) {
-//                 return res.status(400).json({ 
-//                     success: false,
-//                     message: 'Un compte avec cet email existe déjà' 
-//                 });
-//             }
-
-//             const telephoneExistant = await AuthController._verifierExistenceTelephone(telephone);
-//             if (telephoneExistant) {
-//                 return res.status(400).json({ 
-//                     success: false,
-//                     message: 'Un compte avec ce numéro de téléphone existe déjà' 
-//                 });
-//             }
-
-//             if (!cguAcceptees) {
-//                 return res.status(400).json({ 
-//                     success: false,
-//                     message: 'Vous devez accepter les CGU' 
-//                 });
-//             }
-
-//             // Hasher le mot de passe
-//             const motDePasseHash = await bcrypt.hash(motDePasse, 10);
-
-//             // Créer le producteur
-//             const producteurData = {
-//                 email,
-//                 telephone,
-//                 motDePasseHash,
-//                 typeProducteur,
-//                 nomComplet,
-//                 adresse,
-//                 longitude: parseFloat(longitude),
-//                 latitude: parseFloat(latitude),
-//                 quartier,
-//                 commune,
-//                 cguAcceptees
-//             };
-
-//             const nouveauProducteur = await Producteur.creer(producteurData);
-
-//             // Générer le token JWT
-//             const token = AuthController._genererToken(
-//                 nouveauProducteur.id, 
-//                 nouveauProducteur.email, 
-//                 'producteur'
-//             );
-
-//             res.status(201).json({
-//                 success: true,
-//                 message: 'Inscription réussie',
-//                 token,
-//                 utilisateur: {
-//                     id: nouveauProducteur.id,
-//                     email: nouveauProducteur.email,
-//                     telephone: nouveauProducteur.telephone,
-//                     type: 'producteur',
-//                     role: nouveauProducteur.type_producteur,
-//                     nomComplet: nouveauProducteur.nom_complet,
-//                     quartier: nouveauProducteur.quartier,
-//                     commune: nouveauProducteur.commune,
-//                     points: nouveauProducteur.points || 0
-//                 }
-//             });
-//         } catch (erreur) {
-//             console.error('❌ Erreur inscription producteur:', erreur);
-//             res.status(500).json({ 
-//                 success: false,
-//                 message: 'Erreur lors de l\'inscription',
-//                 erreur: erreur.message 
-//             });
-//         }
-//     }
-
-//     // Inscription collecteur
-//     static async inscrireCollecteur(req, res) {
-//         try {
-//             const { 
-//                 email, 
-//                 telephone, 
-//                 motDePasse, 
-//                 nomComplet, 
-//                 typeCollecteur,
-//                 numeroIdentite,
-//                 zoneInterventionNom,
-//                 quartiersHabituels,
-//                 communesIntervention,
-//                 cguAcceptees 
-//             } = req.body;
-
-//             // Vérifications
-//             const utilisateurExistant = await AuthController._verifierExistenceEmail(email);
-//             if (utilisateurExistant) {
-//                 return res.status(400).json({ 
-//                     success: false,
-//                     message: 'Un compte avec cet email existe déjà' 
-//                 });
-//             }
-
-//             const telephoneExistant = await AuthController._verifierExistenceTelephone(telephone);
-//             if (telephoneExistant) {
-//                 return res.status(400).json({ 
-//                     success: false,
-//                     message: 'Un compte avec ce numéro de téléphone existe déjà' 
-//                 });
-//             }
-
-//             if (!cguAcceptees) {
-//                 return res.status(400).json({ 
-//                     success: false,
-//                     message: 'Vous devez accepter les CGU' 
-//                 });
-//             }
-
-//             // Hasher le mot de passe
-//             const motDePasseHash = await bcrypt.hash(motDePasse, 10);
-
-//             // Créer le collecteur
-//             const collecteurData = {
-//                 email,
-//                 telephone,
-//                 motDePasseHash,
-//                 nomComplet,
-//                 typeCollecteur,
-//                 numeroIdentite,
-//                 zoneInterventionNom,
-//                 quartiersHabituels,
-//                 communesIntervention,
-//                 cguAcceptees
-//             };
-
-//             const nouveauCollecteur = await Collecteur.create(collecteurData);
-
-//             res.status(201).json({
-//                 success: true,
-//                 message: 'Inscription réussie. Votre compte est en attente de validation.',
-//                 utilisateur: {
-//                     id: nouveauCollecteur.id,
-//                     email: nouveauCollecteur.email,
-//                     telephone: nouveauCollecteur.telephone,
-//                     type: 'collecteur',
-//                     nomComplet: nouveauCollecteur.nom_complet,
-//                     statut: nouveauCollecteur.statut
-//                 }
-//             });
-//         } catch (erreur) {
-//             console.error('❌ Erreur inscription collecteur:', erreur);
-//             res.status(500).json({ 
-//                 success: false,
-//                 message: 'Erreur lors de l\'inscription',
-//                 erreur: erreur.message 
-//             });
-//         }
-//     }
-
-//     // Inscription générique
-//     static async inscrire(req, res) {
-//         try {
-//             const { typeUtilisateur } = req.body;
-            
-//             if (!typeUtilisateur) {
-//                 return res.status(400).json({ 
-//                     success: false,
-//                     message: 'Le type d\'utilisateur est requis (producteur/collecteur)' 
-//                 });
-//             }
-
-//             switch(typeUtilisateur) {
-//                 case 'producteur':
-//                     return await AuthController.inscrireProducteur(req, res);
-//                 case 'collecteur':
-//                     return await AuthController.inscrireCollecteur(req, res);
-//                 default:
-//                     return res.status(400).json({ 
-//                         success: false,
-//                         message: 'Type d\'utilisateur invalide' 
-//                     });
-//             }
-//         } catch (erreur) {
-//             console.error('❌ Erreur inscription:', erreur);
-//             res.status(500).json({ 
-//                 success: false,
-//                 message: 'Erreur lors de l\'inscription',
-//                 erreur: erreur.message 
-//             });
-//         }
-//     }
-
-//     // ============================================
-//     // CONNEXIONS
-//     // ============================================
-    
-//     // Connexion unifiée
-//     static async connecter(req, res) {
-//         try {
-//             const { identifiant, motDePasse } = req.body;
-
-//             if (!identifiant || !motDePasse) {
-//                 return res.status(400).json({
-//                     success: false,
-//                     message: 'Identifiant et mot de passe requis'
-//                 });
-//             }
-
-//             // Chercher l'utilisateur dans toutes les tables
-//             const resultat = await AuthController._trouverUtilisateurParIdentifiant(identifiant);
-            
-//             if (!resultat || !resultat.utilisateur) {
-//                 return res.status(401).json({ 
-//                     success: false,
-//                     message: 'Identifiants incorrects' 
-//                 });
-//             }
-
-//             const { utilisateur, type } = resultat;
-
-//             // Vérifier le mot de passe
-//             const motDePasseValide = await bcrypt.compare(motDePasse, utilisateur.mot_de_passe_hash);
-//             if (!motDePasseValide) {
-//                 return res.status(401).json({ 
-//                     success: false,
-//                     message: 'Identifiants incorrects' 
-//                 });
-//             }
-
-//             // Vérifications spécifiques selon le type
-//             const verificationStatut = AuthController._verifierStatutUtilisateur(utilisateur, type);
-//             if (!verificationStatut.valide) {
-//                 return res.status(403).json({ 
-//                     success: false,
-//                     message: verificationStatut.message 
-//                 });
-//             }
-
-//             // Mettre à jour la dernière connexion
-//             await AuthController._mettreAJourDerniereConnexion(utilisateur.id, type);
-
-//             // Générer le token
-//             const token = AuthController._genererToken(
-//                 utilisateur.id, 
-//                 utilisateur.email, 
-//                 type
-//             );
-
-//             // Préparer la réponse
-//             const reponseUtilisateur = AuthController._preparerDonneesUtilisateur(utilisateur, type);
-
-//             res.json({
-//                 success: true,
-//                 message: 'Connexion réussie',
-//                 token,
-//                 utilisateur: reponseUtilisateur
-//             });
-//         } catch (erreur) {
-//             console.error('❌ Erreur connexion:', erreur);
-//             res.status(500).json({ 
-//                 success: false,
-//                 message: 'Erreur lors de la connexion',
-//                 erreur: erreur.message 
-//             });
-//         }
-//     }
-
-//     // Connexions spécifiques (rétrocompatibilité)
-//     static async connecterProducteur(req, res) {
-//         return AuthController.connecter(req, res);
-//     }
-
-//     static async connecterCollecteur(req, res) {
-//         return AuthController.connecter(req, res);
-//     }
-
-//     static async connecterGestionnaire(req, res) {
-//         return AuthController.connecter(req, res);
-//     }
-
-//     static async connecterSuperviseur(req, res) {
-//         return AuthController.connecter(req, res);
-//     }
-
-   
-    
-//     // static verifierToken(req, res, next) {
-//     //     // Routes publiques (ne nécessitent pas de token)
-//     //     const publicRoutes = [
-//     //         '/api/collecteurs/connexion',
-//     //         '/api/collecteurs/inscription',
-//     //         '/api/collecteurs/LOHION',
-//     //         '/api/collecteurs/test-public',
-//     //         '/api/gestionnaires/connexion',
-//     //         '/api/superviseurs/connexion',
-//     //         '/api/producteurs/connexion',
-//     //         '/api/producteurs/inscription'
-//     //     ];
-
-//     //     // Vérifier si c'est une route publique
-//     //     if (publicRoutes.includes(req.path) || publicRoutes.includes(req.originalUrl)) {
-//     //         console.log('🔓 Route publique - accès autorisé:', req.path);
-//     //         return next();
-//     //     }
-
-//     //     // Récupérer le token
-//     //     const authHeader = req.headers.authorization;
-        
-//     //     if (!authHeader) {
-//     //         console.log('❌ Token manquant - Header Authorization absent');
-//     //         return res.status(401).json({ 
-//     //             success: false,
-//     //             message: 'Token manquant',
-//     //             code: 'TOKEN_MISSING'
-//     //         });
-//     //     }
-
-//     //     // Vérifier le format
-//     //     const parts = authHeader.split(' ');
-//     //     if (parts.length !== 2 || parts[0] !== 'Bearer') {
-//     //         console.log('❌ Format de token invalide');
-//     //         return res.status(401).json({ 
-//     //             success: false,
-//     //             message: 'Format de token invalide. Utilisez: Bearer [token]',
-//     //             code: 'INVALID_FORMAT'
-//     //         });
-//     //     }
-
-//     //     const token = parts[1];
-
-//     //     try {
-//     //         // Vérifier et décoder le token
-//     //         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            
-//     //         // Ajouter les infos à la requête
-//     //         req.utilisateurId = decoded.id;
-//     //         req.utilisateurEmail = decoded.email;
-//     //         req.utilisateurType = decoded.type;
-            
-//     //         console.log(`✅ Token valide - ${decoded.email} (${decoded.type})`);
-            
-//     //         next();
-//     //     } catch (error) {
-//     //         if (error.name === 'TokenExpiredError') {
-//     //             return res.status(401).json({ 
-//     //                 success: false,
-//     //                 message: 'Token expiré',
-//     //                 code: 'TOKEN_EXPIRED'
-//     //             });
-//     //         }
-            
-//     //         console.error('❌ Token invalide:', error.message);
-//     //         return res.status(401).json({ 
-//     //             success: false,
-//     //             message: 'Token invalide',
-//     //             code: 'INVALID_TOKEN'
-//     //         });
-//     //     }
-//     // }
-
-//     static verifierToken(req, res, next) {
-//     // Routes publiques
-//     const publicRoutes = [
-//         '/api/collecteurs/connexion',
-//         '/api/collecteurs/inscription',
-//         '/api/gestionnaires/connexion',
-//         '/api/superviseurs/connexion',
-//         '/api/producteurs/connexion',
-//         '/api/producteurs/inscription'
-//     ];
-
-//     if (publicRoutes.includes(req.path) || publicRoutes.includes(req.originalUrl)) {
-//         console.log('🔓 Route publique:', req.path);
-//         return next();
-//     }
-
-//     const authHeader = req.headers.authorization;
-    
-//     if (!authHeader) {
-//         return res.status(401).json({ 
-//             success: false,
-//             message: 'Token manquant'
-//         });
-//     }
-
-//     const parts = authHeader.split(' ');
-//     if (parts.length !== 2 || parts[0] !== 'Bearer') {
-//         return res.status(401).json({ 
-//             success: false,
-//             message: 'Format de token invalide'
-//         });
-//     }
-
-//     const token = parts[1];
-
-//     try {
-//         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-//         // ✅ Gestion des deux formats de token
-//         req.utilisateurId = decoded.id || decoded.userId;
-//         req.utilisateurEmail = decoded.email;
-        
-//         // Si le token a un type, on l'utilise
-//         if (decoded.type) {
-//             req.utilisateurType = decoded.type;
-//         } else {
-//             // Sinon, on détermine le type à partir de l'URL ou de la base de données
-//             if (req.originalUrl.includes('/api/producteurs/')) {
-//                 req.utilisateurType = 'producteur';
-//             } else if (req.originalUrl.includes('/api/collecteurs/')) {
-//                 req.utilisateurType = 'collecteur';
-//             } else if (req.originalUrl.includes('/api/gestionnaires/')) {
-//                 req.utilisateurType = 'gestionnaire';
-//             } else if (req.originalUrl.includes('/api/superviseurs/')) {
-//                 req.utilisateurType = 'superviseur';
-//             } else {
-//                 // Par défaut
-//                 req.utilisateurType = 'producteur';
-//             }
-//             console.log(`⚠️ Type déduit de l'URL: ${req.utilisateurType}`);
-//         }
-        
-//         console.log(`✅ Token valide - ${req.utilisateurEmail} (${req.utilisateurType})`);
-//         next();
-        
-//     } catch (error) {
-//         console.error('❌ Token invalide:', error.message);
-//         return res.status(401).json({ 
-//             success: false,
-//             message: 'Token invalide ou expiré'
-//         });
-//     }
-// }
-
-//     // Middleware pour vérifier le type d'utilisateur
-//     // static verifierTypeUtilisateur(typesAutorises) {
-//     //     return (req, res, next) => {
-//     //         if (!req.utilisateurType) {
-//     //             return res.status(401).json({ 
-//     //                 success: false,
-//     //                 message: 'Type d\'utilisateur non spécifié' 
-//     //             });
-//     //         }
-
-//     //         if (!typesAutorises.includes(req.utilisateurType)) {
-//     //             return res.status(403).json({ 
-//     //                 success: false,
-//     //                 message: 'Accès non autorisé pour ce type d\'utilisateur' 
-//     //             });
-//     //         }
-
-//     //         next();
-//     //     };
-//     // }
-
-//     static verifierTypeUtilisateur(typesAutorises) {
-//     return (req, res, next) => {
-//         if (!req.utilisateurType) {
-//             // Si pas de type, on considère que c'est un producteur par défaut
-//             req.utilisateurType = 'producteur';
-//         }
-
-//         if (!typesAutorises.includes(req.utilisateurType)) {
-//             return res.status(403).json({ 
-//                 success: false,
-//                 message: 'Accès non autorisé pour ce type d\'utilisateur' 
-//             });
-//         }
-
-//         next();
-//     };
-// }
-
-//     // ============================================
-//     // RÉINITIALISATION DE MOT DE PASSE
-//     // ============================================
-    
-//     static async demanderReinitialisationMdp(req, res) {
-//         try {
-//             const { email } = req.body;
-
-//             const resultat = await AuthController._trouverUtilisateurParIdentifiant(email);
-            
-//             if (!resultat || !resultat.utilisateur) {
-//                 return res.json({ 
-//                     success: true,
-//                     message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation' 
-//                 });
-//             }
-
-//             const { utilisateur, type } = resultat;
-
-//             // Générer un token de réinitialisation
-//             const token = crypto.randomBytes(32).toString('hex');
-//             const expireLe = new Date();
-//             expireLe.setHours(expireLe.getHours() + 1);
-
-//             // Sauvegarder le token
-//             const requete = `
-//                 INSERT INTO tokens 
-//                 (utilisateur_id, type_utilisateur, token, type_token, expire_le)
-//                 VALUES ($1, $2, $3, 'reset_password', $4)
-//             `;
-//             await pool.query(requete, [utilisateur.id, type, token, expireLe]);
-
-//             const lienReinitialisation = `${process.env.FRONTEND_URL}/reinitialiser-mot-de-passe?token=${token}`;
-            
-//             console.log(`🔐 Lien de réinitialisation: ${lienReinitialisation}`);
-
-//             res.json({ 
-//                 success: true,
-//                 message: 'Lien de réinitialisation envoyé avec succès'
-//             });
-//         } catch (erreur) {
-//             console.error('❌ Erreur demande réinitialisation:', erreur);
-//             res.status(500).json({ 
-//                 success: false,
-//                 message: 'Erreur lors de la demande',
-//                 erreur: erreur.message 
-//             });
-//         }
-//     }
-
-//     static async reinitialiserMdp(req, res) {
-//         try {
-//             const { token, nouveauMotDePasse } = req.body;
-
-//             // Vérifier le token
-//             const requeteToken = `
-//                 SELECT * FROM tokens 
-//                 WHERE token = $1 
-//                 AND type_token = 'reset_password'
-//                 AND utilise = false 
-//                 AND expire_le > NOW()
-//             `;
-//             const resultatToken = await pool.query(requeteToken, [token]);
-//             const tokenValide = resultatToken.rows[0];
-
-//             if (!tokenValide) {
-//                 return res.status(400).json({ 
-//                     success: false,
-//                     message: 'Token invalide ou expiré' 
-//                 });
-//             }
-
-//             // Hasher le nouveau mot de passe
-//             const nouveauMotDePasseHash = await bcrypt.hash(nouveauMotDePasse, 10);
-
-//             // Mettre à jour le mot de passe
-//             await AuthController._mettreAJourMotDePasse(
-//                 tokenValide.utilisateur_id,
-//                 tokenValide.type_utilisateur,
-//                 nouveauMotDePasseHash
-//             );
-
-//             // Marquer le token comme utilisé
-//             await pool.query(
-//                 'UPDATE tokens SET utilise = true WHERE id = $1',
-//                 [tokenValide.id]
-//             );
-
-//             res.json({ 
-//                 success: true,
-//                 message: 'Mot de passe réinitialisé avec succès' 
-//             });
-//         } catch (erreur) {
-//             console.error('❌ Erreur réinitialisation:', erreur);
-//             res.status(500).json({ 
-//                 success: false,
-//                 message: 'Erreur lors de la réinitialisation',
-//                 erreur: erreur.message 
-//             });
-//         }
-//     }
-
-//     // ============================================
-//     // VALIDATION DE COMPTE
-//     // ============================================
-    
-//     static async validerCompte(req, res) {
-//         try {
-//             const { token } = req.params;
-
-//             const requeteToken = `
-//                 SELECT * FROM tokens 
-//                 WHERE token = $1 
-//                 AND type_token = 'validation_compte'
-//                 AND utilise = false 
-//                 AND expire_le > NOW()
-//             `;
-//             const resultatToken = await pool.query(requeteToken, [token]);
-//             const tokenValide = resultatToken.rows[0];
-
-//             if (!tokenValide) {
-//                 return res.status(400).json({ 
-//                     success: false,
-//                     message: 'Token de validation invalide ou expiré' 
-//                 });
-//             }
-
-//             // Activer le compte selon le type
-//             if (tokenValide.type_utilisateur === 'collecteur') {
-//                 await Collecteur.update(tokenValide.utilisateur_id, { 
-//                     est_actif: true,
-//                     statut: 'actif'
-//                 });
-//             } else if (tokenValide.type_utilisateur === 'producteur') {
-//                 await Producteur.update(tokenValide.utilisateur_id, { 
-//                     est_actif: true 
-//                 });
-//             }
-
-//             await pool.query(
-//                 'UPDATE tokens SET utilise = true WHERE id = $1',
-//                 [tokenValide.id]
-//             );
-
-//             res.json({ 
-//                 success: true,
-//                 message: 'Compte validé avec succès' 
-//             });
-//         } catch (erreur) {
-//             console.error('❌ Erreur validation compte:', erreur);
-//             res.status(500).json({ 
-//                 success: false,
-//                 message: 'Erreur lors de la validation',
-//                 erreur: erreur.message 
-//             });
-//         }
-//     }
-
-//     // ============================================
-//     // MÉTHODES PRIVÉES
-//     // ============================================
-    
-//     static _genererToken(id, email, type) {
-//         return jwt.sign(
-//             { id, email, type },
-//             process.env.JWT_SECRET,
-//             { expiresIn: process.env.JWT_EXPIRE || '7d' }
-//         );
-//     }
-
-//     static async _verifierExistenceEmail(email) {
-//         const queries = [
-//             Producteur.trouverParEmail(email),
-//             Collecteur.trouverParEmail(email),
-//             Gestionnaire.trouverParEmail(email),
-//             Superviseur.trouverParEmail(email)
-//         ];
-
-//         const results = await Promise.all(queries);
-//         return results.some(result => result !== null);
-//     }
-
-//     static async _verifierExistenceTelephone(telephone) {
-//         const queries = [
-//             Producteur.trouverParTelephone(telephone),
-//             Collecteur.findByTelephone(telephone)
-//         ];
-
-//         const results = await Promise.all(queries);
-//         return results.some(result => result !== null);
-//     }
-
-//     static async _trouverUtilisateurParIdentifiant(identifiant) {
-//         // Par email
-//         let utilisateur = await Producteur.trouverParEmail(identifiant);
-//         if (utilisateur) return { utilisateur, type: 'producteur' };
-
-//         utilisateur = await Collecteur.findByEmail(identifiant);
-//         if (utilisateur) return { utilisateur, type: 'collecteur' };
-
-//         utilisateur = await Gestionnaire.findByEmail(identifiant);
-//         if (utilisateur) return { utilisateur, type: 'gestionnaire' };
-
-//         utilisateur = await Superviseur.findByEmail(identifiant);
-//         if (utilisateur) return { utilisateur, type: 'superviseur' };
-
-//         // Par téléphone
-//         utilisateur = await Producteur.trouverParTelephone(identifiant);
-//         if (utilisateur) return { utilisateur, type: 'producteur' };
-
-//         utilisateur = await Collecteur.findByTelephone(identifiant);
-//         if (utilisateur) return { utilisateur, type: 'collecteur' };
-
-//         return null;
-//     }
-
-//     static _verifierStatutUtilisateur(utilisateur, type) {
-//         switch(type) {
-//             case 'producteur':
-//                 if (!utilisateur.est_actif) {
-//                     return { valide: false, message: 'Compte désactivé' };
-//                 }
-//                 break;
-            
-//             case 'collecteur':
-//                 if (utilisateur.statut === 'en_attente') {
-//                     return { valide: false, message: 'Compte en attente de validation' };
-//                 }
-//                 if (utilisateur.statut === 'suspendu') {
-//                     return { valide: false, message: 'Compte suspendu' };
-//                 }
-//                 if (utilisateur.statut !== 'actif') {
-//                     return { valide: false, message: 'Compte non actif' };
-//                 }
-//                 break;
-            
-//             case 'gestionnaire':
-//             case 'superviseur':
-//                 if (!utilisateur.est_actif) {
-//                     return { valide: false, message: 'Compte désactivé' };
-//                 }
-//                 break;
-//         }
-
-//         return { valide: true };
-//     }
-
-//     static async _mettreAJourDerniereConnexion(id, type) {
-//         try {
-//             const date = new Date();
-//             let table;
-            
-//             switch(type) {
-//                 case 'producteur':
-//                     table = 'producteurs';
-//                     break;
-//                 case 'collecteur':
-//                     table = 'collecteurs';
-//                     break;
-//                 case 'gestionnaire':
-//                     table = 'gestionnaires_points';
-//                     break;
-//                 case 'superviseur':
-//                     table = 'superviseurs';
-//                     break;
-//                 default:
-//                     return;
-//             }
-            
-//             await pool.query(
-//                 `UPDATE ${table} SET derniere_connexion = $1 WHERE id = $2`,
-//                 [date, id]
-//             );
-//         } catch (erreur) {
-//             console.error('⚠️ Erreur mise à jour connexion:', erreur);
-//         }
-//     }
-
-//     static async _mettreAJourMotDePasse(id, type, nouveauMotDePasseHash) {
-//         switch(type) {
-//             case 'producteur':
-//                 await pool.query(
-//                     'UPDATE producteurs SET mot_de_passe_hash = $1 WHERE id = $2',
-//                     [nouveauMotDePasseHash, id]
-//                 );
-//                 break;
-//             case 'collecteur':
-//                 await pool.query(
-//                     'UPDATE collecteurs SET mot_de_passe_hash = $1 WHERE id = $2',
-//                     [nouveauMotDePasseHash, id]
-//                 );
-//                 break;
-//             case 'gestionnaire':
-//                 await pool.query(
-//                     'UPDATE gestionnaires_points SET mot_de_passe_hash = $1 WHERE id = $2',
-//                     [nouveauMotDePasseHash, id]
-//                 );
-//                 break;
-//             case 'superviseur':
-//                 await pool.query(
-//                     'UPDATE superviseurs SET mot_de_passe_hash = $1 WHERE id = $2',
-//                     [nouveauMotDePasseHash, id]
-//                 );
-//                 break;
-//         }
-//     }
-
-//     static _preparerDonneesUtilisateur(utilisateur, type) {
-//         const base = {
-//             id: utilisateur.id,
-//             email: utilisateur.email,
-//             telephone: utilisateur.telephone,
-//             type: type,
-//             nomComplet: utilisateur.nom_complet
-//         };
-
-//         switch(type) {
-//             case 'producteur':
-//                 return {
-//                     ...base,
-//                     typeProducteur: utilisateur.type_producteur,
-//                     points: utilisateur.points || 0,
-//                     quartier: utilisateur.quartier,
-//                     commune: utilisateur.commune
-//                 };
-            
-//             case 'collecteur':
-//                 return {
-//                     ...base,
-//                     typeCollecteur: utilisateur.type_collecteur,
-//                     statut: utilisateur.statut,
-//                     zoneIntervention: utilisateur.zone_intervention_nom,
-//                     pointsTotal: utilisateur.points_total || 0,
-//                     gainsTotal: utilisateur.gains_total || 0
-//                 };
-            
-//             case 'gestionnaire':
-//                 return {
-//                     ...base,
-//                     pointCollecteId: utilisateur.point_collecte_id,
-//                     fonction: utilisateur.fonction
-//                 };
-            
-//             case 'superviseur':
-//                 return {
-//                     ...base,
-//                     role: utilisateur.role
-//                 };
-            
-//             default:
-//                 return base;
-//         }
-//     }
-// }
-
-// export default AuthController;
-
-
 
 
 import bcrypt from 'bcrypt';
-import Collecteur from '../models/Collecteur.js';
-import Mission from '../models/Mission.js';
-import jwt from 'jsonwebtoken';
-import Notification from '../models/Notification.js';
-import { pool } from '../config/database.js';
-
-
-
-// // Nouvelle méthode pour mettre à jour les infos personnelles
-// static async mettreAJourInfosPersonnelles(req, res) {
-//     try {
-//         const collecteurId = req.utilisateurId;
-//         const {
-//             nomComplet,
-//             telephone,
-//             numeroIdentite,
-//             zoneInterventionNom,
-//             quartiersHabituels,
-//             communesIntervention,
-//             zoneIntervention,
-//             photoProfilUrl,
-//             photoCniRectoUrl,
-//             photoCniVersoUrl
-//         } = req.body;
-
-//         // Vérifier si le téléphone est déjà utilisé par un autre collecteur
-//         if (telephone) {
-//             const collecteurExistant = await Collecteur.trouverParTelephone(telephone);
-//             if (collecteurExistant && collecteurExistant.id !== collecteurId) {
-//                 return res.status(400).json({
-//                     success: false,
-//                     message: 'Ce numéro de téléphone est déjà utilisé'
-//                 });
-//             }
-//         }
-
-//         const donnees = {
-//             nomComplet,
-//             telephone,
-//             numeroIdentite,
-//             zoneInterventionNom,
-//             quartiersHabituels,
-//             communesIntervention,
-//             zoneIntervention,
-//             photoProfilUrl,
-//             photoCniRectoUrl,
-//             photoCniVersoUrl
-//         };
-
-//         const collecteur = await Collecteur.mettreAJourInfosPersonnelles(collecteurId, donnees);
-
-//         if (!collecteur) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Aucune donnée à mettre à jour'
-//             });
-//         }
-
-//         res.json({
-//             success: true,
-//             message: 'Informations personnelles mises à jour avec succès',
-//             collecteur
-//         });
-//     } catch (erreur) {
-//         console.error('Erreur mise à jour infos personnelles:', erreur);
-//         res.status(500).json({
-//             success: false,
-//             message: 'Erreur lors de la mise à jour des informations',
-//             erreur: erreur.message
-//         });
-//     }
-// }
-
-// // Nouvelle méthode pour changer le mot de passe
-// static async changerMotDePasse(req, res) {
-//     try {
-//         const collecteurId = req.utilisateurId;
-//         const { ancienMotDePasse, nouveauMotDePasse } = req.body;
-
-//         // Vérifier l'ancien mot de passe
-//         const ancienHash = await Collecteur.verifierMotDePasse(collecteurId);
-//         const motDePasseValide = await bcrypt.compare(ancienMotDePasse, ancienHash);
-
-//         if (!motDePasseValide) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: 'Ancien mot de passe incorrect'
-//             });
-//         }
-
-//         // Hasher le nouveau mot de passe
-//         const salt = await bcrypt.genSalt(10);
-//         const nouveauMotDePasseHash = await bcrypt.hash(nouveauMotDePasse, salt);
-
-//         // Mettre à jour
-//         await Collecteur.changerMotDePasse(collecteurId, nouveauMotDePasseHash);
-
-//         res.json({
-//             success: true,
-//             message: 'Mot de passe modifié avec succès'
-//         });
-//     } catch (erreur) {
-//         console.error('Erreur changement mot de passe:', erreur);
-//         res.status(500).json({
-//             success: false,
-//             message: 'Erreur lors du changement de mot de passe',
-//             erreur: erreur.message
-//         });
-//     }
-// }
-
-
-class CollecteurController {
-    // Inscription d'un collecteur avec upload de fichiers
-    static async inscription(req, res) {
-        try {
-            // Les fichiers sont dans req.files
-            const files = req.files || {};
-            
-            // Construire les URLs des fichiers uploadés
-            const baseUrl = `${req.protocol}://${req.get('host')}`;
-            
-            const photoProfilUrl = files.photoProfil ? 
-                `${baseUrl}/uploads/profils/${files.photoProfil[0].filename}` : null;
-            
-            const photoCniRectoUrl = files.photoCniRecto ? 
-                `${baseUrl}/uploads/cnis/${files.photoCniRecto[0].filename}` : null;
-            
-            const photoCniVersoUrl = files.photoCniVerso ? 
-                `${baseUrl}/uploads/cnis/${files.photoCniVerso[0].filename}` : null;
-
-            // Récupérer les données du formulaire (stringifiées)
-            const {
-                email, telephone, motDePasse, nomComplet,
-                typeCollecteur, numeroIdentite, zoneInterventionNom,
-                quartiersHabituels, communesIntervention, cguAcceptees
-            } = req.body;
-
-            // Vérifications
-            if (!email || !telephone || !motDePasse || !nomComplet || !typeCollecteur || !zoneInterventionNom) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Tous les champs obligatoires doivent être remplis'
-                });
-            }
-
-            // Vérifier les photos CNI
-            if (!photoCniRectoUrl || !photoCniVersoUrl) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Les photos recto et verso de la CNI sont requises'
-                });
-            }
-
-            // Vérifier si l'email existe déjà
-            const collecteurExistant = await Collecteur.trouverParEmail(email);
-            if (collecteurExistant) {
-                // Nettoyer les fichiers uploadés si erreur
-                CollecteurController.cleanupUploadedFiles(files);
-                return res.status(400).json({
-                    success: false,
-                    message: 'Un compte avec cet email existe déjà'
-                });
-            }
-
-            // Vérifier le téléphone
-            const telephoneExistant = await Collecteur.trouverParTelephone(telephone);
-            if (telephoneExistant) {
-                CollecteurController.cleanupUploadedFiles(files);
-                return res.status(400).json({
-                    success: false,
-                    message: 'Un compte avec ce numéro existe déjà'
-                });
-            }
-
-            // Hasher le mot de passe
-            const salt = await bcrypt.genSalt(10);
-            const motDePasseHash = await bcrypt.hash(motDePasse, salt);
-
-            // Traiter les tableaux
-            const quartiersArray = quartiersHabituels ? 
-                quartiersHabituels.split(',').map(q => q.trim()).filter(q => q) : [];
-            
-            const communesArray = communesIntervention ? 
-                communesIntervention.split(',').map(c => c.trim()).filter(c => c) : [];
-
-            // Créer le collecteur avec les URLs des photos
-            const collecteurData = {
-                email,
-                telephone,
-                motDePasseHash,
-                nomComplet,
-                typeCollecteur,
-                numeroIdentite: numeroIdentite || null,
-                zoneIntervention: {
-                    type: "Polygon",
-                    coordinates: [[
-                        [2.3522, 48.8566],
-                        [2.3622, 48.8566],
-                        [2.3622, 48.8666],
-                        [2.3522, 48.8666],
-                        [2.3522, 48.8566]
-                    ]]
-                },
-                zoneInterventionNom,
-                quartiersHabituels: quartiersArray,
-                communesIntervention: communesArray,
-                photoProfilUrl,
-                photoCniRectoUrl,
-                photoCniVersoUrl,
-                cguAcceptees: cguAcceptees === 'true' || cguAcceptees === true
-            };
-
-            const nouveauCollecteur = await Collecteur.creer(collecteurData);
-
-            // Créer une notification pour le superviseur
-            await pool.query(
-                `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification)
-                 VALUES ((SELECT id FROM superviseurs LIMIT 1), 'superviseur', 
-                         'Nouveau collecteur en attente', 
-                         $1 || ' demande à rejoindre la plateforme. Documents CNI fournis.',
-                         'info')`,
-                [nomComplet]
-            );
-
-            res.status(201).json({
-                success: true,
-                message: 'Inscription réussie. En attente de validation par un superviseur.',
-                collecteur: {
-                    id: nouveauCollecteur.id,
-                    email: nouveauCollecteur.email,
-                    nomComplet: nouveauCollecteur.nom_complet,
-                    statut: nouveauCollecteur.statut
-                }
-            });
-
-        } catch (erreur) {
-            console.error('❌ Erreur inscription collecteur:', erreur);
-            
-            // Nettoyer les fichiers uploadés en cas d'erreur
-            if (req.files) {
-                CollecteurController.cleanupUploadedFiles(req.files);
-            }
-            
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors de l\'inscription',
-                erreur: erreur.message
-            });
-        }
-    }
-
-    // Helper pour nettoyer les fichiers uploadés en cas d'erreur
-    static cleanupUploadedFiles(files) {
-        if (!files) return;
-        
-        Object.values(files).forEach(fileArray => {
-            fileArray.forEach(file => {
-                try {
-                    fs.unlinkSync(file.path);
-                    console.log(`🧹 Fichier supprimé: ${file.path}`);
-                } catch (err) {
-                    console.error('❌ Erreur lors de la suppression du fichier:', err);
-                }
-            });
-        });
-    }
-
-    // Connexion
-    static async connexion(req, res) {
-        try {
-            const { identifiant, motDePasse } = req.body;
-
-            let collecteur = await Collecteur.trouverParEmail(identifiant);
-            if (!collecteur) {
-                collecteur = await Collecteur.trouverParTelephone(identifiant);
-            }
-
-            if (!collecteur) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Identifiants incorrects'
-                });
-            }
-
-            const motDePasseValide = await bcrypt.compare(motDePasse, collecteur.mot_de_passe_hash);
-            if (!motDePasseValide) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Identifiants incorrects'
-                });
-            }
-
-            if (collecteur.statut !== 'actif') {
-                return res.status(403).json({
-                    success: false,
-                    message: 'Votre compte est en attente de validation ou a été suspendu'
-                });
-            }
-
-            await Collecteur.mettreAJourConnexion(collecteur.id);
-
-            const token = jwt.sign(
-                { 
-                    id: collecteur.id, 
-                    email: collecteur.email, 
-                    type: 'collecteur' 
-                },
-                process.env.JWT_SECRET || 'votre_cle_secrete',
-                { expiresIn: process.env.JWT_EXPIRE || '7d' }
-            );
-
-            res.json({
-                success: true,
-                message: 'Connexion réussie',
-                token,
-                collecteur: {
-                    id: collecteur.id,
-                    email: collecteur.email,
-                    telephone: collecteur.telephone,
-                    nomComplet: collecteur.nom_complet,
-                    typeCollecteur: collecteur.type_collecteur,
-                    statut: collecteur.statut,
-                    points: collecteur.points_total,
-                    gains: collecteur.gains_total,
-                    photoProfilUrl: collecteur.photo_profil_url
-                }
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur connexion:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors de la connexion',
-                erreur: erreur.message
-            });
-        }
-    }
-
-    // Obtenir le profil complet
-    static async monProfil(req, res) {
-        try {
-            const collecteurId = req.utilisateurId;
-            const collecteur = await Collecteur.trouverParId(collecteurId);
-
-            if (!collecteur) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Collecteur non trouvé'
-                });
-            }
-
-            delete collecteur.mot_de_passe_hash;
-
-            res.json({
-                success: true,
-                collecteur
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur profil:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors de la récupération du profil',
-                erreur: erreur.message
-            });
-        }
-    }
-
-    // Mettre à jour les infos personnelles
-    static async mettreAJourInfosPersonnelles(req, res) {
-        try {
-            const collecteurId = req.utilisateurId;
-            const {
-                nomComplet,
-                telephone,
-                numeroIdentite,
-                zoneInterventionNom,
-                quartiersHabituels,
-                communesIntervention,
-                zoneIntervention
-            } = req.body;
-
-            // Vérifier téléphone unique
-            if (telephone) {
-                const collecteurExistant = await Collecteur.trouverParTelephone(telephone);
-                if (collecteurExistant && collecteurExistant.id !== collecteurId) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Ce numéro de téléphone est déjà utilisé'
-                    });
-                }
-            }
-
-            const donnees = {
-                nomComplet,
-                telephone,
-                numeroIdentite,
-                zoneInterventionNom,
-                quartiersHabituels: quartiersHabituels ? 
-                    quartiersHabituels.split(',').map(q => q.trim()).filter(q => q) : undefined,
-                communesIntervention: communesIntervention ? 
-                    communesIntervention.split(',').map(c => c.trim()).filter(c => c) : undefined,
-                zoneIntervention
-            };
-
-            const collecteur = await Collecteur.mettreAJourInfosPersonnelles(collecteurId, donnees);
-
-            if (!collecteur) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Aucune donnée à mettre à jour'
-                });
-            }
-
-            res.json({
-                success: true,
-                message: 'Informations personnelles mises à jour avec succès',
-                collecteur
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur mise à jour:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors de la mise à jour',
-                erreur: erreur.message
-            });
-        }
-    }
-
-    // Changer mot de passe
-    static async changerMotDePasse(req, res) {
-        try {
-            const collecteurId = req.utilisateurId;
-            const { ancienMotDePasse, nouveauMotDePasse } = req.body;
-
-            const ancienHash = await Collecteur.verifierMotDePasse(collecteurId);
-            const motDePasseValide = await bcrypt.compare(ancienMotDePasse, ancienHash);
-
-            if (!motDePasseValide) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Ancien mot de passe incorrect'
-                });
-            }
-
-            const salt = await bcrypt.genSalt(10);
-            const nouveauMotDePasseHash = await bcrypt.hash(nouveauMotDePasse, salt);
-
-            await Collecteur.changerMotDePasse(collecteurId, nouveauMotDePasseHash);
-
-            res.json({
-                success: true,
-                message: 'Mot de passe modifié avec succès'
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur changement mot de passe:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors du changement de mot de passe',
-                erreur: erreur.message
-            });
-        }
-    }
-
- 
-// Méthode pour obtenir le profil complet
- static async monProfil(req, res) {
-    try {
-        const collecteurId = req.utilisateurId;
-        const collecteur = await Collecteur.trouverParId(collecteurId);
-
-        if (!collecteur) {
-            return res.status(404).json({
-                success: false,
-                message: 'Collecteur non trouvé'
-            });
-        }
-
-        // Ne pas renvoyer les informations sensibles
-        delete collecteur.mot_de_passe_hash;
-
-        res.json({
-            success: true,
-            collecteur
-        });
-    } catch (erreur) {
-        console.error('Erreur récupération profil:', erreur);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la récupération du profil',
-            erreur: erreur.message
-        });
-    }
-}
-
-    // Connexion
-   // Dans collecteurController.js - méthode connexion
- static async connexion(req, res) {
-    try {
-        const { identifiant, motDePasse } = req.body;
-
-        let collecteur = await Collecteur.trouverParEmail(identifiant);
-        if (!collecteur) {
-            collecteur = await Collecteur.trouverParTelephone(identifiant);
-        }
-
-        if (!collecteur) {
-            return res.status(401).json({
-                success: false,
-                message: 'Identifiants incorrects'
-            });
-        }
-
-        // Vérifier le mot de passe
-        const motDePasseValide = await bcrypt.compare(motDePasse, collecteur.mot_de_passe_hash);
-        if (!motDePasseValide) {
-            return res.status(401).json({
-                success: false,
-                message: 'Identifiants incorrects'
-            });
-        }
-
-        // Vérifier le statut
-        if (collecteur.statut !== 'actif') {
-            return res.status(403).json({
-                success: false,
-                message: 'Votre compte est en attente de validation ou a été suspendu'
-            });
-        }
-
-        // Mettre à jour la connexion
-        await Collecteur.mettreAJourConnexion(collecteur.id);
-
-        // ✅ CORRECTION: Générer token JWT directement avec jwt.sign
-        const token = jwt.sign(
-            { 
-                id: collecteur.id, 
-                email: collecteur.email, 
-                type: 'collecteur' 
-            },
-            process.env.JWT_SECRET || 'votre_cle_secrete',
-            { expiresIn: process.env.JWT_EXPIRE || '7d' }
-        );
-
-        res.json({
-            success: true,
-            message: 'Connexion réussie',
-            token,
-            collecteur: {
-                id: collecteur.id,
-                email: collecteur.email,
-                telephone: collecteur.telephone,
-                nomComplet: collecteur.nom_complet,
-                typeCollecteur: collecteur.type_collecteur,
-                statut: collecteur.statut,
-                points: collecteur.points_total,
-                gains: collecteur.gains_total
-            }
-        });
-    } catch (erreur) {
-        console.error('Erreur connexion collecteur:', erreur);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la connexion',
-            erreur: erreur.message
-        });
-    }
-  }
-
-    // Obtenir les missions disponibles
-    static async missionsDisponibles(req, res) {
-        try {
-            const collecteurId = req.utilisateurId;
-            const missions = await Mission.disponiblesPourCollecteur(collecteurId);
-
-            res.json({
-                success: true,
-                missions
-            });
-        } catch (erreur) {
-            console.error('Erreur récupération missions:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors de la récupération des missions',
-                erreur: erreur.message
-            });
-        }
-    }
-
-    // Accepter une mission
-    static async accepterMission(req, res) {
-        try {
-            const { missionId } = req.params;
-            const collecteurId = req.utilisateurId;
-
-            // Vérifier si le collecteur a déjà une mission en cours
-            const missionsEnCours = await Mission.obtenirParCollecteur(collecteurId, 'en_cours');
-            if (missionsEnCours.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Vous avez déjà une mission en cours'
-                });
-            }
-
-            const mission = await Mission.attribuer(missionId, collecteurId);
-
-            res.json({
-                success: true,
-                message: 'Mission acceptée avec succès',
-                mission
-            });
-        } catch (erreur) {
-            console.error('Erreur acceptation mission:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors de l\'acceptation de la mission',
-                erreur: erreur.message
-            });
-        }
-    }
-
-    // Démarrer une collecte
-    static async demarrerCollecte(req, res) {
-        try {
-            const { missionId } = req.params;
-            const collecteurId = req.utilisateurId;
-
-            const mission = await Mission.demarrerCollecte(missionId, collecteurId);
-
-            res.json({
-                success: true,
-                message: 'Collecte démarrée',
-                mission
-            });
-        } catch (erreur) {
-            console.error('Erreur démarrage collecte:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors du démarrage de la collecte',
-                erreur: erreur.message
-            });
-        }
-    }
-
-    // Terminer une collecte (avant dépôt)
-    static async terminerCollecte(req, res) {
-        try {
-            const { missionId } = req.params;
-            const collecteurId = req.utilisateurId;
-            const { photoPreuveUrl, codeConfirmation, notes, conformiteTri } = req.body;
-
-            const mission = await Mission.terminerCollecte(missionId, collecteurId, {
-                photoPreuveUrl,
-                codeConfirmation,
-                notes,
-                conformiteTri
-            });
-
-            res.json({
-                success: true,
-                message: 'Collecte terminée. En attente de dépôt au point de collecte.',
-                mission
-            });
-        } catch (erreur) {
-            console.error('Erreur fin collecte:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors de la fin de la collecte',
-                erreur: erreur.message
-            });
-        }
-    }
-
-    // Choisir point de dépôt
-    static async choisirPointDepot(req, res) {
-        try {
-            const { missionId } = req.params;
-            const { pointDepotId } = req.body;
-            const collecteurId = req.utilisateurId;
-
-            const mission = await Mission.deposerAuPoint(missionId, collecteurId, pointDepotId);
-
-            res.json({
-                success: true,
-                message: 'Point de dépôt sélectionné',
-                mission
-            });
-        } catch (erreur) {
-            console.error('Erreur choix point dépôt:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors du choix du point de dépôt',
-                erreur: erreur.message
-            });
-        }
-    }
-
-    // Ajouter une photo preuve
-    static async ajouterPhoto(req, res) {
-        try {
-            const { missionId } = req.params;
-            const collecteurId = req.utilisateurId;
-            const { url, type } = req.body;
-
-            const photo = await Mission.ajouterPhoto(missionId, collecteurId, url, type);
-
-            res.json({
-                success: true,
-                message: 'Photo ajoutée avec succès',
-                photo
-            });
-        } catch (erreur) {
-            console.error('Erreur ajout photo:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors de l\'ajout de la photo',
-                erreur: erreur.message
-            });
-        }
-    }
-
-    // Modifier le profil
-    static async modifierProfil(req, res) {
-        try {
-            const collecteurId = req.utilisateurId;
-            const donnees = req.body;
-
-            const collecteur = await Collecteur.mettreAJour(collecteurId, donnees);
-
-            res.json({
-                success: true,
-                message: 'Profil mis à jour avec succès',
-                collecteur
-            });
-        } catch (erreur) {
-            console.error('Erreur modification profil:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors de la modification du profil',
-                erreur: erreur.message
-            });
-        }
-    }
-
-    // ✅ Obtenir mes missions avec détails
-static async mesMissions(req, res) {
-    try {
-        const collecteurId = req.utilisateurId;
-        const { statut } = req.query;
-
-        const missions = await Collecteur.missionsAvecDetails(collecteurId, statut);
-
-        // Grouper par statut pour faciliter l'affichage
-        const grouped = {
-            enCours: missions.filter(m => m.statut === 'en_cours'),
-            acceptees: missions.filter(m => m.statut === 'acceptee'),
-            deposees: missions.filter(m => m.statut === 'deposee'),
-            validees: missions.filter(m => m.statut === 'validee'),
-            autres: missions.filter(m => !['en_cours', 'acceptee', 'deposee', 'validee'].includes(m.statut))
-        };
-
-        res.json({
-            success: true,
-            missions,
-            grouped,
-            total: missions.length
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur récupération missions:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-// ✅ Obtenir mes gains avec détails
-static async mesGains(req, res) {
-    try {
-        const collecteurId = req.utilisateurId;
-        
-        const gains = await Collecteur.gainsAvecDetails(collecteurId);
-        const statistiques = await Collecteur.statistiquesGains(collecteurId);
-
-        // Grouper par type
-        const grouped = {
-            collecte: gains.filter(g => g.type_gain === 'collecte'),
-            bonus: gains.filter(g => g.type_gain === 'bonus')
-        };
-
-        res.json({
-            success: true,
-            gains,
-            grouped,
-            statistiques,
-            total: gains.length
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur récupération gains:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-// ✅ Tableau de bord amélioré
-static async tableauBord(req, res) {
-    try {
-        const collecteurId = req.utilisateurId;
-        
-        const dashboard = await Collecteur.tableauBord(collecteurId);
-        const missions = await Collecteur.missionsAvecDetails(collecteurId);
-        const statistiquesGains = await Collecteur.statistiquesGains(collecteurId);
-
-        // Compter par statut
-        const compteurs = {
-            disponibles: missions.filter(m => m.statut === 'disponible').length,
-            acceptees: missions.filter(m => m.statut === 'acceptee').length,
-            enCours: missions.filter(m => m.statut === 'en_cours').length,
-            deposees: missions.filter(m => m.statut === 'deposee').length,
-            validees: missions.filter(m => m.statut === 'validee').length
-        };
-
-        // Dernière mission
-        const derniereMission = missions
-            .filter(m => m.statut === 'validee')
-            .sort((a, b) => new Date(b.date_validation) - new Date(a.date_validation))[0];
-
-        res.json({
-            success: true,
-            dashboard,
-            compteurs,
-            derniereMission,
-            statistiquesGains,
-            missionEnCours: missions.find(m => m.statut === 'en_cours') || null
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur tableau bord:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-// ✅ Obtenir mes missions (version améliorée)
-static async mesMissions(req, res) {
-    try {
-        const collecteurId = req.utilisateurId;
-        const { statut } = req.query;
-
-        const missions = await Collecteur.missionsAvecDetails(collecteurId, statut);
-
-        // Grouper par statut pour faciliter l'affichage
-        const grouped = {
-            enCours: missions.filter(m => m.statut === 'en_cours'),
-            acceptees: missions.filter(m => m.statut === 'acceptee'),
-            deposees: missions.filter(m => m.statut === 'deposee'),
-            validees: missions.filter(m => m.statut === 'validee'),
-            autres: missions.filter(m => !['en_cours', 'acceptee', 'deposee', 'validee'].includes(m.statut))
-        };
-
-        res.json({
-            success: true,
-            missions,
-            grouped,
-            total: missions.length
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur récupération missions:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-// ✅ Obtenir mes gains (version améliorée)
-static async mesGains(req, res) {
-    try {
-        const collecteurId = req.utilisateurId;
-        
-        const gains = await Collecteur.gainsAvecDetails(collecteurId);
-        const statistiques = await Collecteur.statistiquesGains(collecteurId);
-
-        // Grouper par type
-        const grouped = {
-            collecte: gains.filter(g => g.type_gain === 'collecte'),
-            bonus: gains.filter(g => g.type_gain === 'bonus')
-        };
-
-        // Calcul des totaux
-        const totalCollecte = grouped.collecte.reduce((sum, g) => sum + parseFloat(g.montant), 0);
-        const totalBonus = grouped.bonus.reduce((sum, g) => sum + parseFloat(g.montant), 0);
-
-        res.json({
-            success: true,
-            gains,
-            grouped,
-            statistiques,
-            totals: {
-                collecte: totalCollecte,
-                bonus: totalBonus,
-                global: totalCollecte + totalBonus
-            },
-            total: gains.length
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur récupération gains:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-
-// Tableau de bord 
-static async tableauBord(req, res) {
-    try {
-        const collecteurId = req.utilisateurId;
-        
-        const dashboard = await Collecteur.tableauBord(collecteurId);
-        
-        // Récupérer la mission en cours
-        const missionEnCours = await pool.query(`
-            SELECT m.*, 
-                   d.type_dechet, d.quantite, d.unite,
-                   p.nom_complet as producteur_nom,
-                   p.adresse as producteur_adresse,
-                   p.telephone as producteur_telephone
-            FROM missions m
-            JOIN declarations_dechets d ON m.declaration_id = d.id
-            JOIN producteurs p ON d.producteur_id = p.id
-            WHERE m.collecteur_id = $1 AND m.statut = 'en_cours'
-            LIMIT 1
-        `, [collecteurId]);
-
-        res.json({
-            success: true,
-            dashboard: dashboard.statistiques || {},
-            gains: dashboard.gains || {},
-            historique: dashboard.historique || [],
-            missionEnCours: missionEnCours.rows[0] || null
-        });
-        
-    } catch (erreur) {
-        console.error('❌ Erreur tableau bord:', erreur);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Erreur lors de la récupération du tableau de bord' 
-        });
-    }
-}
-
-
-static async mesGains(req, res) {
-    try {
-        const collecteurId = req.utilisateurId;
-        
-        const gains = await Collecteur.gainsAvecDetails(collecteurId);
-        
-        // Statistiques
-        const totalCollecte = gains
-            .filter(g => g.type_gain === 'collecte')
-            .reduce((sum, g) => sum + parseFloat(g.montant), 0);
-            
-        const totalBonus = gains
-            .filter(g => g.type_gain === 'bonus')
-            .reduce((sum, g) => sum + parseFloat(g.montant), 0);
-            
-        const totalValide = gains
-            .filter(g => g.statut === 'valide')
-            .reduce((sum, g) => sum + parseFloat(g.montant), 0);
-
-        res.json({
-            success: true,
-            gains,
-            resume: {
-                total: totalValide,
-                collecte: totalCollecte,
-                bonus: totalBonus,
-                enAttente: gains.filter(g => g.statut === 'en_attente').length
-            }
-        });
-        
-    } catch (erreur) {
-        console.error('❌ Erreur récupération gains:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur serveur' });
-    }
-}
-
-}
-
-export default CollecteurController;
-
-
-
-// 28/02/2026 :
-
-
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import { pool } from '../config/database.js';
-
-// Importer tous les modèles
-import Producteur from '../models/Producteur.js';
-import Collecteur from '../models/Collecteur.js';
-import Gestionnaire from '../models/GestionnairePoint.js';
+import Admin from '../models/Admin.js';
 import Superviseur from '../models/Superviseur.js';
 import Recycleur from '../models/Recycleur.js';
 import Sponsor from '../models/Sponsor.js';
 import Ong from '../models/Ong.js';
-import Admin from '../models/Admin.js';
-import EmailService from '../services/EmailService.js';
+import Campagne from '../models/Campagne.js';
+import DemandeSuppression from '../models/DemandeSupression.js';
+import Producteur from '../models/Producteur.js';
+import { pool } from '../config/database.js';
+import jwt from 'jsonwebtoken';
 
-class AuthController {
+class AdminController {
+    // ===== Authentification
+
     
-    
-    // Inscription producteur
-    static async inscrireProducteur(req, res) {
-        try {
-            const { 
-                email, 
-                telephone, 
-                motDePasse, 
-                typeProducteur, 
-                nomComplet, 
-                adresse, 
-                longitude, 
-                latitude, 
-                quartier, 
-                commune,
-                cguAcceptees 
-            } = req.body;
+// backend/controllers/AdminController.js
 
-            // Vérifier si l'utilisateur existe déjà
-            const utilisateurExistant = await AuthController._verifierExistenceEmail(email);
-            if (utilisateurExistant) {
-                return res.status(400).json({ 
-                    success: false,
-                    message: 'Un compte avec cet email existe déjà' 
-                });
-            }
-
-            const telephoneExistant = await AuthController._verifierExistenceTelephone(telephone);
-            if (telephoneExistant) {
-                return res.status(400).json({ 
-                    success: false,
-                    message: 'Un compte avec ce numéro de téléphone existe déjà' 
-                });
-            }
-
-            if (!cguAcceptees) {
-                return res.status(400).json({ 
-                    success: false,
-                    message: 'Vous devez accepter les CGU' 
-                });
-            }
-
-            // Hasher le mot de passe
-            const motDePasseHash = await bcrypt.hash(motDePasse, 10);
-
-            // Créer le producteur
-            const producteurData = {
-                email,
-                telephone,
-                motDePasseHash,
-                typeProducteur,
-                nomComplet,
-                adresse,
-                longitude: parseFloat(longitude),
-                latitude: parseFloat(latitude),
-                quartier,
-                commune,
-                cguAcceptees
-            };
-
-            const nouveauProducteur = await Producteur.creer(producteurData);
-
-            // Générer le token JWT
-            const token = AuthController._genererToken(
-                nouveauProducteur.id, 
-                nouveauProducteur.email, 
-                'producteur'
-            );
-
-            res.status(201).json({
-                success: true,
-                message: 'Inscription réussie',
-                token,
-                utilisateur: {
-                    id: nouveauProducteur.id,
-                    email: nouveauProducteur.email,
-                    telephone: nouveauProducteur.telephone,
-                    type: 'producteur',
-                    role: nouveauProducteur.type_producteur,
-                    nomComplet: nouveauProducteur.nom_complet,
-                    quartier: nouveauProducteur.quartier,
-                    commune: nouveauProducteur.commune,
-                    points: nouveauProducteur.points || 0
-                }
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur inscription producteur:', erreur);
-            res.status(500).json({ 
-                success: false,
-                message: 'Erreur lors de l\'inscription',
-                erreur: erreur.message 
-            });
-        }
-    }
-
-    // Inscription collecteur
-    static async inscrireCollecteur(req, res) {
-        try {
-            const { 
-                email, 
-                telephone, 
-                motDePasse, 
-                nomComplet, 
-                typeCollecteur,
-                numeroIdentite,
-                zoneInterventionNom,
-                quartiersHabituels,
-                communesIntervention,
-                cguAcceptees 
-            } = req.body;
-
-            // Vérifications
-            const utilisateurExistant = await AuthController._verifierExistenceEmail(email);
-            if (utilisateurExistant) {
-                return res.status(400).json({ 
-                    success: false,
-                    message: 'Un compte avec cet email existe déjà' 
-                });
-            }
-
-            const telephoneExistant = await AuthController._verifierExistenceTelephone(telephone);
-            if (telephoneExistant) {
-                return res.status(400).json({ 
-                    success: false,
-                    message: 'Un compte avec ce numéro de téléphone existe déjà' 
-                });
-            }
-
-            if (!cguAcceptees) {
-                return res.status(400).json({ 
-                    success: false,
-                    message: 'Vous devez accepter les CGU' 
-                });
-            }
-
-            // Hasher le mot de passe
-            const motDePasseHash = await bcrypt.hash(motDePasse, 10);
-
-            // Créer le collecteur
-            const collecteurData = {
-                email,
-                telephone,
-                motDePasseHash,
-                nomComplet,
-                typeCollecteur,
-                numeroIdentite,
-                zoneInterventionNom,
-                quartiersHabituels,
-                communesIntervention,
-                cguAcceptees
-            };
-
-            const nouveauCollecteur = await Collecteur.create(collecteurData);
-
-            res.status(201).json({
-                success: true,
-                message: 'Inscription réussie. Votre compte est en attente de validation.',
-                utilisateur: {
-                    id: nouveauCollecteur.id,
-                    email: nouveauCollecteur.email,
-                    telephone: nouveauCollecteur.telephone,
-                    type: 'collecteur',
-                    nomComplet: nouveauCollecteur.nom_complet,
-                    statut: nouveauCollecteur.statut
-                }
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur inscription collecteur:', erreur);
-            res.status(500).json({ 
-                success: false,
-                message: 'Erreur lors de l\'inscription',
-                erreur: erreur.message 
-            });
-        }
-    }
-
-    // Inscription générique
-    static async inscrire(req, res) {
-        try {
-            const { typeUtilisateur } = req.body;
-            
-            if (!typeUtilisateur) {
-                return res.status(400).json({ 
-                    success: false,
-                    message: 'Le type d\'utilisateur est requis (producteur/collecteur)' 
-                });
-            }
-
-            switch(typeUtilisateur) {
-                case 'producteur':
-                    return await AuthController.inscrireProducteur(req, res);
-                case 'collecteur':
-                    return await AuthController.inscrireCollecteur(req, res);
-                default:
-                    return res.status(400).json({ 
-                        success: false,
-                        message: 'Type d\'utilisateur invalide' 
-                    });
-            }
-        } catch (erreur) {
-            console.error('❌ Erreur inscription:', erreur);
-            res.status(500).json({ 
-                success: false,
-                message: 'Erreur lors de l\'inscription',
-                erreur: erreur.message 
-            });
-        }
-    }
-
-    // ============================================
-    // CONNEXIONS
-    // ============================================
-    
-    // Connexion unifiée
-    static async connecter(req, res) {
-        try {
-            const { identifiant, motDePasse } = req.body;
-
-            if (!identifiant || !motDePasse) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Identifiant et mot de passe requis'
-                });
-            }
-
-            // Chercher l'utilisateur dans toutes les tables
-            const resultat = await AuthController._trouverUtilisateurParIdentifiant(identifiant);
-            
-            if (!resultat || !resultat.utilisateur) {
-                return res.status(401).json({ 
-                    success: false,
-                    message: 'Identifiants incorrects' 
-                });
-            }
-
-            const { utilisateur, type } = resultat;
-
-            // Vérifier le mot de passe
-            const motDePasseValide = await bcrypt.compare(motDePasse, utilisateur.mot_de_passe_hash);
-            if (!motDePasseValide) {
-                return res.status(401).json({ 
-                    success: false,
-                    message: 'Identifiants incorrects' 
-                });
-            }
-
-            // Vérifications spécifiques selon le type
-            const verificationStatut = AuthController._verifierStatutUtilisateur(utilisateur, type);
-            if (!verificationStatut.valide) {
-                return res.status(403).json({ 
-                    success: false,
-                    message: verificationStatut.message 
-                });
-            }
-
-            // Mettre à jour la dernière connexion
-            await AuthController._mettreAJourDerniereConnexion(utilisateur.id, type);
-
-            // Générer le token
-            const token = AuthController._genererToken(
-                utilisateur.id, 
-                utilisateur.email, 
-                type
-            );
-
-            // Préparer la réponse
-            const reponseUtilisateur = AuthController._preparerDonneesUtilisateur(utilisateur, type);
-
-            res.json({
-                success: true,
-                message: 'Connexion réussie',
-                token,
-                utilisateur: reponseUtilisateur
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur connexion:', erreur);
-            res.status(500).json({ 
-                success: false,
-                message: 'Erreur lors de la connexion',
-                erreur: erreur.message 
-            });
-        }
-    }
-
-    // Connexions spécifiques (rétrocompatibilité)
-    static async connecterProducteur(req, res) {
-        return AuthController.connecter(req, res);
-    }
-
-    static async connecterCollecteur(req, res) {
-        return AuthController.connecter(req, res);
-    }
-
-    static async connecterGestionnaire(req, res) {
-        return AuthController.connecter(req, res);
-    }
-
-    static async connecterSuperviseur(req, res) {
-        return AuthController.connecter(req, res);
-    }
-
-   
-    static verifierToken(req, res, next) {
-    // Routes publiques
-    const publicRoutes = [
-        '/api/collecteurs/connexion',
-        '/api/collecteurs/inscription',
-        '/api/gestionnaires/connexion',
-        '/api/superviseurs/connexion',
-        '/api/producteurs/connexion',
-        '/api/producteurs/inscription'
-    ];
-
-    if (publicRoutes.includes(req.path) || publicRoutes.includes(req.originalUrl)) {
-        console.log('🔓 Route publique:', req.path);
-        return next();
-    }
-
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader) {
-        return res.status(401).json({ 
-            success: false,
-            message: 'Token manquant'
-        });
-    }
-
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
-        return res.status(401).json({ 
-            success: false,
-            message: 'Format de token invalide'
-        });
-    }
-
-    const token = parts[1];
-
+static async getProfil(req, res) {
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (!req.admin || !req.admin.id) {
+            return res.status(401).json({
+                success: false,
+                message: 'Utilisateur non authentifié'
+            });
+        }
+
+        const admin = await Admin.trouverParId(req.admin.id);
         
-        // ✅ Gestion des deux formats de token
-        req.utilisateurId = decoded.id || decoded.userId;
-        req.utilisateurEmail = decoded.email;
-        
-        // Si le token a un type, on l'utilise
-        if (decoded.type) {
-            req.utilisateurType = decoded.type;
-        } else {
-            // Sinon, on détermine le type à partir de l'URL ou de la base de données
-            if (req.originalUrl.includes('/api/producteurs/')) {
-                req.utilisateurType = 'producteur';
-            } else if (req.originalUrl.includes('/api/collecteurs/')) {
-                req.utilisateurType = 'collecteur';
-            } else if (req.originalUrl.includes('/api/gestionnaires/')) {
-                req.utilisateurType = 'gestionnaire';
-            } else if (req.originalUrl.includes('/api/superviseurs/')) {
-                req.utilisateurType = 'superviseur';
-            } else {
-                // Par défaut
-                req.utilisateurType = 'producteur';
-            }
-            console.log(`⚠️ Type déduit de l'URL: ${req.utilisateurType}`);
-        }
-        
-        console.log(`✅ Token valide - ${req.utilisateurEmail} (${req.utilisateurType})`);
-        next();
-        
-    } catch (error) {
-        console.error('❌ Token invalide:', error.message);
-        return res.status(401).json({ 
-            success: false,
-            message: 'Token invalide ou expiré'
-        });
-    }
-}
-
-
-    static verifierTypeUtilisateur(typesAutorises) {
-    return (req, res, next) => {
-        if (!req.utilisateurType) {
-            // Si pas de type, on considère que c'est un producteur par défaut
-            req.utilisateurType = 'producteur';
-        }
-
-        if (!typesAutorises.includes(req.utilisateurType)) {
-            return res.status(403).json({ 
+        if (!admin) {
+            return res.status(404).json({
                 success: false,
-                message: 'Accès non autorisé pour ce type d\'utilisateur' 
+                message: 'Administrateur non trouvé'
             });
         }
-
-        next();
-    };
-}
-
-    static async reinitialiserMdp(req, res) {
-        try {            const { token, nouveauMotDePasse } = req.body;
-
-            // Vérifier le token
-            const requeteToken = `
-                SELECT * FROM tokens 
-                WHERE token = $1 
-                AND type_token = 'reset_password'
-                AND utilise = false 
-                AND expire_le > NOW()
-            `;
-            const resultatToken = await pool.query(requeteToken, [token]);
-            const tokenValide = resultatToken.rows[0];
-
-            if (!tokenValide) {
-                return res.status(400).json({ 
-                    success: false,
-                    message: 'Token invalide ou expiré' 
-                });
-            }
-
-            // Hasher le nouveau mot de passe
-            const nouveauMotDePasseHash = await bcrypt.hash(nouveauMotDePasse, 10);
-
-            // Mettre à jour le mot de passe
-            await AuthController._mettreAJourMotDePasse(
-                tokenValide.utilisateur_id,
-                tokenValide.type_utilisateur,
-                nouveauMotDePasseHash
-            );
-
-            // Marquer le token comme utilisé
-            await pool.query(
-                'UPDATE tokens SET utilise = true WHERE id = $1',
-                [tokenValide.id]
-            );
-
-            res.json({ 
-                success: true,
-                message: 'Mot de passe réinitialisé avec succès' 
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur réinitialisation:', erreur);
-            res.status(500).json({ 
-                success: false,
-                message: 'Erreur lors de la réinitialisation',
-                erreur: erreur.message 
-            });
-        }
-    }
-
-    // ============================================
-    // VALIDATION DE COMPTE
-    // ============================================
-    
-    static async validerCompte(req, res) {
-        try {
-            const { token } = req.params;
-
-            const requeteToken = `
-                SELECT * FROM tokens 
-                WHERE token = $1 
-                AND type_token = 'validation_compte'
-                AND utilise = false 
-                AND expire_le > NOW()
-            `;
-            const resultatToken = await pool.query(requeteToken, [token]);
-            const tokenValide = resultatToken.rows[0];
-
-            if (!tokenValide) {
-                return res.status(400).json({ 
-                    success: false,
-                    message: 'Token de validation invalide ou expiré' 
-                });
-            }
-
-            // Activer le compte selon le type
-            if (tokenValide.type_utilisateur === 'collecteur') {
-                await Collecteur.update(tokenValide.utilisateur_id, { 
-                    est_actif: true,
-                    statut: 'actif'
-                });
-            } else if (tokenValide.type_utilisateur === 'producteur') {
-                await Producteur.update(tokenValide.utilisateur_id, { 
-                    est_actif: true 
-                });
-            }
-
-            await pool.query(
-                'UPDATE tokens SET utilise = true WHERE id = $1',
-                [tokenValide.id]
-            );
-
-            res.json({ 
-                success: true,
-                message: 'Compte validé avec succès' 
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur validation compte:', erreur);
-            res.status(500).json({ 
-                success: false,
-                message: 'Erreur lors de la validation',
-                erreur: erreur.message 
-            });
-        }
-    }
-
-   
-    
-    static _genererToken(id, email, type) {
-        return jwt.sign(
-            { id, email, type },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRE || '7d' }
-        );
-    }
-
-    static async _verifierExistenceEmail(email) {
-        const queries = [
-            Producteur.trouverParEmail(email),
-            Collecteur.trouverParEmail(email),
-            Gestionnaire.trouverParEmail(email),
-            Superviseur.trouverParEmail(email)
-        ];
-
-        const results = await Promise.all(queries);
-        return results.some(result => result !== null);
-    }
-
-    static async _verifierExistenceTelephone(telephone) {
-        const queries = [
-            Producteur.trouverParTelephone(telephone),
-            Collecteur.findByTelephone(telephone)
-        ];
-
-        const results = await Promise.all(queries);
-        return results.some(result => result !== null);
-    }
-
-
-    // static async _trouverUtilisateurParIdentifiant(identifiant) {
-    //     // Par email
-    //     let utilisateur = await Producteur.trouverParEmail(identifiant);
-    //     if (utilisateur) return { utilisateur, type: 'producteur' };
-
-    //     utilisateur = await Collecteur.trouverParEmail(identifiant);
-    //     if (utilisateur) return { utilisateur, type: 'collecteur' };
-
-    //     utilisateur = await Gestionnaire.trouverParEmail(identifiant);
-    //     if (utilisateur) return { utilisateur, type: 'gestionnaire' };
-
-    //     utilisateur = await Superviseur.trouverParEmail(identifiant);
-    //     if (utilisateur) return { utilisateur, type: 'superviseur' };
-
-    //     // Par téléphone
-    //     utilisateur = await Producteur.trouverParTelephone(identifiant);
-    //     if (utilisateur) return { utilisateur, type: 'producteur' };
-
-    //     return null;
-    // }
-
-    
-    static async _trouverUtilisateurParIdentifiant(identifiant) {
-        // Par email
-        let utilisateur = await Producteur.trouverParEmail(identifiant);
-        if (utilisateur) return { utilisateur, type: 'producteur' };
-
-        utilisateur = await Collecteur.trouverParEmail(identifiant);
-        if (utilisateur) return { utilisateur, type: 'collecteur' };
-
-        utilisateur = await Gestionnaire.trouverParEmail(identifiant);
-        if (utilisateur) return { utilisateur, type: 'gestionnaire' };
-
-        utilisateur = await Superviseur.trouverParEmail(identifiant);
-        if (utilisateur) return { utilisateur, type: 'superviseur' };
-
-         utilisateur = await Recycleur.trouverParEmail(identifiant);
-        if (utilisateur) return { utilisateur, type: 'recycleur' };
-
-        utilisateur = await Sponsor.trouverParEmail(identifiant);
-        if (utilisateur) return { utilisateur, type: 'sponsor' };
-
-       utilisateur = await Ong.trouverParEmail(identifiant);
-       if (utilisateur) return { utilisateur, type: 'ong' };
-
-       utilisateur = await Admin.trouverParEmail(identifiant);
-      if (utilisateur) return { utilisateur, type: 'admin' };
-
-    // Par téléphone
-      utilisateur = await Recycleur.trouverParTelephone(identifiant);
-      if (utilisateur) return { utilisateur, type: 'recycleur' };
-
-      utilisateur = await Sponsor.trouverParTelephone(identifiant);
-      if (utilisateur) return { utilisateur, type: 'sponsor' };
-
-      utilisateur = await Ong.trouverParTelephone(identifiant);
-      if (utilisateur) return { utilisateur, type: 'ong' };
-
-        // Par téléphone
-        utilisateur = await Producteur.trouverParTelephone(identifiant);
-        if (utilisateur) return { utilisateur, type: 'producteur' };
-
-        return null;
-    }
-
-
-    // static _verifierStatutUtilisateur(utilisateur, type) {
-    //     switch(type) {
-    //         case 'producteur':
-    //             if (!utilisateur.est_actif) {
-    //                 return { valide: false, message: 'Compte désactivé' };
-    //             }
-    //             break;
-            
-    //         case 'collecteur':
-    //             if (utilisateur.statut === 'en_attente') {
-    //                 return { valide: false, message: 'Compte en attente de validation' };
-    //             }
-    //             if (utilisateur.statut === 'suspendu') {
-    //                 return { valide: false, message: 'Compte suspendu' };
-    //             }
-    //             if (utilisateur.statut !== 'actif') {
-    //                 return { valide: false, message: 'Compte non actif' };
-    //             }
-    //             break;
-            
-    //         case 'gestionnaire':
-    //         case 'superviseur':
-    //             if (!utilisateur.est_actif) {
-    //                 return { valide: false, message: 'Compte désactivé' };
-    //             }
-    //             break;
-    //     }
-
-    //     return { valide: true };
-    // }
-
-
-static _verifierStatutUtilisateur(utilisateur, type) {
-    // Vérification générique pour tous les types
-    if (!utilisateur) {
-        return { valide: false, message: 'Utilisateur inexistant' };
-    }
-
-    switch(type) {
-        // ===== PRODUCTEURS =====
-        case 'producteur':
-            if (utilisateur.est_actif === false) {
-                return { valide: false, message: 'Compte producteur désactivé' };
-            }
-            break;
-
-        // ===== COLLECTEURS =====
-        case 'collecteur':
-            if (utilisateur.statut === 'en_attente') {
-                return { valide: false, message: 'Compte collecteur en attente de validation' };
-            }
-            if (utilisateur.statut === 'suspendu') {
-                return { valide: false, message: 'Compte collecteur suspendu' };
-            }
-            if (utilisateur.statut === 'rejete') {
-                return { valide: false, message: 'Compte collecteur rejeté' };
-            }
-            if (utilisateur.statut !== 'actif') {
-                return { valide: false, message: 'Compte collecteur non actif' };
-            }
-            if (utilisateur.est_actif === false) {
-                return { valide: false, message: 'Compte collecteur désactivé' };
-            }
-            break;
-
-        // ===== GESTIONNAIRES =====
-        case 'gestionnaire':
-            if (utilisateur.est_actif === false) {
-                return { valide: false, message: 'Compte gestionnaire désactivé' };
-            }
-            // Vérifier si le point de collecte est actif
-            if (utilisateur.point_collecte_id) {
-                // Optionnel: vérifier le statut du point de collecte
-            }
-            break;
-
-        // ===== SUPERVISEURS =====
-        case 'superviseur':
-            if (utilisateur.est_actif === false) {
-                return { valide: false, message: 'Compte superviseur désactivé' };
-            }
-            break;
-
-        // ===== RECYCLEURS =====
-        case 'recycleur':
-            if (utilisateur.statut === 'en_attente') {
-                return { valide: false, message: 'Compte recycleur en attente de validation' };
-            }
-            if (utilisateur.statut === 'suspendu') {
-                return { valide: false, message: 'Compte recycleur suspendu' };
-            }
-            if (utilisateur.statut === 'rejete') {
-                return { valide: false, message: 'Compte recycleur rejeté' };
-            }
-            if (utilisateur.statut !== 'actif') {
-                return { valide: false, message: 'Compte recycleur non actif' };
-            }
-            if (utilisateur.est_actif === false) {
-                return { valide: false, message: 'Compte recycleur désactivé' };
-            }
-            break;
-
-        // ===== SPONSORS =====
-        case 'sponsor':
-            if (utilisateur.est_actif === false) {
-                return { valide: false, message: 'Compte sponsor désactivé' };
-            }
-            if (utilisateur.statut && utilisateur.statut === 'suspendu') {
-                return { valide: false, message: 'Compte sponsor suspendu' };
-            }
-            break;
-
-        // ===== ONG =====
-        case 'ong':
-            if (utilisateur.est_actif === false) {
-                return { valide: false, message: 'Compte ONG désactivé' };
-            }
-            if (utilisateur.statut && utilisateur.statut === 'suspendu') {
-                return { valide: false, message: 'Compte ONG suspendu' };
-            }
-            break;
-
-        // ===== ADMINS =====
-        case 'admin':
-            if (utilisateur.est_actif === false) {
-                return { valide: false, message: 'Compte administrateur désactivé' };
-            }
-            break;
-
-        // ===== TYPE INCONNU =====
-        default:
-            console.warn(`⚠️ Type d'utilisateur inconnu: ${type}`);
-            return { valide: false, message: 'Type de compte non reconnu' };
-    }
-
-    return { valide: true };
-}
-
-    // static async _mettreAJourDerniereConnexion(id, type) {
-    //     try {
-    //         const date = new Date();
-    //         let table;
-            
-    //         switch(type) {
-    //             case 'producteur':
-    //                 table = 'producteurs';
-    //                 break;
-    //             case 'collecteur':
-    //                 table = 'collecteurs';
-    //                 break;
-    //             case 'gestionnaire':
-    //                 table = 'gestionnaires_points';
-    //                 break;
-    //             case 'superviseur':
-    //                 table = 'superviseurs';
-    //                 break;
-    //             default:
-    //                 return;
-    //         }
-            
-    //         await pool.query(
-    //             `UPDATE ${table} SET derniere_connexion = $1 WHERE id = $2`,
-    //             [date, id]
-    //         );
-    //     } catch (erreur) {
-    //         console.error('⚠️ Erreur mise à jour connexion:', erreur);
-    //     }
-    // }
-
-
-    
-    static async _mettreAJourDerniereConnexion(id, type) {
-        try {
-            const date = new Date();
-            let table;
-            
-            switch(type) {
-                case 'producteur':
-                    table = 'producteurs';
-                    break;
-                case 'collecteur':
-                    table = 'collecteurs';
-                    break;
-                case 'gestionnaire':
-                    table = 'gestionnaires_points';
-                    break;
-                case 'superviseur':
-                    table = 'superviseurs';
-                    break;
-                 case 'recycleur':
-                table = 'recycleurs';
-                break;
-            case 'sponsor':
-                table = 'sponsors';
-                break;
-            case 'ong':
-                table = 'ongs';
-                break;
-            case 'admin':
-                table = 'admins';
-                break;
-                default:
-                    return;
-            }
-            
-            await pool.query(
-                `UPDATE ${table} SET derniere_connexion = $1 WHERE id = $2`,
-                [date, id]
-            );
-        } catch (erreur) {
-            console.error('⚠️ Erreur mise à jour connexion:', erreur);
-        }
-    }
-
-
-    // static async _mettreAJourMotDePasse(id, type, nouveauMotDePasseHash) {
-    //     switch(type) {
-    //         case 'producteur':
-    //             await pool.query(
-    //                 'UPDATE producteurs SET mot_de_passe_hash = $1 WHERE id = $2',
-    //                 [nouveauMotDePasseHash, id]
-    //             );
-    //             break;
-    //         case 'collecteur':
-    //             await pool.query(
-    //                 'UPDATE collecteurs SET mot_de_passe_hash = $1 WHERE id = $2',
-    //                 [nouveauMotDePasseHash, id]
-    //             );
-    //             break;
-    //         case 'gestionnaire':
-    //             await pool.query(
-    //                 'UPDATE gestionnaires_points SET mot_de_passe_hash = $1 WHERE id = $2',
-    //                 [nouveauMotDePasseHash, id]
-    //             );
-    //             break;
-    //         case 'superviseur':
-    //             await pool.query(
-    //                 'UPDATE superviseurs SET mot_de_passe_hash = $1 WHERE id = $2',
-    //                 [nouveauMotDePasseHash, id]
-    //             );
-    //             break;
-    //     }
-    // }
-
-    
-    static async _mettreAJourMotDePasse(id, type, nouveauMotDePasseHash) {
-        switch(type) {
-            case 'producteur':
-                await pool.query(
-                    'UPDATE producteurs SET mot_de_passe_hash = $1 WHERE id = $2',
-                    [nouveauMotDePasseHash, id]
-                );
-                break;
-            case 'collecteur':
-                await pool.query(
-                    'UPDATE collecteurs SET mot_de_passe_hash = $1 WHERE id = $2',
-                    [nouveauMotDePasseHash, id]
-                );
-                break;
-            case 'gestionnaire':
-                await pool.query(
-                    'UPDATE gestionnaires_points SET mot_de_passe_hash = $1 WHERE id = $2',
-                    [nouveauMotDePasseHash, id]
-                );
-                break;
-            case 'superviseur':
-                await pool.query(
-                    'UPDATE superviseurs SET mot_de_passe_hash = $1 WHERE id = $2',
-                    [nouveauMotDePasseHash, id]
-                );
-                break;
-             case 'recycleur':
-            await pool.query(
-                'UPDATE recycleurs SET mot_de_passe_hash = $1 WHERE id = $2',
-                [nouveauMotDePasseHash, id]
-            );
-            break;
-        case 'sponsor':
-            await pool.query(
-                'UPDATE sponsors SET mot_de_passe_hash = $1 WHERE id = $2',
-                [nouveauMotDePasseHash, id]
-            );
-            break;
-        case 'ong':
-            await pool.query(
-                'UPDATE ongs SET mot_de_passe_hash = $1 WHERE id = $2',
-                [nouveauMotDePasseHash, id]
-            );
-            break;
-        case 'admin':
-            await pool.query(
-                'UPDATE admins SET mot_de_passe_hash = $1 WHERE id = $2',
-                [nouveauMotDePasseHash, id]
-            );
-            break;
-    
-        }
-    }
-
-
-
-// Générer un code aléatoire à 6 chiffres
-static _genererCode6Chiffres() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-
-
-// ✅ NOUVELLE VERSION - Demander réinitialisation par CODE
-static async demanderReinitialisationMdp(req, res) {
-    try {
-        const { email } = req.body;
-
-        if (!email) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email requis'
-            });
-        }
-
-        // Chercher l'utilisateur par email
-        const resultat = await AuthController._trouverUtilisateurParIdentifiant(email);
-        
-        if (!resultat || !resultat.utilisateur) {
-            // Pour des raisons de sécurité, on renvoie le même message
-            return res.json({ 
-                success: true,
-                message: 'Si un compte existe avec cet email, vous recevrez un code de réinitialisation'
-            });
-        }
-
-        const { utilisateur, type } = resultat;
-
-        // Vérifier les demandes récentes (anti-spam)
-        const checkRecent = await pool.query(`
-            SELECT COUNT(*) FROM codes_reinitialisation 
-            WHERE email = $1 
-            AND cree_le > NOW() - INTERVAL '5 minutes'
-        `, [email]);
-
-        if (parseInt(checkRecent.rows[0].count) >= 3) {
-            return res.status(429).json({
-                success: false,
-                message: 'Trop de demandes. Veuillez attendre quelques minutes.'
-            });
-        }
-
-        // Générer un code à 6 chiffres
-        const code = AuthController._genererCode6Chiffres();
-        const expireLe = new Date();
-        expireLe.setMinutes(expireLe.getMinutes() + 15); // Valable 15 minutes
-
-        // Sauvegarder le code en base de données
-        await pool.query(`
-            INSERT INTO codes_reinitialisation 
-            (utilisateur_id, type_utilisateur, code, email, expire_le)
-            VALUES ($1, $2, $3, $4, $5)
-        `, [utilisateur.id, type, code, email, expireLe]);
-
-        // ✅ CORRECTION ICI : Utiliser la méthode d'envoi réel
-        const emailEnvoye = await EmailService.envoyerCodeReinitialisation(
-            email, 
-            code, 
-            utilisateur.nom_complet
-        );
-
-        if (!emailEnvoye) {
-            // En cas d'échec, on peut toujours afficher le code dans la console
-            console.log('\n' + '='.repeat(50));
-            console.log('⚠️ ÉCHEC ENVOI EMAIL - CODE À UTILISER');
-            console.log('📧 À:', email);
-            console.log('🔐 Code:', code);
-            console.log('='.repeat(50) + '\n');
-            
-            return res.status(500).json({
-                success: false,
-                message: 'Erreur lors de l\'envoi du code. Veuillez réessayer.'
-            });
-        }
-
-        res.json({ 
-            success: true,
-            message: 'Code de réinitialisation envoyé avec succès'
-        });
-
-    } catch (erreur) {
-        console.error('❌ Erreur demande réinitialisation:', erreur);
-        res.status(500).json({ 
-            success: false,
-            message: 'Erreur lors de la demande',
-            erreur: erreur.message 
-        });
-    }
-}
-
-// ✅ NOUVELLE VERSION - Vérifier le code
-static async verifierCodeReinitialisation(req, res) {
-    try {
-        const { email, code } = req.body;
-
-        if (!email || !code) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email et code requis'
-            });
-        }
-
-        // Vérifier le code
-        const resultat = await pool.query(`
-            SELECT * FROM codes_reinitialisation 
-            WHERE email = $1 
-            AND code = $2
-            AND utilise = false 
-            AND expire_le > NOW()
-            ORDER BY cree_le DESC
-            LIMIT 1
-        `, [email, code]);
-
-        if (resultat.rows.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Code invalide ou expiré'
-            });
-        }
-
-        const codeData = resultat.rows[0];
-
-        // Incrémenter les tentatives
-        await pool.query(`
-            UPDATE codes_reinitialisation 
-            SET tentatives = tentatives + 1 
-            WHERE id = $1
-        `, [codeData.id]);
 
         res.json({
             success: true,
-            message: 'Code valide',
-            token: codeData.id // On renvoie l'ID du code comme token temporaire
+            admin: {
+                id: admin.id,
+                email: admin.email,
+                telephone: admin.telephone,
+                nomComplet: admin.nom_complet,
+                role: admin.role,
+                est_actif: admin.est_actif,
+                cree_le: admin.cree_le,
+                derniere_connexion: admin.derniere_connexion
+            }
         });
-
     } catch (erreur) {
-        console.error('❌ Erreur vérification code:', erreur);
-        res.status(500).json({ 
+        console.error('❌ Erreur récupération profil:', erreur);
+        res.status(500).json({
             success: false,
-            message: 'Erreur lors de la vérification',
-            erreur: erreur.message 
+            message: 'Erreur lors de la récupération du profil'
         });
     }
 }
 
-//  Réinitialiser le mot de passe avec le code
-static async reinitialiserMdpAvecCode(req, res) {
+
+static async modifierProfil(req, res) {
     try {
-        const { email, code, nouveauMotDePasse } = req.body;
+        const adminId = req.admin.id; // Récupéré via le middleware d'authentification
+        const { email, telephone, nomComplet, role, motDePasse } = req.body;
 
-        if (!email || !code || !nouveauMotDePasse) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email, code et nouveau mot de passe requis'
-            });
+        // Vérifier si l'email est déjà utilisé par un autre admin
+        if (email) {
+            const adminExistant = await Admin.trouverParEmail(email);
+            if (adminExistant && adminExistant.id !== adminId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cet email est déjà utilisé par un autre compte'
+                });
+            }
         }
 
-        if (nouveauMotDePasse.length < 6) {
-            return res.status(400).json({
-                success: false,
-                message: 'Le mot de passe doit contenir au moins 6 caractères'
-            });
+        // Vérifier si le téléphone est déjà utilisé
+        if (telephone) {
+            const adminExistant = await Admin.trouverParTelephone(telephone);
+            if (adminExistant && adminExistant.id !== adminId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Ce téléphone est déjà utilisé par un autre compte'
+                });
+            }
         }
 
-        // Vérifier le code
-        const resultat = await pool.query(`
-            SELECT * FROM codes_reinitialisation 
-            WHERE email = $1 
-            AND code = $2
-            AND utilise = false 
-            AND expire_le > NOW()
-            ORDER BY cree_le DESC
-            LIMIT 1
-        `, [email, code]);
+        // Préparer les données à mettre à jour
+        const donneesMAJ = {};
+        if (email) donneesMAJ.email = email;
+        if (telephone) donneesMAJ.telephone = telephone;
+        if (nomComplet) donneesMAJ.nomComplet = nomComplet;
+        if (role) donneesMAJ.role = role;
 
-        if (resultat.rows.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Code invalide ou expiré'
-            });
+        // Gestion du mot de passe si fourni
+        if (motDePasse) {
+            const salt = await bcrypt.genSalt(10);
+            const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+            donneesMAJ.motDePasseHash = motDePasseHash;
         }
 
-        const codeData = resultat.rows[0];
+        // Exécuter la mise à jour
+        const adminMisAJour = await Admin.mettreAJour(adminId, donneesMAJ);
 
-        // Hasher le nouveau mot de passe
-        const nouveauMotDePasseHash = await bcrypt.hash(nouveauMotDePasse, 10);
-
-        // Mettre à jour le mot de passe
-        await AuthController._mettreAJourMotDePasse(
-            codeData.utilisateur_id,
-            codeData.type_utilisateur,
-            nouveauMotDePasseHash
-        );
-
-        // Marquer le code comme utilisé
-        await pool.query(`
-            UPDATE codes_reinitialisation 
-            SET utilise = true 
-            WHERE id = $1
-        `, [codeData.id]);
-
-        // Supprimer tous les anciens codes pour cet utilisateur
-        await pool.query(`
-            DELETE FROM codes_reinitialisation 
-            WHERE email = $1 AND utilise = false
-        `, [email]);
-
-        res.json({ 
+        res.status(200).json({
             success: true,
-            message: 'Mot de passe réinitialisé avec succès' 
+            message: 'Profil mis à jour avec succès',
+            admin: {
+                id: adminMisAJour.id,
+                email: adminMisAJour.email,
+                telephone: adminMisAJour.telephone,
+                nomComplet: adminMisAJour.nom_complet,
+                role: adminMisAJour.role,
+                creeLe: adminMisAJour.cree_le,
+                misAJourLe: adminMisAJour.mis_a_jour_le
+            }
         });
 
     } catch (erreur) {
-        console.error('❌ Erreur réinitialisation:', erreur);
-        res.status(500).json({ 
+        console.error('❌ Erreur mise à jour profil admin:', erreur);
+        res.status(500).json({
             success: false,
-            message: 'Erreur lors de la réinitialisation',
-            erreur: erreur.message 
+            message: 'Erreur lors de la mise à jour du profil',
+            erreur: erreur.message
         });
     }
 }
 
-    // static _preparerDonneesUtilisateur(utilisateur, type) {
-    //     const base = {
-    //         id: utilisateur.id,
-    //         email: utilisateur.email,
-    //         telephone: utilisateur.telephone,
-    //         type: type,
-    //         nomComplet: utilisateur.nom_complet
-    //     };
+    static async creerAdmin(req, res) {
+        try {
+            const { email, telephone, motDePasse, nomComplet, role } = req.body;
+            const existant = await Admin.trouverParEmail(email);
+            if (existant) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Un compte   existe déjà avec cet emails '
+                });
+            }
 
-    //     switch(type) {
-    //         case 'producteur':
-    //             return {
-    //                 ...base,
-    //                 typeProducteur: utilisateur.type_producteur,
-    //                 points: utilisateur.points || 0,
-    //                 quartier: utilisateur.quartier,
-    //                 commune: utilisateur.commune
-    //             };
-            
-    //         case 'collecteur':
-    //             return {
-    //                 ...base,
-    //                 typeCollecteur: utilisateur.type_collecteur,
-    //                 statut: utilisateur.statut,
-    //                 zoneIntervention: utilisateur.zone_intervention_nom,
-    //                 pointsTotal: utilisateur.points_total || 0,
-    //                 gainsTotal: utilisateur.gains_total || 0
-    //             };
-            
-    //         case 'gestionnaire':
-    //             return {
-    //                 ...base,
-    //                 pointCollecteId: utilisateur.point_collecte_id,
-    //                 fonction: utilisateur.fonction
-    //             };
-            
-    //         case 'superviseur':
-    //             return {
-    //                 ...base,
-    //                 role: utilisateur.role
-    //             };
-            
-    //         default:
-    //             return base;
+            const salt = await bcrypt.genSalt(10);
+            const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+
+            const nouveauAdmin = await Admin.creer({
+                email,
+                telephone,
+                motDePasseHash,
+                nomComplet,
+                role
+            });
+
+            res.status(201).json({
+                success: true,
+                message: 'Admin créé avec succès',
+                admin: {
+                    id: nouveauAdmin.id,
+                    email: nouveauAdmin.email,
+                    nomComplet: nouveauAdmin.nom_complet,
+                    role: nouveauAdmin.role
+                }
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur création admin:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la création',
+                erreur: erreur.message
+            });
+        }
+    }
+
+    // static async connexion(req, res) {
+    //     try {
+    //         const { email, motDePasse } = req.body;
+
+    //         const admin = await Admin.trouverParEmail(email);
+    //         if (!admin) {
+    //             return res.status(401).json({
+    //                 success: false,
+    //                 message: 'Identifiants incorrects'
+    //             });
+    //         }
+
+    //         const valide = await bcrypt.compare(motDePasse, admin.mot_de_passe_hash);
+    //         if (!valide) {
+    //             return res.status(401).json({
+    //                 success: false,
+    //                 message: 'Identifiants incorrects'
+    //             });
+    //         }
+
+    //         if (!admin.est_actif) {
+    //             return res.status(403).json({
+    //                 success: false,
+    //                 message: 'Compte désactivé'
+    //             });
+    //         }
+
+    //         await Admin.mettreAJourConnexion(admin.id);
+
+    //         const token = jwt.sign(
+    //             { id: admin.id, email: admin.email, type: 'admin' },
+    //             process.env.JWT_SECRET,
+    //             { expiresIn: '7d' }
+    //         );
+
+    //         res.json({
+    //             success: true,
+    //             token,
+    //             utilisateur: {
+    //                 id: admin.id,
+    //                 email: admin.email,
+    //                 nomComplet: admin.nom_complet,
+    //                 telephone:admin.telephone,
+    //                 cree_le:admin.cree_le,
+    //                 role: admin.role,
+    //                 type: 'admin'
+    //             }
+    //         });
+
+    //     } catch (erreur) {
+    //         console.error('❌ Erreur connexion admin:', erreur);
+    //         res.status(500).json({
+    //             success: false,
+    //             message: 'Erreur lors de la connexion'
+    //         });
     //     }
     // }
 
-    
-    static _preparerDonneesUtilisateur(utilisateur, type) {
-        const base = {
-            id: utilisateur.id,
-            email: utilisateur.email,
-            telephone: utilisateur.telephone,
-            type: type,
-            nomComplet: utilisateur.nom_complet
-        };
 
-        switch(type) {
-            case 'producteur':
-                return {
-                    ...base,
-                    typeProducteur: utilisateur.type_producteur,
-                    points: utilisateur.points || 0,
-                    quartier: utilisateur.quartier,
-                    commune: utilisateur.commune
-                };
-            
-            case 'collecteur':
-                return {
-                    ...base,
-                    typeCollecteur: utilisateur.type_collecteur,
-                    statut: utilisateur.statut,
-                    zoneIntervention: utilisateur.zone_intervention_nom,
-                    pointsTotal: utilisateur.points_total || 0,
-                    gainsTotal: utilisateur.gains_total || 0
-                };
-            
-            case 'gestionnaire':
-                return {
-                    ...base,
-                    pointCollecteId: utilisateur.point_collecte_id,
-                    fonction: utilisateur.fonction
-                };
-            
-            case 'superviseur':
-                return {
-                    ...base,
-                    role: utilisateur.role
-                };
-            case 'recycleur':
-                return {
-                    ...base,
-                    role: utilisateur.role,
-                    };
-            case 'sponsor':
-                return {
-                    ...base,
-                    role: utilisateur.role,
-                    };
-            case 'ong':
-                return {
-                    ...base,
-                    role: utilisateur.role,
-                    };
-            case 'admin':
-                return {
-                    ...base,
-                    role: utilisateur.role,
-                    };
 
-            default:
-                return base;
+static async connexion(req, res) {
+    try {
+        const { email, motDePasse } = req.body;
+
+        const admin = await Admin.trouverParEmail(email);
+        if (!admin) {
+            return res.status(401).json({
+                success: false,
+                message: 'Identifiants incorrects'
+            });
         }
+
+        const valide = await bcrypt.compare(motDePasse, admin.mot_de_passe_hash);
+        if (!valide) {
+            return res.status(401).json({
+                success: false,
+                message: 'Identifiants incorrects'
+            });
+        }
+
+        if (!admin.est_actif) {
+            return res.status(403).json({
+                success: false,
+                message: 'Compte désactivé'
+            });
+        }
+
+        // Mettre à jour la dernière connexion et récupérer la date
+        const connexionMiseAJour = await Admin.mettreAJourConnexion(admin.id);
+        
+        const token = jwt.sign(
+            { id: admin.id, email: admin.email, type: 'admin' },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.json({
+            success: true,
+            token,
+            utilisateur: {
+                id: admin.id,
+                email: admin.email,
+                nomComplet: admin.nom_complet,
+                telephone: admin.telephone || null,
+                cree_le: admin.cree_le,
+                derniere_connexion: new Date().toISOString(), // Date actuelle
+                role: admin.role,
+                est_actif: admin.est_actif,
+                type: 'admin'
+            }
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur connexion admin:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la connexion'
+        });
     }
 }
 
-export default AuthController;
+
+static async tableauBord(req, res) {
+    try {
+        const stats = await pool.query(`
+            WITH stats_globales AS (
+                SELECT 
+                    (SELECT COUNT(*) FROM superviseurs) as total_superviseurs,
+                    (SELECT COUNT(*) FROM recycleurs) as total_recycleurs,
+                    (SELECT COUNT(*) FROM collecteurs) as total_collecteurs,
+                    (SELECT COUNT(*) FROM gestionnaires_points) as total_gestionnaires,
+                    (SELECT COUNT(*) FROM producteurs) as total_producteurs,
+                    (SELECT COUNT(*) FROM sponsors) as total_sponsors,
+                    (SELECT COUNT(*) FROM ongs) as total_ongs,
+                    (SELECT COUNT(*) FROM campagnes) as total_campagnes,
+                    (SELECT COUNT(*) FROM campagnes WHERE statut = 'planifiee') as campagnes_actives,
+                    (SELECT COUNT(*) FROM missions WHERE statut = 'validee') as missions_validees,
+                    (SELECT COALESCE(SUM(poids_depose), 0) FROM missions WHERE statut = 'validee') as total_kg_collectes,
+                    (SELECT COALESCE(SUM(gains_attribues), 0) FROM missions WHERE statut = 'validee') as total_credits_distribues
+            ),
+            stats_superviseurs AS (
+                SELECT 
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE est_actif = true) as actifs,
+                    COUNT(*) FILTER (WHERE est_actif = false) as inactifs
+                FROM superviseurs
+            ),
+            stats_gestionnaires AS (
+                SELECT 
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE est_actif = true) as actifs,
+                    COUNT(*) FILTER (WHERE est_actif = false) as inactifs
+                FROM gestionnaires_points
+            ),
+            stats_recycleurs AS (
+                SELECT 
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE est_actif = true) as actifs,
+                    COUNT(*) FILTER (WHERE est_actif = false) as inactifs
+                FROM recycleurs
+            ),
+            stats_ongs AS (
+                SELECT 
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE est_actif = true) as actifs,
+                    COUNT(*) FILTER (WHERE est_actif = false) as inactifs
+                FROM ongs
+            ),
+            stats_sponsors AS (
+                SELECT 
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE est_actif = true) as actifs,
+                    COUNT(*) FILTER (WHERE est_actif = false) as inactifs
+                FROM sponsors
+            ),
+            stats_producteurs AS (
+                SELECT 
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE type_compte = 'premium') as premium,
+                    COUNT(*) FILTER (WHERE date_part('month', cree_le) = date_part('month', CURRENT_DATE)) as nouveaux_mois
+                FROM producteurs
+            ),
+            stats_collecteurs AS (
+                SELECT 
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE statut = 'actif') as actifs,
+                    COUNT(*) FILTER (WHERE statut = 'en_attente') as en_attente
+                FROM collecteurs
+            ),
+            top_collecteurs AS (
+                SELECT 
+                    c.nom_complet,
+                    c.email,
+                    COUNT(m.id) as missions_realisees,
+                    COALESCE(SUM(m.poids_depose), 0) as kg_collectes
+                FROM collecteurs c
+                LEFT JOIN missions m ON c.id = m.collecteur_id AND m.statut = 'validee'
+                GROUP BY c.id, c.nom_complet, c.email
+                ORDER BY kg_collectes DESC
+                LIMIT 5
+            ),
+            evolution_30j AS (
+                SELECT 
+                    date_trunc('day', cree_le) as jour,
+                    COUNT(*) as inscriptions
+                FROM producteurs
+                WHERE cree_le >= CURRENT_DATE - INTERVAL '30 days'
+                GROUP BY date_trunc('day', cree_le)
+            )
+            SELECT 
+                (SELECT row_to_json(stats_globales) FROM stats_globales) as globales,
+                (SELECT row_to_json(stats_superviseurs) FROM stats_superviseurs) as superviseurs,
+                (SELECT row_to_json(stats_gestionnaires) FROM stats_gestionnaires) as gestionnaires,
+                (SELECT row_to_json(stats_recycleurs) FROM stats_recycleurs) as recycleurs,
+                (SELECT row_to_json(stats_ongs) FROM stats_ongs) as ongs,
+                (SELECT row_to_json(stats_sponsors) FROM stats_sponsors) as sponsors,
+                (SELECT row_to_json(stats_producteurs) FROM stats_producteurs) as producteurs,
+                (SELECT row_to_json(stats_collecteurs) FROM stats_collecteurs) as collecteurs,
+                (SELECT json_agg(top_collecteurs) FROM top_collecteurs) as top_collecteurs,
+                (SELECT json_agg(evolution_30j) FROM evolution_30j) as evolution
+        `);
+
+        res.json({
+            success: true,
+            statistiques: stats.rows[0]
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur dashboard admin:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération'
+        });
+    }
+}
+    // ===== GESTION DES SUPERVISEURS =====
+    static async creerSuperviseur(req, res) {
+        try {
+            const { email, telephone, motDePasse, nomComplet } = req.body;
+
+            const existant = await Superviseur.trouverParEmail(email);
+            if (existant) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Un superviseur avec cet email existe déjà'
+                });
+            }
+
+            const salt = await bcrypt.genSalt(10);
+            const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+
+            const nouveauSuperviseur = await Superviseur.creer({
+                email,
+                telephone,
+                motDePasseHash,
+                nomComplet,
+                role: 'superviseur',
+                est_actif: true
+            });
+
+            // Journaliser l'action
+            await pool.query(`
+                INSERT INTO historique_actions (utilisateur_id, action, details, adresse_ip)
+                VALUES ($1, $2, $3, $4)
+            `, [req.utilisateurId, 'CREATION_SUPERVISEUR', JSON.stringify({ email, nomComplet }), req.ip]);
+
+            res.status(201).json({
+                success: true,
+                message: 'Superviseur créé avec succès',
+                superviseur: {
+                    id: nouveauSuperviseur.id,
+                    email: nouveauSuperviseur.email,
+                    nomComplet: nouveauSuperviseur.nom_complet
+                }
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur création superviseur:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la création'
+            });
+        }
+    }
+
+
+    static async listerSuperviseurs(req, res) {
+  try {
+    const superviseurs = await Superviseur.listerTous();
+
+    if (!superviseurs.length) {
+      return res.json({ success: true, superviseurs: [] });
+    }
+
+    const ids = superviseurs.map(s => s.id);
+
+    // Requête unique sans la table points_depot_volontaire (colonne cree_par inexistante)
+    const statsResult = await pool.query(`
+      SELECT 
+        s.id AS superviseur_id,
+        COUNT(DISTINCT c.id) FILTER (WHERE c.createur_id = s.id AND c.createur_type = 'superviseur') AS campagnes_creees,
+        COUNT(DISTINCT g.id) FILTER (WHERE g.cree_par = s.id) AS gestionnaires_creees,
+        COUNT(DISTINCT col.id) FILTER (WHERE col.valide_par = s.id) AS collecteurs_valides,
+        COUNT(DISTINCT d.id) FILTER (WHERE d.superviseur_id = s.id AND d.statut = 'en_attente') AS demandes_attente
+      FROM unnest($1::uuid[]) AS s(id)
+      LEFT JOIN campagnes c ON c.createur_id = s.id AND c.createur_type = 'superviseur'
+      LEFT JOIN gestionnaires_points g ON g.cree_par = s.id
+      LEFT JOIN collecteurs col ON col.valide_par = s.id
+      LEFT JOIN demandes_suppression d ON d.superviseur_id = s.id
+      GROUP BY s.id
+    `, [ids]);
+
+    const statsMap = {};
+    statsResult.rows.forEach(row => {
+      statsMap[row.superviseur_id] = {
+        campagnes_creees: parseInt(row.campagnes_creees) || 0,
+        gestionnaires_creees: parseInt(row.gestionnaires_creees) || 0,
+        collecteurs_valides: parseInt(row.collecteurs_valides) || 0,
+        demandes_attente: parseInt(row.demandes_attente) || 0
+      };
+    });
+
+    const superviseursAvecStats = superviseurs.map(sup => ({
+      ...sup,
+      statistiques: statsMap[sup.id] || {
+        campagnes_creees: 0,
+        gestionnaires_creees: 0,
+        collecteurs_valides: 0,
+        demandes_attente: 0
+      }
+    }));
+
+    res.json({ success: true, superviseurs: superviseursAvecStats });
+
+  } catch (erreur) {
+    console.error('❌ Erreur liste superviseurs:', erreur);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des superviseurs'
+    });
+  }
+}
+ 
+    static async detailsSuperviseur(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const superviseur = await Superviseur.trouverParId(id);
+            if (!superviseur) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Superviseur non trouvé'
+                });
+            }
+
+            // Récupérer toutes les activités du superviseur
+            const activites = await pool.query(`
+                SELECT 
+                    (SELECT json_agg(row_to_json(c)) FROM (
+                        SELECT * FROM campagnes 
+                        WHERE createur_id = $1 AND createur_type = 'superviseur'
+                        ORDER BY cree_le DESC
+                    ) c) as campagnes,
+                    (SELECT json_agg(row_to_json(g)) FROM (
+                        SELECT * FROM gestionnaires_points 
+                        WHERE cree_par = $1
+                        ORDER BY cree_le DESC
+                    ) g) as gestionnaires,
+                    (SELECT json_agg(row_to_json(p)) FROM (
+                        SELECT * FROM points_depot_volontaire 
+                        WHERE cree_par = $1
+                        ORDER BY cree_le DESC
+                    ) p) as points_collecte,
+                    (SELECT json_agg(row_to_json(col)) FROM (
+                        SELECT * FROM collecteurs 
+                        WHERE valide_par = $1
+                        ORDER BY valide_le DESC
+                    ) col) as collecteurs_valides,
+                    (SELECT json_agg(row_to_json(d)) FROM (
+                        SELECT * FROM demandes_suppression 
+                        WHERE superviseur_id = $1
+                        ORDER BY cree_le DESC
+                    ) d) as demandes_suppression
+            `, [id]);
+
+            res.json({
+                success: true,
+                superviseur,
+                activites: activites.rows[0]
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur détails superviseur:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    static async modifierSuperviseur(req, res) {
+        try {
+            const { id } = req.params;
+            const { email, telephone, nomComplet, est_actif } = req.body;
+
+            const superviseur = await Superviseur.trouverParId(id);
+            if (!superviseur) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Superviseur non trouvé'
+                });
+            }
+
+            const donnees = { email, telephone, nomComplet, est_actif };
+            const superviseurModifie = await Superviseur.mettreAJour(id, donnees);
+
+            res.json({
+                success: true,
+                message: 'Superviseur modifié avec succès',
+                superviseur: superviseurModifie
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur modification superviseur:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la modification'
+            });
+        }
+    }
+
+    static async supprimerSuperviseur(req, res) {
+        try {
+            const { id } = req.params;
+            
+            // Vérifier si le superviseur a des dépendances
+            const dependances = await pool.query(`
+                SELECT 
+                    (SELECT COUNT(*) FROM campagnes WHERE createur_id = $1 AND createur_type = 'superviseur') as campagnes,
+                    (SELECT COUNT(*) FROM gestionnaires_points WHERE cree_par = $1) as gestionnaires,
+                    (SELECT COUNT(*) FROM points_depot_volontaire WHERE cree_par = $1) as points,
+                    (SELECT COUNT(*) FROM demandes_suppression WHERE superviseur_id = $1 AND statut = 'en_attente') as demandes
+            `, [id]);
+
+            if (dependances.rows[0].campagnes > 0 || dependances.rows[0].gestionnaires > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Impossible de supprimer : le superviseur a des dépendances actives'
+                });
+            }
+
+            await pool.query('DELETE FROM superviseurs WHERE id = $1', [id]);
+
+            res.json({
+                success: true,
+                message: 'Superviseur supprimé avec succès'
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur suppression superviseur:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la suppression'
+            });
+        }
+    }
+
+    // Dans AdminController.js - méthode creerRecycleur CORRIGÉE version pour supabase
+// static async creerRecycleur(req, res) {
+//     try {
+//         console.log('📦 Données reçues:', req.body);
+//         console.log('📁 Fichiers reçus:', req.files);
+
+//         const {
+//             email,
+//             telephone,
+//             motDePasse,
+//             nomEntreprise,
+//             nomResponsable,
+//             adresse,
+//             quartier,
+//             commune,
+//             numeroIdentite,
+//             // ⚠️ IMPORTANT: Ces champs sont ajoutés par uploadToSupabase.js
+//             photoProfilUrl,      // ← URL Supabase
+//             photoCniRectoUrl,    // ← URL Supabase
+//             photoCniVersoUrl     // ← URL Supabase
+//         } = req.body;
+
+//         // Validation
+//         const champsManquants = [];
+//         if (!email) champsManquants.push('email');
+//         if (!telephone) champsManquants.push('telephone');
+//         if (!motDePasse) champsManquants.push('motDePasse');
+//         if (!nomEntreprise) champsManquants.push('nomEntreprise');
+//         if (!nomResponsable) champsManquants.push('nomResponsable');
+
+//         if (champsManquants.length > 0) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: `Champs obligatoires manquants: ${champsManquants.join(', ')}`
+//             });
+//         }
+
+//         // Vérifier les photos CNI
+//         if (!photoCniRectoUrl || !photoCniVersoUrl) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Les photos recto et verso de la CNI sont requises'
+//             });
+//         }
+
+//         // Vérifier existence
+//         const existantEmail = await Recycleur.trouverParEmail(email);
+//         if (existantEmail) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Un recycleur avec cet email existe déjà'
+//             });
+//         }
+
+//         const existantTel = await Recycleur.trouverParTelephone(telephone);
+//         if (existantTel) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Un recycleur avec ce téléphone existe déjà'
+//             });
+//         }
+
+//         // Hasher le mot de passe
+//         const salt = await bcrypt.genSalt(10);
+//         const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+
+//         // ✅ Les URLs sont déjà dans req.body, plus besoin de les construire
+//         console.log('📸 URLs des photos:');
+//         console.log('  - Profil:', photoProfilUrl || 'non fourni');
+//         console.log('  - CNI Recto:', photoCniRectoUrl);
+//         console.log('  - CNI Verso:', photoCniVersoUrl);
+
+//         // Créer le recycleur
+//         const recycleurData = {
+//             email,
+//             telephone,
+//             motDePasseHash,
+//             nomEntreprise,
+//             nomResponsable,
+//             adresse: adresse || null,
+//             quartier: quartier || null,
+//             commune: commune || null,
+//             numeroIdentite: numeroIdentite || null,
+//             photoProfilUrl: photoProfilUrl || null,  // ← URL Supabase
+//             photoCniRectoUrl: photoCniRectoUrl,      // ← URL Supabase
+//             photoCniVersoUrl: photoCniVersoUrl,      // ← URL Supabase
+//             cguAcceptees: true,
+//             statut: 'actif',
+//             est_actif: true,
+//             valide_par: req.utilisateurId,
+//             valide_le: new Date()
+//         };
+
+//         const nouveauRecycleur = await Recycleur.creer(recycleurData);
+
+//         // Journaliser
+//         await pool.query(`
+//             INSERT INTO historique_actions (utilisateur_id, action, details, adresse_ip)
+//             VALUES ($1, $2, $3, $4)
+//         `, [req.utilisateurId, 'CREATION_RECYCLEUR', JSON.stringify({ email, nomEntreprise }), req.ip]);
+
+//         res.status(201).json({
+//             success: true,
+//             message: 'Recycleur créé et activé avec succès',
+//             recycleur: {
+//                 id: nouveauRecycleur.id,
+//                 email: nouveauRecycleur.email,
+//                 telephone: nouveauRecycleur.telephone,
+//                 nomEntreprise: nouveauRecycleur.nom_entreprise,
+//                 statut: nouveauRecycleur.statut,
+//                 // Retourner aussi les URLs pour vérification
+//                 photos: {
+//                     profil: photoProfilUrl,
+//                     cniRecto: photoCniRectoUrl,
+//                     cniVerso: photoCniVersoUrl
+//                 }
+//             }
+//         });
+
+//     } catch (erreur) {
+//         console.error('❌ Erreur création recycleur:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de la création',
+//             erreur: erreur.message
+//         });
+//     }
+// }
+
+// VERSION en locale
+
+// Dans AdminController.js
+static async creerRecycleur(req, res) {
+    try {
+        console.log('📦 Données reçues:', req.body);
+        console.log('📁 Fichiers reçus:', req.files);
+
+        const {
+            email,
+            telephone,
+            motDePasse,
+            nomEntreprise,
+            nomResponsable,
+            adresse,
+            quartier,
+            commune,
+            numeroIdentite,
+        } = req.body;
+
+        // Validation
+        const champsManquants = [];
+        if (!email) champsManquants.push('email');
+        if (!telephone) champsManquants.push('telephone');
+        if (!motDePasse) champsManquants.push('motDePasse');
+        if (!nomEntreprise) champsManquants.push('nomEntreprise');
+        if (!nomResponsable) champsManquants.push('nomResponsable');
+
+        if (champsManquants.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Champs obligatoires manquants: ${champsManquants.join(', ')}`
+            });
+        }
+
+        // Vérifier les photos CNI dans req.files
+        const photoCniRectoFile = req.files?.photoCniRecto?.[0];
+        const photoCniVersoFile = req.files?.photoCniVerso?.[0];
+
+        if (!photoCniRectoFile || !photoCniVersoFile) {
+            return res.status(400).json({
+                success: false,
+                message: 'Les photos recto et verso de la CNI sont requises'
+            });
+        }
+
+        // Construire les URLs des fichiers locaux
+        const photoProfilUrl = req.files?.photoProfil?.[0] 
+            ? `/uploads/profils/${req.files.photoProfil[0].filename}`
+            : null;
+        const photoCniRectoUrl = `/uploads/cnis/${photoCniRectoFile.filename}`;
+        const photoCniVersoUrl = `/uploads/cnis/${photoCniVersoFile.filename}`;
+
+        // Vérifier existence
+        const existantEmail = await Recycleur.trouverParEmail(email);
+        if (existantEmail) {
+            return res.status(400).json({
+                success: false,
+                message: 'Un recycleur avec cet email existe déjà'
+            });
+        }
+
+        const existantTel = await Recycleur.trouverParTelephone(telephone);
+        if (existantTel) {
+            return res.status(400).json({
+                success: false,
+                message: 'Un recycleur avec ce téléphone existe déjà'
+            });
+        }
+
+        // Hasher le mot de passe
+        const salt = await bcrypt.genSalt(10);
+        const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+
+        console.log('📸 URLs des photos:');
+        console.log('  - Profil:', photoProfilUrl || 'non fourni');
+        console.log('  - CNI Recto:', photoCniRectoUrl);
+        console.log('  - CNI Verso:', photoCniVersoUrl);
+
+        // Créer le recycleur
+        const recycleurData = {
+            email,
+            telephone,
+            motDePasseHash,
+            nomEntreprise,
+            nomResponsable,
+            adresse: adresse || null,
+            quartier: quartier || null,
+            commune: commune || null,
+            numeroIdentite: numeroIdentite || null,
+            photoProfilUrl: photoProfilUrl,
+            photoCniRectoUrl: photoCniRectoUrl,
+            photoCniVersoUrl: photoCniVersoUrl,
+            cguAcceptees: true,
+            statut: 'actif',
+            est_actif: true,
+            valide_par: req.utilisateurId,
+            valide_le: new Date()
+        };
+
+        const nouveauRecycleur = await Recycleur.creer(recycleurData);
+
+        // Journaliser
+        await pool.query(`
+            INSERT INTO historique_actions (utilisateur_id, action, details, adresse_ip)
+            VALUES ($1, $2, $3, $4)
+        `, [req.utilisateurId, 'CREATION_RECYCLEUR', JSON.stringify({ email, nomEntreprise }), req.ip]);
+
+        res.status(201).json({
+            success: true,
+            message: 'Recycleur créé et activé avec succès',
+            recycleur: {
+                id: nouveauRecycleur.id,
+                email: nouveauRecycleur.email,
+                telephone: nouveauRecycleur.telephone,
+                nomEntreprise: nouveauRecycleur.nom_entreprise,
+                statut: nouveauRecycleur.statut,
+                photos: {
+                    profil: photoProfilUrl,
+                    cniRecto: photoCniRectoUrl,
+                    cniVerso: photoCniVersoUrl
+                }
+            }
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur création recycleur:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la création',
+            erreur: erreur.message
+        });
+    }
+}
+
+
+static async supprimerRecycleur(req, res) {
+    try {
+        const { id } = req.params;
+        
+        // Vérifier si le recycleur existe
+        const recycleur = await pool.query('SELECT * FROM recycleurs WHERE id = $1', [id]);
+        
+        if (recycleur.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Recycleur non trouvé'
+            });
+        }
+
+        // Supprimer d'abord les dépendances
+        await pool.query('DELETE FROM missions WHERE collecteur_id = $1', [id]);
+        await pool.query('DELETE FROM collecteurs_points WHERE collecteur_id = $1', [id]);
+        await pool.query('DELETE FROM historique_recycleur WHERE recycleur_id = $1', [id]);
+        
+        // Supprimer le recycleur
+        await pool.query('DELETE FROM recycleurs WHERE id = $1', [id]);
+
+        res.json({
+            success: true,
+            message: 'Recycleur supprimé avec succès'
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur suppression recycleur:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la suppression du recycleur',
+            erreur: erreur.message
+        });
+    }
+}
+
+// Dans AdminController.js
+static async supprimerRecycleurDirect(req, res) {
+    try {
+        const { id } = req.params;
+        
+        // Vérifier si le recycleur existe
+        const recycleur = await pool.query('SELECT * FROM recycleurs WHERE id = $1', [id]);
+        
+        if (recycleur.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Recycleur non trouvé'
+            });
+        }
+
+        // Commencer une transaction
+        await pool.query('BEGIN');
+
+        try {
+            // 1. Supprimer les missions du recycleur
+            await pool.query('DELETE FROM missions WHERE collecteur_id = $1', [id]);
+            
+            // 2. Supprimer les associations aux points de collecte
+            await pool.query('DELETE FROM collecteurs_points WHERE collecteur_id = $1', [id]);
+            
+            // 3. Supprimer l'historique
+            await pool.query('DELETE FROM historique_recycleur WHERE recycleur_id = $1', [id]);
+            
+            // 4. Supprimer le recycleur
+            await pool.query('DELETE FROM recycleurs WHERE id = $1', [id]);
+
+            await pool.query('COMMIT');
+
+            res.json({
+                success: true,
+                message: 'Recycleur supprimé avec succès'
+            });
+
+        } catch (error) {
+            await pool.query('ROLLBACK');
+            throw error;
+        }
+
+    } catch (erreur) {
+        console.error('❌ Erreur suppression recycleur:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la suppression du recycleur',
+            erreur: erreur.message
+        });
+    }
+}
+
+    static async listerRecycleurs(req, res) {
+        try {
+            const { statut } = req.query;
+            const recycleurs = await Recycleur.listerTous({ statut });
+            
+            // Ajouter des statistiques
+            for (let r of recycleurs) {
+                const stats = await pool.query(`
+                    SELECT 
+                        COUNT(de.id) as total_demandes,
+                        COUNT(de.id) FILTER (WHERE de.statut = 'validee') as demandes_validees,
+                        COUNT(de.id) FILTER (WHERE de.statut = 'realisee') as demandes_realisees,
+                        COUNT(dr.id) as total_declarations,
+                        COALESCE(SUM(dr.quantite_recyclee), 0) as total_kg_recycles,
+                        MAX(dr.date_recyclage) as derniere_declaration
+                    FROM recycleurs rec
+                    LEFT JOIN demandes_enlevement de ON rec.id = de.recycleur_id
+                    LEFT JOIN declarations_recyclage dr ON rec.id = dr.recycleur_id
+                    WHERE rec.id = $1
+                    GROUP BY rec.id
+                `, [r.id]);
+                
+                r.statistiques = stats.rows[0] || {
+                    total_demandes: 0,
+                    demandes_validees: 0,
+                    demandes_realisees: 0,
+                    total_declarations: 0,
+                    total_kg_recycles: 0
+                };
+            }
+
+            res.json({
+                success: true,
+                recycleurs
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur liste recycleurs:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    static async detailsRecycleur(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const recycleur = await Recycleur.trouverParId(id);
+            if (!recycleur) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Recycleur non trouvé'
+                });
+            }
+
+            // Récupérer les demandes d'enlèvement
+            const demandes = await Recycleur.getDemandesEnlevement(id);
+            
+            // Récupérer les déclarations de recyclage
+            const declarations = await Recycleur.getDeclarationsRecyclage(id);
+            
+            // Récupérer les statistiques
+            const stats = await Recycleur.getDashboard(id);
+
+            res.json({
+                success: true,
+                recycleur,
+                demandes,
+                declarations,
+                statistiques: stats
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur détails recycleur:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    
+// Supprimer un recycleur (admin seulement)
+static async supprimerRecycleur(req, res) {
+    try {
+        const { id } = req.params;
+
+        const recycleur = await Recycleur.trouverParId(id);
+        if (!recycleur) {
+            return res.status(404).json({
+                success: false,
+                message: 'Recycleur non trouvé'
+            });
+        }
+
+        // Supprimer les fichiers associés si nécessaire
+        // ...
+
+        await pool.query('DELETE FROM recycleurs WHERE id = $1', [id]);
+
+        res.json({
+            success: true,
+            message: 'Recycleur supprimé avec succès'
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur suppression recycleur:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la suppression',
+            erreur: erreur.message
+        });
+    }
+}
+
+    static async modifierRecycleur(req, res) {
+        try {
+            const { id } = req.params;
+            const {
+                email, telephone, nomEntreprise, nomResponsable,
+                adresse, quartier, commune, numeroIdentite
+            } = req.body;
+
+            const recycleur = await Recycleur.trouverParId(id);
+            if (!recycleur) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Recycleur non trouvé'
+                });
+            }
+
+            const donnees = {
+                email, telephone, nomEntreprise, nomResponsable,
+                adresse, quartier, commune, numeroIdentite
+            };
+
+            // Gérer les nouvelles photos si fournies
+            if (req.files) {
+                if (req.files.photoProfil) {
+                    donnees.photoProfilUrl = `/uploads/profils/${req.files.photoProfil[0].filename}`;
+                }
+                if (req.files.photoCniRecto) {
+                    donnees.photoCniRectoUrl = `/uploads/cnis/${req.files.photoCniRecto[0].filename}`;
+                }
+                if (req.files.photoCniVerso) {
+                    donnees.photoCniVersoUrl = `/uploads/cnis/${req.files.photoCniVerso[0].filename}`;
+                }
+            }
+
+            const recycleurModifie = await Recycleur.mettreAJour(id, donnees);
+
+            res.json({
+                success: true,
+                message: 'Recycleur modifié avec succès',
+                recycleur: recycleurModifie
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur modification recycleur:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la modification'
+            });
+        }
+    }
+static async  validerRecycleur (req, res)  {
+    try {
+        const { id } = req.params;
+        const { notes } = req.body;
+        const adminId = req.utilisateurId; // L'admin connecté
+
+        // Appeler la méthode valider du modèle Recycleur
+        const recycleur = await Recycleur.valider(id, adminId, notes);
+
+        res.json({
+            success: true,
+            message: 'Recycleur validé avec succès',
+            recycleur
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur validation recycleur:', erreur);
+        res.status(500).json({
+            success: false,
+            message: erreur.message || 'Erreur lors de la validation'
+        });
+    }
+};
+
+// Réactiver un recycleur
+static async  reactiverRecycleur (req, res){
+    try {
+        const { id } = req.params;
+        const { notes } = req.body;
+        const adminId = req.utilisateurId;
+
+        const recycleur = await Recycleur.reactiver(id, adminId, notes);
+
+        res.json({
+            success: true,
+            message: 'Recycleur réactivé avec succès',
+            recycleur
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur réactivation recycleur:', erreur);
+        res.status(500).json({
+            success: false,
+            message: erreur.message || 'Erreur lors de la réactivation'
+        });
+    }
+};
+    static async suspendreRecycleur(req, res) {
+        try {
+            const { id } = req.params;
+            const { raison } = req.body;
+
+            if (!raison) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La raison de la suspension est requise'
+                });
+            }
+
+            const recycleur = await Recycleur.suspendre(id, raison);
+
+            res.json({
+                success: true,
+                message: 'Recycleur suspendu avec succès',
+                recycleur
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur suspension recycleur:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la suspension'
+            });
+        }
+    }
+
+    static async demanderSuppressionRecycleur(req, res) {
+        try {
+            const { id } = req.params;
+            const { raison } = req.body;
+
+            if (!raison) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La raison de la suppression est requise'
+                });
+            }
+
+            const demande = await DemandeSuppression.creer({
+                superviseurId: req.utilisateurId,
+                typeEntite: 'recycleur',
+                entiteId: id,
+                raison,
+                statut: 'en_attente'
+            });
+
+            res.json({
+                success: true,
+                message: 'Demande de suppression envoyée',
+                demande
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur demande suppression:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la demande'
+            });
+        }
+    }
+
+ static async creerSponsor(req, res) {
+    try {
+        const {
+            email, telephone, motDePasse, nomOrganisation,
+            typeOrganisation, nomResponsable, adresse
+        } = req.body;
+
+        const existant = await Sponsor.trouverParEmail(email);
+        if (existant) {
+            return res.status(400).json({
+                success: false,
+                message: 'Un sponsor avec cet email existe déjà'
+            });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+
+        // plus de photoLogoUrl
+        const nouveauSponsor = await Sponsor.creer({
+            email,
+            telephone,
+            motDePasseHash,
+            nomOrganisation,
+            typeOrganisation,
+            nomResponsable,
+            adresse,
+            cguAcceptees: true,
+            est_actif: true
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Sponsor créé avec succès',
+            sponsor: {
+                id: nouveauSponsor.id,
+                email: nouveauSponsor.email,
+                nomOrganisation: nouveauSponsor.nom_organisation
+            }
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur création sponsor:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la création'
+        });
+    }
+}
+    static async listerSponsors(req, res) {
+    try {
+        const sponsors = await Sponsor.listerTous();
+        // Ajouter les campagnes associées...
+        for (let s of sponsors) {
+            const campagnes = await Sponsor.getCampagnes(s.id);
+            s.nb_campagnes = campagnes.length;
+            s.campagnes = campagnes;
+            const dashboard = await Sponsor.getDashboard(s.id);
+            s.statistiques = dashboard;
+        }
+        res.json({
+            success: true,
+            sponsors
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur liste sponsors:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération'
+        });
+    }
+}
+    static async detailsSponsor(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const sponsor = await Sponsor.trouverParId(id);
+            if (!sponsor) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Sponsor non trouvé'
+                });
+            }
+
+            const campagnes = await Sponsor.getCampagnes(id);
+            const dashboard = await Sponsor.getDashboard(id);
+
+            res.json({
+                success: true,
+                sponsor,
+                campagnes,
+                statistiques: dashboard
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur détails sponsor:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+static async modifierSponsor(req, res) {
+    try {
+        const { id } = req.params;
+        const {
+            nomOrganisation, typeOrganisation, nomResponsable,
+            telephone, adresse
+        } = req.body;
+
+        const sponsor = await Sponsor.trouverParId(id);
+        if (!sponsor) {
+            return res.status(404).json({
+                success: false,
+                message: 'Sponsor non trouvé'
+            });
+        }
+
+        const donnees = {
+            nomOrganisation, typeOrganisation, nomResponsable,
+            telephone, adresse
+        };
+
+        // Supprimé : if (req.file) { donnees.photoLogoUrl = ... }
+
+        const sponsorModifie = await Sponsor.mettreAJour(id, donnees);
+
+        res.json({
+            success: true,
+            message: 'Sponsor modifié avec succès',
+            sponsor: sponsorModifie
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur modification sponsor:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la modification'
+        });
+    }
+}
+    static async supprimerSponsor(req, res) {
+        try {
+            const { id } = req.params;
+            
+            // Vérifier si le sponsor participe à des campagnes actives
+            const campagnes = await pool.query(`
+                SELECT pc.* FROM promoteurs_campagne pc
+                JOIN campagnes c ON pc.campagne_id = c.id
+                WHERE pc.promoteur_id = $1 AND pc.promoteur_type = 'sponsor'
+                AND c.statut = 'active'
+            `, [id]);
+
+            if (campagnes.rows.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Impossible de supprimer : le sponsor participe à des campagnes actives'
+                });
+            }
+
+            await pool.query('DELETE FROM sponsors WHERE id = $1', [id]);
+
+            res.json({
+                success: true,
+                message: 'Sponsor supprimé avec succès'
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur suppression sponsor:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la suppression'
+            });
+        }
+    }
+
+    static async activerSponsor(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const sponsor = await Sponsor.activer(id);
+
+            res.json({
+                success: true,
+                message: 'Sponsor activé avec succès',
+                sponsor
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur activation sponsor:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de l\'activation'
+            });
+        }
+    }
+
+    static async desactiverSponsor(req, res) {
+        try {
+            const { id } = req.params;
+            const { raison } = req.body;
+
+            if (!raison) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La raison de la désactivation est requise'
+                });
+            }
+
+            const sponsor = await Sponsor.desactiver(id, raison);
+
+            res.json({
+                success: true,
+                message: 'Sponsor désactivé avec succès',
+                sponsor
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur désactivation sponsor:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la désactivation'
+            });
+        }
+    }
+static async creerOng(req, res) {
+    try {
+        const {
+            email, telephone, motDePasse, nomOng,
+            numeroAgrement, domaineIntervention, nomResponsable, adresse
+        } = req.body;
+
+        const existant = await Ong.trouverParEmail(email);
+        if (existant) {
+            return res.status(400).json({
+                success: false,
+                message: 'Une ONG avec cet email existe déjà'
+            });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+
+        // Supprimé : const photoLogoUrl = req.file ? ...;
+
+        const nouvelleOng = await Ong.creer({
+            email,
+            telephone,
+            motDePasseHash,
+            nomOng,
+            numeroAgrement,
+            domaineIntervention: domaineIntervention ? domaineIntervention.split(',') : [],
+            nomResponsable,
+            adresse,
+            // photoLogoUrl supprimé
+            cguAcceptees: true,
+            est_actif: true
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'ONG créée avec succès',
+            ong: {
+                id: nouvelleOng.id,
+                email: nouvelleOng.email,
+                nomOng: nouvelleOng.nom_ong
+            }
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur création ONG:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la création'
+        });
+    }
+}
+
+    static async listerOngs(req, res) {    
+        try {
+            const ongs = await Ong.listerTous();
+            
+            // Ajouter les rapports et campagnes
+            for (let o of ongs) {
+                const rapports = await pool.query(
+                    'SELECT COUNT(*) as total FROM rapports_ong WHERE ong_id = $1',
+                    [o.id]
+                );
+                o.nb_rapports = rapports.rows[0].total;
+                
+                const campagnes = await Ong.getCampagnes(o.id);
+                o.nb_campagnes = campagnes.length;
+                o.campagnes = campagnes;
+                
+                const dashboard = await Ong.getDashboard(o.id);
+                o.statistiques = dashboard;
+            }
+
+            res.json({
+                success: true,
+                ongs
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur liste ONG:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    static async detailsOng(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const ong = await Ong.trouverParId(id);
+            if (!ong) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'ONG non trouvée'
+                });
+            }
+
+            const campagnes = await Ong.getCampagnes(id);
+            const rapports = await pool.query(
+                'SELECT * FROM rapports_ong WHERE ong_id = $1 ORDER BY cree_le DESC',
+                [id]
+            );
+            const dashboard = await Ong.getDashboard(id);
+
+            res.json({
+                success: true,
+                ong,
+                campagnes,
+                rapports: rapports.rows,
+                statistiques: dashboard
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur détails ONG:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+static async modifierOng(req, res) {
+    try {
+        const { id } = req.params;
+        const {
+            nomOng, numeroAgrement, domaineIntervention,
+            nomResponsable, telephone, adresse
+        } = req.body;
+
+        const ong = await Ong.trouverParId(id);
+        if (!ong) {
+            return res.status(404).json({
+                success: false,
+                message: 'ONG non trouvée'
+            });
+        }
+
+        const donnees = {
+            nomOng, numeroAgrement,
+            domaineIntervention: domaineIntervention ? domaineIntervention.split(',') : [],
+            nomResponsable, telephone, adresse
+        };
+
+        // Supprimé : if (req.file) { donnees.photoLogoUrl = ... }
+
+        const ongModifiee = await Ong.mettreAJour(id, donnees);
+
+        res.json({
+            success: true,
+            message: 'ONG modifiée avec succès',
+            ong: ongModifiee
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur modification ONG:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la modification'
+        });
+    }
+}
+    // ===== GESTION DES CAMPAGNES =====
+    static async creerCampagne(req, res) {
+        try {
+            const {
+                nom, description, dateDebut, dateFin,
+                typesDechets, zonesIntervention, poidsAttendue,
+                prixParKg, statut, promoteurs
+            } = req.body;
+
+            // Créer la campagne
+            const nouvelleCampagne = await Campagne.creer({
+                nom,
+                description,
+                dateDebut,
+                dateFin,
+                typesDechets: Array.isArray(typesDechets) ? typesDechets : typesDechets.split(','),
+                zonesIntervention: zonesIntervention ? (Array.isArray(zonesIntervention) ? zonesIntervention : zonesIntervention.split(',')) : [],
+                poidsAttendue: parseFloat(poidsAttendue),
+                prixParKg: parseFloat(prixParKg),
+                statut: statut || 'planifiee',
+                createurId: req.utilisateurId,
+                createurType: 'admin'
+            });
+
+            // Ajouter ECOCOLLECT comme promoteur par défaut
+            await Campagne.ajouterPromoteur(nouvelleCampagne.id, req.utilisateurId, 'ecocollect', 0, 'Promoteur principal');
+
+            // Ajouter les promoteurs supplémentaires si fournis
+            if (promoteurs && Array.isArray(promoteurs)) {
+                for (const p of promoteurs) {
+                    await Campagne.ajouterPromoteur(
+                        nouvelleCampagne.id,
+                        p.id,
+                        p.type,
+                        p.contribution || null,
+                        p.objectif || null
+                    );
+                }
+            }
+
+            res.status(201).json({
+                success: true,
+                message: 'Campagne créée avec succès',
+                campagne: nouvelleCampagne
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur création campagne:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la création'
+            });
+        }
+    }
+
+    static async listerCampagnes(req, res) {
+        try {
+            const { statut } = req.query;
+            const campagnes = await Campagne.lister({ statut });
+            
+            // Ajouter les promoteurs et statistiques
+            for (let c of campagnes) {
+                const promoteurs = await Campagne.getPromoteurs(c.id);
+                c.promoteurs = promoteurs;
+                
+                const stats = await Campagne.getStatistiques(c.id);
+                c.statistiques = stats;
+            }
+
+            res.json({
+                success: true,
+                campagnes
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur liste campagnes:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    static async detailsCampagne(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const campagne = await Campagne.trouverParId(id);
+            if (!campagne) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campagne non trouvée'
+                });
+            }
+
+            const promoteurs = await Campagne.getPromoteurs(id);
+            const suivi = await Campagne.getSuivi(id);
+            const statistiques = await Campagne.getStatistiques(id);
+            const rapport = await Campagne.getRapportComplet(id);
+
+            res.json({
+                success: true,
+                campagne,
+                promoteurs,
+                suivi,
+                statistiques,
+                rapport
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur détails campagne:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    static async modifierCampagne(req, res) {
+        try {
+            const { id } = req.params;
+            const {
+                nom, description, dateDebut, dateFin,
+                typesDechets, zonesIntervention, poidsAttendue,
+                prixParKg, statut
+            } = req.body;
+
+            const campagne = await Campagne.trouverParId(id);
+            if (!campagne) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campagne non trouvée'
+                });
+            }
+
+            const donnees = {
+                nom, description, dateDebut, dateFin,
+                typesDechets: Array.isArray(typesDechets) ? typesDechets : typesDechets?.split(','),
+                zonesIntervention: zonesIntervention ? (Array.isArray(zonesIntervention) ? zonesIntervention : zonesIntervention.split(',')) : [],
+                poidsAttendue: poidsAttendue ? parseFloat(poidsAttendue) : undefined,
+                prixParKg: prixParKg ? parseFloat(prixParKg) : undefined,
+                statut
+            };
+
+            const campagneModifiee = await Campagne.mettreAJour(id, donnees);
+
+            res.json({
+                success: true,
+                message: 'Campagne modifiée avec succès',
+                campagne: campagneModifiee
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur modification campagne:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la modification'
+            });
+        }
+    }
+
+    static async ajouterPromoteurCampagne(req, res) {
+        try {
+            const { id } = req.params;
+            const { promoteurId, promoteurType, contribution, objectif } = req.body;
+
+            const campagne = await Campagne.trouverParId(id);
+            if (!campagne) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campagne non trouvée'
+                });
+            }
+
+            const promoteur = await Campagne.ajouterPromoteur(id, promoteurId, promoteurType, contribution, objectif);
+
+            res.json({
+                success: true,
+                message: 'Promoteur ajouté avec succès',
+                promoteur
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur ajout promoteur:', erreur);
+            res.status(500).json({
+                success: false,
+                message: erreur.message || 'Erreur lors de l\'ajout du promoteur'
+            });
+        }
+    }
+
+    static async retirerPromoteurCampagne(req, res) {
+        try {
+            const { id, promoteurId, promoteurType } = req.params;
+
+            const campagne = await Campagne.trouverParId(id);
+            if (!campagne) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campagne non trouvée'
+                });
+            }
+
+            await Campagne.retirerPromoteur(id, promoteurId, promoteurType);
+
+            res.json({
+                success: true,
+                message: 'Promoteur retiré avec succès'
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur retrait promoteur:', erreur);
+            res.status(500).json({
+                success: false,
+                message: erreur.message || 'Erreur lors du retrait du promoteur'
+            });
+        }
+    }
+
+    static async ajouterSuiviCampagne(req, res) {
+        try {
+            const { id } = req.params;
+            const { dateSuivi, poidsCollecte, montantUtilise, pointsConcernes, details } = req.body;
+
+            const campagne = await Campagne.trouverParId(id);
+            if (!campagne) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campagne non trouvée'
+                });
+            }
+
+            const suivi = await Campagne.ajouterSuivi({
+                campagneId: id,
+                dateSuivi,
+                poidsCollecte,
+                montantUtilise,
+                pointsConcernes,
+                details
+            });
+
+            res.json({
+                success: true,
+                message: 'Suivi ajouté avec succès',
+                suivi
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur ajout suivi:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de l\'ajout du suivi'
+            });
+        }
+    }
+
+    static async rapportCampagne(req, res) {
+        try {
+            const { id } = req.params;
+            const { format = 'json' } = req.query;
+
+            const campagne = await Campagne.trouverParId(id);
+            if (!campagne) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campagne non trouvée'
+                });
+            }
+
+            const rapport = await Campagne.getRapportComplet(id);
+
+            if (format === 'json') {
+                res.json({
+                    success: true,
+                    rapport
+                });
+            } else if (format === 'pdf' || format === 'excel') {
+                // Implémenter la génération PDF/Excel ici
+                res.json({
+                    success: true,
+                    message: `Génération ${format} à implémenter`,
+                    rapport
+                });
+            }
+
+        } catch (erreur) {
+            console.error('❌ Erreur rapport campagne:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la génération du rapport'
+            });
+        }
+    }
+
+    // ===== GESTION DES PRODUCTEURS PREMIUM =====
+    static async convertirEnPremium(req, res) {
+        try {
+            const { producteurId } = req.params;
+            const {
+                typeAbonnement,
+                frequenceCollecte,
+                montantAbonnement,
+                stripeCustomerId,
+                stripeSubscriptionId
+            } = req.body;
+
+            const producteur = await Producteur.trouverParId(producteurId);
+            if (!producteur) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Producteur non trouvé'
+                });
+            }
+
+            // Vérifier s'il est déjà premium
+            const dejaPremium = await pool.query(
+                'SELECT * FROM producteurs_premium WHERE producteur_id = $1 AND statut = $2',
+                [producteurId, 'actif']
+            );
+
+            if (dejaPremium.rows.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Ce producteur est déjà premium'
+                });
+            }
+
+            // Calculer les dates
+            const dateDebut = new Date();
+            const dateFin = new Date();
+            
+            switch(typeAbonnement) {
+                case 'mensuel':
+                    dateFin.setMonth(dateFin.getMonth() + 1);
+                    break;
+                case 'trimestriel':
+                    dateFin.setMonth(dateFin.getMonth() + 3);
+                    break;
+                case 'annuel':
+                    dateFin.setFullYear(dateFin.getFullYear() + 1);
+                    break;
+                default:
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Type d\'abonnement invalide'
+                    });
+            }
+
+            // Calculer la prochaine collecte
+            const prochaineCollecte = new Date();
+            switch(frequenceCollecte) {
+                case 'hebdomadaire':
+                    prochaineCollecte.setDate(prochaineCollecte.getDate() + 7);
+                    break;
+                case 'bi-mensuelle':
+                    prochaineCollecte.setDate(prochaineCollecte.getDate() + 15);
+                    break;
+                case 'mensuelle':
+                    prochaineCollecte.setMonth(prochaineCollecte.getMonth() + 1);
+                    break;
+                default:
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Fréquence de collecte invalide'
+                    });
+            }
+
+            // Créer l'abonnement premium
+            const abonnement = await pool.query(`
+                INSERT INTO producteurs_premium (
+                    producteur_id, type_abonnement, frequence_collecte,
+                    date_debut, date_fin, montant_abonnement,
+                     statut,
+                    prochaine_collecte
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING *
+            `, [
+                producteurId, typeAbonnement, frequenceCollecte,
+                dateDebut, dateFin, montantAbonnement, 'actif',
+                prochaineCollecte
+            ]);
+
+            // Mettre à jour le type de compte du producteur
+            await pool.query(
+                'UPDATE producteurs SET type_compte = $1  WHERE id = $2',
+                ['premium', producteurId]
+            );
+
+            // Journaliser l'action
+            await pool.query(`
+                INSERT INTO historique_actions (utilisateur_id, action, details, adresse_ip)
+                VALUES ($1, $2, $3, $4)
+            `, [req.utilisateurId, 'CONVERSION_PREMIUM', JSON.stringify({ 
+                producteurId, 
+                typeAbonnement, 
+                montantAbonnement 
+            }), req.ip]);
+
+            res.json({
+                success: true,
+                message: 'Producteur converti en premium avec succès',
+                abonnement: abonnement.rows[0]
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur conversion premium:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la conversion'
+            });
+        }
+    }
+
+    static async listerProducteursPremium(req, res) {
+        try {
+            const resultat = await pool.query(`
+                SELECT 
+                    p.*,
+                    pp.type_abonnement,
+                    pp.frequence_collecte,
+                    pp.date_debut,
+                    pp.date_fin,
+                    pp.montant_abonnement,
+                    pp.statut as abonnement_statut,
+                    pp.prochaine_collecte,
+                    pp.cree_le as abonnement_cree_le,
+                    (SELECT COUNT(*) FROM declarations_dechets WHERE producteur_id = p.id) as total_declarations,
+                    (SELECT COUNT(*) FROM missions m 
+                     JOIN declarations_dechets d ON m.declaration_id = d.id 
+                     WHERE d.producteur_id = p.id AND m.statut = 'validee') as collectes_effectuees
+                FROM producteurs p
+                JOIN producteurs_premium pp ON p.id = pp.producteur_id
+                ORDER BY pp.date_fin ASC
+            `);
+
+            res.json({
+                success: true,
+                producteurs: resultat.rows
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur liste producteurs premium:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    static async detailsProducteurPremium(req, res) {
+        try {
+            const { id } = req.params;
+
+            const resultat = await pool.query(`
+                SELECT 
+                    p.*,
+                    pp.type_abonnement,
+                    pp.frequence_collecte,
+                    pp.date_debut,
+                    pp.date_fin,
+                    pp.montant_abonnement,
+                    pp.statut as abonnement_statut,
+                    pp.prochaine_collecte,
+                    pp.cree_le as abonnement_cree_le,
+                    pp.modifie_le as abonnement_modifie_le
+                FROM producteurs p
+                JOIN producteurs_premium pp ON p.id = pp.producteur_id
+                WHERE p.id = $1
+            `, [id]);
+
+            if (resultat.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Producteur premium non trouvé'
+                });
+            }
+
+            // Récupérer l'historique des collectes
+            const collectes = await pool.query(`
+                SELECT 
+                    m.*,
+                    d.date_declaration,
+                    d.type_dechet,
+                    d.quantite
+                FROM missions m
+                JOIN declarations_dechets d ON m.declaration_id = d.id
+                WHERE d.producteur_id = $1
+                ORDER BY m.date_validation DESC
+                LIMIT 20
+            `, [id]);
+
+            res.json({
+                success: true,
+                producteur: resultat.rows[0],
+                collectes: collectes.rows
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur détails producteur premium:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    static async resilierAbonnement(req, res) {
+        try {
+            const { id } = req.params;
+            const { raison } = req.body;
+
+            const abonnement = await pool.query(
+                'SELECT * FROM producteurs_premium WHERE producteur_id = $1 AND statut = $2',
+                [id, 'actif']
+            );
+
+            if (abonnement.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Abonnement actif non trouvé'
+                });
+            }
+
+            // Mettre à jour l'abonnement
+            await pool.query(`
+                UPDATE producteurs_premium 
+                SET statut = $1, modifie_le = CURRENT_TIMESTAMP
+                WHERE id = $2
+            `, ['resilie', abonnement.rows[0].id]);
+
+            // Mettre à jour le producteur
+            await pool.query(
+                'UPDATE producteurs SET type_compte = $1 WHERE id = $2',
+                ['standard', id]
+            );
+
+            // Journaliser
+            await pool.query(`
+                INSERT INTO historique_actions (utilisateur_id, action, details, adresse_ip)
+                VALUES ($1, $2, $3, $4)
+            `, [req.utilisateurId, 'RESILIATION_ABONNEMENT', JSON.stringify({ 
+                producteurId: id, 
+                raison 
+            }), req.ip]);
+
+            res.json({
+                success: true,
+                message: 'Abonnement résilié avec succès'
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur résiliation abonnement:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la résiliation'
+            });
+        }
+    }
+
+    // ===== GESTION DES DEMANDES DE SUPPRESSION =====
+    static async listerDemandesSuppression(req, res) {
+        try {
+            const { statut } = req.query;
+            const demandes = await DemandeSuppression.lister({ statut });
+            
+            // Ajouter les statistiques
+            const stats = await DemandeSuppression.getStats();
+
+            res.json({
+                success: true,
+                demandes,
+                statistiques: stats
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur liste demandes:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    static async detailsDemandeSuppression(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const demande = await DemandeSuppression.trouverParId(id);
+            if (!demande) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Demande non trouvée'
+                });
+            }
+
+            res.json({
+                success: true,
+                demande
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur détails demande:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    static async traiterDemandeSuppression(req, res) {
+        try {
+            const { demandeId } = req.params;
+            const { statut, notes } = req.body;
+
+            if (!statut || !['approuvee', 'rejetee'].includes(statut)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Statut invalide'
+                });
+            }
+
+            const demande = await DemandeSuppression.traiter(demandeId, statut, req.utilisateurId, notes);
+
+            res.json({
+                success: true,
+                message: `Demande ${statut === 'approuvee' ? 'approuvée' : 'rejetée'} avec succès`,
+                demande
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur traitement demande:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors du traitement'
+            });
+        }
+    }
+
+    // ===== HISTORIQUE COMPLET =====
+    static async historiqueComplet(req, res) {
+        try {
+            const { type, dateDebut, dateFin, limit = 100, page = 1 } = req.query;
+            const offset = (page - 1) * limit;
+
+            let requete = `
+                SELECT * FROM historique_actions 
+                WHERE 1=1
+            `;
+            const valeurs = [];
+            let index = 1;
+
+            if (type) {
+                requete += ` AND action LIKE $${index++}`;
+                valeurs.push(`%${type}%`);
+            }
+
+            if (dateDebut) {
+                requete += ` AND cree_le >= $${index++}`;
+                valeurs.push(dateDebut);
+            }
+
+            if (dateFin) {
+                requete += ` AND cree_le <= $${index++}`;
+                valeurs.push(dateFin);
+            }
+
+            // Compter le total
+            const countQuery = requete.replace('SELECT *', 'SELECT COUNT(*) as total');
+            const countResult = await pool.query(countQuery, valeurs);
+            const total = parseInt(countResult.rows[0].total);
+
+            requete += ` ORDER BY cree_le DESC LIMIT $${index} OFFSET $${index + 1}`;
+            valeurs.push(parseInt(limit), offset);
+
+            const resultat = await pool.query(requete, valeurs);
+
+            // Ajouter les statistiques
+            const stats = await pool.query(`
+                SELECT 
+                    COUNT(*) as total_actions,
+                    COUNT(*) FILTER (WHERE cree_le >= CURRENT_DATE) as aujourd_hui,
+                    COUNT(*) FILTER (WHERE cree_le >= CURRENT_DATE - INTERVAL '7 days') as cette_semaine,
+                    COUNT(*) FILTER (WHERE cree_le >= CURRENT_DATE - INTERVAL '30 days') as ce_mois,
+                    COUNT(DISTINCT utilisateur_id) as utilisateurs_actifs
+                FROM historique_actions
+            `);
+
+            res.json({
+                success: true,
+                historique: resultat.rows,
+                pagination: {
+                    total,
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    pages: Math.ceil(total / limit)
+                },
+                statistiques: stats.rows[0]
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur historique:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    // ===== STATISTIQUES AVANCÉES =====
+    static async statistiquesAvancees(req, res) {
+        try {
+            const stats = await pool.query(`
+                WITH stats_globales AS (
+                    SELECT 
+                        (SELECT COUNT(*) FROM producteurs) as total_producteurs,
+                        (SELECT COUNT(*) FROM collecteurs) as total_collecteurs,
+                        (SELECT COUNT(*) FROM gestionnaires_points) as total_gestionnaires,
+                        (SELECT COUNT(*) FROM superviseurs) as total_superviseurs,
+                        (SELECT COUNT(*) FROM recycleurs) as total_recycleurs,
+                        (SELECT COUNT(*) FROM sponsors) as total_sponsors,
+                        (SELECT COUNT(*) FROM ongs) as total_ongs,
+                        (SELECT COUNT(*) FROM campagnes) as total_campagnes,
+                        (SELECT COUNT(*) FROM missions) as total_missions,
+                        (SELECT COALESCE(SUM(poids_depose), 0) FROM missions WHERE statut = 'validee') as total_kg_collectes,
+                        (SELECT COALESCE(SUM(gains_attribues), 0) FROM missions WHERE statut = 'validee') as total_gains_collecteurs,
+                        (SELECT COALESCE(SUM(points), 0) FROM producteurs) as total_points_producteurs
+                ),
+                evolution_journaliere AS (
+                    SELECT 
+                        date_trunc('day', cree_le) as jour,
+                        COUNT(*) as inscriptions
+                    FROM producteurs
+                    WHERE cree_le >= CURRENT_DATE - INTERVAL '30 days'
+                    GROUP BY date_trunc('day', cree_le)
+                ),
+                repartition_producteurs AS (
+                    SELECT 
+                        type_producteur,
+                        COUNT(*) as nombre
+                    FROM producteurs
+                    GROUP BY type_producteur
+                ),
+                repartition_collecteurs AS (
+                    SELECT 
+                        statut,
+                        COUNT(*) as nombre
+                    FROM collecteurs
+                    GROUP BY statut
+                ),
+                top_producteurs AS (
+                    SELECT 
+                        p.nom_complet,
+                        p.email,
+                        p.points,
+                        COUNT(d.id) as declarations,
+                        COALESCE(SUM(d.quantite), 0) as kg_declares
+                    FROM producteurs p
+                    LEFT JOIN declarations_dechets d ON p.id = d.producteur_id
+                    GROUP BY p.id, p.nom_complet, p.email, p.points
+                    ORDER BY p.points DESC
+                    LIMIT 10
+                ),
+                top_collecteurs AS (
+                    SELECT 
+                        c.nom_complet,
+                        c.email,
+                        c.gains_total,
+                        COUNT(m.id) as missions_realisees,
+                        COALESCE(SUM(m.poids_depose), 0) as kg_collectes
+                    FROM collecteurs c
+                    LEFT JOIN missions m ON c.id = m.collecteur_id AND m.statut = 'validee'
+                    GROUP BY c.id, c.nom_complet, c.email, c.gains_total
+                    ORDER BY kg_collectes DESC
+                    LIMIT 10
+                ),
+                statistiques_campagnes AS (
+                    SELECT 
+                        AVG(CURRENT_DATE - date_debut) as duree_moyenne_jours,
+                        AVG(poids_attendue) as poids_moyen,
+                        COUNT(*) FILTER (WHERE statut = 'active') as actives,
+                        COUNT(*) FILTER (WHERE statut = 'terminee') as terminees
+                    FROM campagnes
+                )
+                SELECT 
+                    (SELECT row_to_json(stats_globales) FROM stats_globales) as globales,
+                    (SELECT json_agg(evolution_journaliere) FROM evolution_journaliere) as evolution,
+                    (SELECT json_agg(repartition_producteurs) FROM repartition_producteurs) as repartition_producteurs,
+                    (SELECT json_agg(repartition_collecteurs) FROM repartition_collecteurs) as repartition_collecteurs,
+                    (SELECT json_agg(top_producteurs) FROM top_producteurs) as top_producteurs,
+                    (SELECT json_agg(top_collecteurs) FROM top_collecteurs) as top_collecteurs,
+                    (SELECT row_to_json(statistiques_campagnes) FROM statistiques_campagnes) as campagnes
+            `);
+
+            res.json({
+                success: true,
+                statistiques: stats.rows[0]
+            });
+
+        } catch (erreur) {
+            console.error('❌ Erreur statistiques avancées:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération'
+            });
+        }
+    }
+
+    static async supprimerCampagne(req, res) {
+    try {
+        const { id } = req.params;
+        
+        // Vérifier si la campagne existe
+        const campagne = await Campagne.trouverParId(id);
+        
+        if (!campagne) {
+            return res.status(404).json({
+                success: false,
+                message: 'Campagne non trouvée'
+            });
+        }
+
+        // Supprimer directement (les relations seront supprimées automatiquement si CASCADE est configuré)
+        const query = 'DELETE FROM campagnes WHERE id = $1 RETURNING *';
+        const result = await pool.query(query, [id]);
+
+        res.json({
+            success: true,
+            message: 'Campagne supprimée avec succès',
+            campagne: result.rows[0]
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur suppression campagne:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la suppression de la campagne',
+            erreur: erreur.message
+        });
+    }
+}
+
+
+
+
+static async statistiquesAchats(req, res) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                COALESCE(SUM(poids), 0) as poids_total_achete,
+                COALESCE(SUM(total), 0) as montant_total_achete,
+                COUNT(*) as nombre_achats
+            FROM achats_gestionnaires
+        `);
+        const global = result.rows[0];
+
+        // Par gestionnaire
+        const parGestionnaire = await pool.query(`
+            SELECT 
+                g.id,
+                g.nom_complet,
+                pdv.nom as point_depot_nom,
+                COUNT(a.id) as nombre_achats,
+                COALESCE(SUM(a.poids), 0) as poids_total,
+                COALESCE(SUM(a.total), 0) as montant_total
+            FROM gestionnaires_points g
+            JOIN achats_gestionnaires a ON g.id = a.gestionnaire_id
+            JOIN points_depot_volontaire pdv ON a.point_depot_id = pdv.id
+            GROUP BY g.id, g.nom_complet, pdv.nom
+            ORDER BY poids_total DESC
+        `);
+
+        // Par point de collecte
+        const parPoint = await pool.query(`
+            SELECT 
+                pdv.id,
+                pdv.nom,
+                COUNT(a.id) as nombre_achats,
+                COALESCE(SUM(a.poids), 0) as poids_total,
+                COALESCE(SUM(a.total), 0) as montant_total
+            FROM points_depot_volontaire pdv
+            JOIN achats_gestionnaires a ON pdv.id = a.point_depot_id
+            GROUP BY pdv.id, pdv.nom
+            ORDER BY poids_total DESC
+        `);
+
+        // Évolution mensuelle
+        const evolution = await pool.query(`
+            SELECT 
+                DATE_TRUNC('month', date_achat) as mois,
+                COALESCE(SUM(poids), 0) as poids_total,
+                COALESCE(SUM(total), 0) as montant_total,
+                COUNT(*) as nombre_achats
+            FROM achats_gestionnaires
+            WHERE date_achat >= NOW() - INTERVAL '12 months'
+            GROUP BY DATE_TRUNC('month', date_achat)
+            ORDER BY mois DESC
+        `);
+
+        res.json({
+            success: true,
+            global,
+            par_gestionnaire: parGestionnaire.rows,
+            par_point: parPoint.rows,
+            evolution_mensuelle: evolution.rows
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur stats achats:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+static async statistiquesCollectes(req, res) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                COALESCE(SUM(poids_depose), 0) as poids_total_collecte,
+                COALESCE(SUM(gains_attribues), 0) as gains_total,
+                COUNT(*) as nombre_missions
+            FROM missions
+            WHERE statut = 'validee'
+        `);
+        const global = result.rows[0];
+
+        // Par collecteur
+        const parCollecteur = await pool.query(`
+            SELECT 
+                c.id,
+                c.nom_complet,
+                COUNT(m.id) as nombre_missions,
+                COALESCE(SUM(m.poids_depose), 0) as poids_total,
+                COALESCE(SUM(m.gains_attribues), 0) as gains_total
+            FROM collecteurs c
+            JOIN missions m ON c.id = m.collecteur_id AND m.statut = 'validee'
+            GROUP BY c.id, c.nom_complet
+            ORDER BY poids_total DESC
+        `);
+
+        // Par point de collecte (dépôt)
+        const parPoint = await pool.query(`
+            SELECT 
+                pdv.id,
+                pdv.nom,
+                COUNT(m.id) as nombre_missions,
+                COALESCE(SUM(m.poids_depose), 0) as poids_total,
+                COALESCE(SUM(m.gains_attribues), 0) as gains_total
+            FROM points_depot_volontaire pdv
+            JOIN missions m ON pdv.id = m.point_depot_id AND m.statut = 'validee'
+            GROUP BY pdv.id, pdv.nom
+            ORDER BY poids_total DESC
+        `);
+
+        // Par gestionnaire (celui qui a validé)
+        const parGestionnaire = await pool.query(`
+            SELECT 
+                g.id,
+                g.nom_complet,
+                pdv.nom as point_depot_nom,
+                COUNT(m.id) as nombre_validations,
+                COALESCE(SUM(m.poids_depose), 0) as poids_total_valide,
+                COALESCE(SUM(m.gains_attribues), 0) as gains_total_valide
+            FROM gestionnaires_points g
+            JOIN missions m ON g.id = m.validee_par AND m.statut = 'validee'
+            JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
+            GROUP BY g.id, g.nom_complet, pdv.nom
+            ORDER BY poids_total_valide DESC
+        `);
+
+        // Évolution mensuelle
+        const evolution = await pool.query(`
+            SELECT 
+                DATE_TRUNC('month', date_validation) as mois,
+                COALESCE(SUM(poids_depose), 0) as poids_total,
+                COALESCE(SUM(gains_attribues), 0) as gains_total,
+                COUNT(*) as nombre_missions
+            FROM missions
+            WHERE statut = 'validee' AND date_validation >= NOW() - INTERVAL '12 months'
+            GROUP BY DATE_TRUNC('month', date_validation)
+            ORDER BY mois DESC
+        `);
+
+        res.json({
+            success: true,
+            global,
+            par_collecteur: parCollecteur.rows,
+            par_point: parPoint.rows,
+            par_gestionnaire: parGestionnaire.rows,
+            evolution_mensuelle: evolution.rows
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur stats collectes:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+// Récupérer les statistiques détaillées d'un collecteur
+static async getCollecteurStats(req, res) {
+    try {
+        const { id } = req.params;
+        // Missions validées du collecteur
+        const missions = await pool.query(`
+            SELECT 
+                COUNT(*) as nb_missions,
+                COALESCE(SUM(poids_depose), 0) as total_kg
+            FROM missions
+            WHERE collecteur_id = $1 AND statut = 'validee'
+        `, [id]);
+
+        // Poids par type de déchet
+        const parType = await pool.query(`
+            SELECT 
+                d.type_dechet,
+                COALESCE(SUM(m.poids_depose), 0) as kg
+            FROM missions m
+            JOIN declarations_dechets d ON m.declaration_id = d.id
+            WHERE m.collecteur_id = $1 AND m.statut = 'validee'
+            GROUP BY d.type_dechet
+        `, [id]);
+
+        res.json({
+            success: true,
+            nb_missions: parseInt(missions.rows[0].nb_missions),
+            total_kg: parseFloat(missions.rows[0].total_kg),
+            par_type: parType.rows
+        });
+    } catch (erreur) {
+        console.error('Erreur getCollecteurStats:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur serveur' });
+    }
+}
+
+// Récupérer les détails d'un gestionnaire (achats + collectes validées)
+static async getGestionnaireDetails(req, res) {
+    try {
+        const { id } = req.params;
+
+        // Achats du gestionnaire
+        const achats = await pool.query(`
+            SELECT 
+                COUNT(*) as nombre,
+                COALESCE(SUM(poids), 0) as poids_total,
+                json_agg(
+                    json_build_object(
+                        'id', id,
+                        'date_achat', date_achat,
+                        'type_dechet', type_dechet,
+                        'poids', poids,
+                        'total', total
+                    ) ORDER BY date_achat DESC
+                ) as liste
+            FROM achats_gestionnaires
+            WHERE gestionnaire_id = $1
+        `, [id]);
+
+        // Collectes validées par ce gestionnaire
+        const collectes = await pool.query(`
+            SELECT 
+                COUNT(*) as nombre,
+                COALESCE(SUM(m.poids_depose), 0) as poids_total,
+                json_agg(
+                    json_build_object(
+                        'id', m.id,
+                        'date_validation', m.date_validation,
+                        'type_dechet', d.type_dechet,
+                        'poids_depose', m.poids_depose,
+                        'gains_attribues', m.gains_attribues
+                    ) ORDER BY m.date_validation DESC
+                ) as liste
+            FROM missions m
+            JOIN declarations_dechets d ON m.declaration_id = d.id
+            WHERE m.validee_par = $1 AND m.statut = 'validee'
+        `, [id]);
+
+        res.json({
+            success: true,
+            achats: {
+                nombre: parseInt(achats.rows[0].nombre),
+                poids_total: parseFloat(achats.rows[0].poids_total),
+                liste: achats.rows[0].liste || []
+            },
+            collectes: {
+                nombre: parseInt(collectes.rows[0].nombre),
+                poids_total: parseFloat(collectes.rows[0].poids_total),
+                liste: collectes.rows[0].liste || []
+            }
+        });
+    } catch (erreur) {
+        console.error('Erreur getGestionnaireDetails:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur serveur' });
+    }
+}
+static async stocksPoints(req, res) {
+    try {
+        const stocks = await pool.query(`
+            SELECT 
+                pdv.id,
+                pdv.nom,
+                pdv.commune,
+                pdv.quartier,
+                json_agg(
+                    json_build_object(
+                        'type_dechet', s.type_dechet,
+                        'quantite_disponible', s.quantite_disponible,
+                        'unite', s.unite,
+                        'prix_estime', s.prix_estime,
+                        'dernier_mouvement', s.dernier_mouvement
+                    )
+                ) as stocks
+            FROM points_depot_volontaire pdv
+            LEFT JOIN stocks_dechets s ON pdv.id = s.point_depot_id
+            WHERE s.quantite_disponible > 0
+            GROUP BY pdv.id, pdv.nom, pdv.commune, pdv.quartier
+            ORDER BY pdv.nom
+        `);
+
+        // Total global par type
+        const totalParType = await pool.query(`
+            SELECT 
+                type_dechet,
+                SUM(quantite_disponible) as total_disponible
+            FROM stocks_dechets
+            GROUP BY type_dechet
+            ORDER BY total_disponible DESC
+        `);
+
+        res.json({
+            success: true,
+            stocks: stocks.rows,
+            total_par_type: totalParType.rows
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur stocks points:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+static async listerProducteurs(req, res) {
+    try {
+        const producteurs = await pool.query(`
+            SELECT id, email, telephone, nom_complet, type_producteur,
+                   quartier, commune, est_actif, type_compte, points, cree_le
+            FROM producteurs
+            ORDER BY cree_le DESC
+        `);
+        res.json({ success: true, producteurs: producteurs.rows });
+    } catch (erreur) {
+        console.error('❌ Erreur liste producteurs:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+static async listerCollecteurs(req, res) {
+    try {
+        const collecteurs = await pool.query(`
+            SELECT id, email, telephone, nom_complet, type_collecteur,
+                   statut, est_actif, points_total, gains_total, zone_intervention_nom , communes_intervention , quartiers_habituels , cree_le
+            FROM collecteurs
+            ORDER BY cree_le DESC
+        `);
+        res.json({ success: true, collecteurs: collecteurs.rows });
+    } catch (erreur) {
+        console.error('❌ Erreur liste collecteurs:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+static async listerGestionnaires(req, res) {
+    try {
+        const gestionnaires = await pool.query(`
+            SELECT g.id, g.email, g.telephone, g.nom_complet, g.fonction,
+                   g.est_actif, pdv.nom as point_depot_nom, g.cree_le
+            FROM gestionnaires_points g
+            LEFT JOIN points_depot_volontaire pdv ON g.point_collecte_id = pdv.id
+            ORDER BY g.cree_le DESC
+        `);
+        res.json({ success: true, gestionnaires: gestionnaires.rows });
+    } catch (erreur) {
+        console.error('❌ Erreur liste gestionnaires:', erreur);
+        res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+}
+
+export default AdminController;

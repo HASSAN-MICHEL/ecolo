@@ -13,9 +13,120 @@ import { pool } from '../config/database.js';
 import jwt from 'jsonwebtoken';
 
 class AdminController {
-    // ===== AUTHENTIFICATION =====
+    // ===== Authentification
 
     
+// backend/controllers/AdminController.js
+
+static async getProfil(req, res) {
+    try {
+        if (!req.admin || !req.admin.id) {
+            return res.status(401).json({
+                success: false,
+                message: 'Utilisateur non authentifié'
+            });
+        }
+
+        const admin = await Admin.trouverParId(req.admin.id);
+        
+        if (!admin) {
+            return res.status(404).json({
+                success: false,
+                message: 'Administrateur non trouvé'
+            });
+        }
+
+        res.json({
+            success: true,
+            admin: {
+                id: admin.id,
+                email: admin.email,
+                telephone: admin.telephone,
+                nomComplet: admin.nom_complet,
+                role: admin.role,
+                est_actif: admin.est_actif,
+                cree_le: admin.cree_le,
+                derniere_connexion: admin.derniere_connexion
+            }
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur récupération profil:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération du profil'
+        });
+    }
+}
+
+
+static async modifierProfil(req, res) {
+    try {
+        const adminId = req.admin.id; // Récupéré via le middleware d'authentification
+        const { email, telephone, nomComplet, role, motDePasse } = req.body;
+
+        // Vérifier si l'email est déjà utilisé par un autre admin
+        if (email) {
+            const adminExistant = await Admin.trouverParEmail(email);
+            if (adminExistant && adminExistant.id !== adminId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cet email est déjà utilisé par un autre compte'
+                });
+            }
+        }
+
+        // Vérifier si le téléphone est déjà utilisé
+        if (telephone) {
+            const adminExistant = await Admin.trouverParTelephone(telephone);
+            if (adminExistant && adminExistant.id !== adminId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Ce téléphone est déjà utilisé par un autre compte'
+                });
+            }
+        }
+
+        // Préparer les données à mettre à jour
+        const donneesMAJ = {};
+        if (email) donneesMAJ.email = email;
+        if (telephone) donneesMAJ.telephone = telephone;
+        if (nomComplet) donneesMAJ.nomComplet = nomComplet;
+        if (role) donneesMAJ.role = role;
+
+        // Gestion du mot de passe si fourni
+        if (motDePasse) {
+            const salt = await bcrypt.genSalt(10);
+            const motDePasseHash = await bcrypt.hash(motDePasse, salt);
+            donneesMAJ.motDePasseHash = motDePasseHash;
+        }
+
+        // Exécuter la mise à jour
+        const adminMisAJour = await Admin.mettreAJour(adminId, donneesMAJ);
+
+        res.status(200).json({
+            success: true,
+            message: 'Profil mis à jour avec succès',
+            admin: {
+                id: adminMisAJour.id,
+                email: adminMisAJour.email,
+                telephone: adminMisAJour.telephone,
+                nomComplet: adminMisAJour.nom_complet,
+                role: adminMisAJour.role,
+                creeLe: adminMisAJour.cree_le,
+                misAJourLe: adminMisAJour.mis_a_jour_le
+            }
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur mise à jour profil admin:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la mise à jour du profil',
+            erreur: erreur.message
+        });
+    }
+}
+
     static async creerAdmin(req, res) {
         try {
             const { email, telephone, motDePasse, nomComplet, role } = req.body;
@@ -57,63 +168,69 @@ class AdminController {
             });
         }
     }
-    static async connexion(req, res) {
-        try {
-            const { email, motDePasse } = req.body;
 
-            const admin = await Admin.trouverParEmail(email);
-            if (!admin) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Identifiants incorrects'
-                });
-            }
 
-            const valide = await bcrypt.compare(motDePasse, admin.mot_de_passe_hash);
-            if (!valide) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Identifiants incorrects'
-                });
-            }
 
-            if (!admin.est_actif) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'Compte désactivé'
-                });
-            }
+static async connexion(req, res) {
+    try {
+        const { email, motDePasse } = req.body;
 
-            await Admin.mettreAJourConnexion(admin.id);
-
-            const token = jwt.sign(
-                { id: admin.id, email: admin.email, type: 'admin' },
-                process.env.JWT_SECRET,
-                { expiresIn: '7d' }
-            );
-
-            res.json({
-                success: true,
-                token,
-                utilisateur: {
-                    id: admin.id,
-                    email: admin.email,
-                    nomComplet: admin.nom_complet,
-                    role: admin.role,
-                    type: 'admin'
-                }
-            });
-
-        } catch (erreur) {
-            console.error('❌ Erreur connexion admin:', erreur);
-            res.status(500).json({
+        const admin = await Admin.trouverParEmail(email);
+        if (!admin) {
+            return res.status(401).json({
                 success: false,
-                message: 'Erreur lors de la connexion'
+                message: 'Identifiants incorrects'
             });
         }
+
+        const valide = await bcrypt.compare(motDePasse, admin.mot_de_passe_hash);
+        if (!valide) {
+            return res.status(401).json({
+                success: false,
+                message: 'Identifiants incorrects'
+            });
+        }
+
+        if (!admin.est_actif) {
+            return res.status(403).json({
+                success: false,
+                message: 'Compte désactivé'
+            });
+        }
+
+        // Mettre à jour la dernière connexion et récupérer la date
+        const connexionMiseAJour = await Admin.mettreAJourConnexion(admin.id);
+        
+        const token = jwt.sign(
+            { id: admin.id, email: admin.email, type: 'admin' },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.json({
+            success: true,
+            token,
+            utilisateur: {
+                id: admin.id,
+                email: admin.email,
+                nomComplet: admin.nom_complet,
+                telephone: admin.telephone || null,
+                cree_le: admin.cree_le,
+                derniere_connexion: new Date().toISOString(), // Date actuelle
+                role: admin.role,
+                est_actif: admin.est_actif,
+                type: 'admin'
+            }
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur connexion admin:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la connexion'
+        });
     }
-
-
+}
 
 
 static async tableauBord(req, res) {
@@ -461,7 +578,9 @@ static async tableauBord(req, res) {
         }
     }
 
-    // Dans AdminController.js - méthode creerRecycleur CORRIGÉE
+// VERSION en locale
+
+// Dans AdminController.js
 static async creerRecycleur(req, res) {
     try {
         console.log('📦 Données reçues:', req.body);
@@ -477,10 +596,6 @@ static async creerRecycleur(req, res) {
             quartier,
             commune,
             numeroIdentite,
-            // ⚠️ IMPORTANT: Ces champs sont ajoutés par uploadToSupabase.js
-            photoProfilUrl,      // ← URL Supabase
-            photoCniRectoUrl,    // ← URL Supabase
-            photoCniVersoUrl     // ← URL Supabase
         } = req.body;
 
         // Validation
@@ -498,13 +613,23 @@ static async creerRecycleur(req, res) {
             });
         }
 
-        // Vérifier les photos CNI
-        if (!photoCniRectoUrl || !photoCniVersoUrl) {
+        // Vérifier les photos CNI dans req.files
+        const photoCniRectoFile = req.files?.photoCniRecto?.[0];
+        const photoCniVersoFile = req.files?.photoCniVerso?.[0];
+
+        if (!photoCniRectoFile || !photoCniVersoFile) {
             return res.status(400).json({
                 success: false,
                 message: 'Les photos recto et verso de la CNI sont requises'
             });
         }
+
+        // Construire les URLs des fichiers locaux
+        const photoProfilUrl = req.files?.photoProfil?.[0] 
+            ? `/uploads/profils/${req.files.photoProfil[0].filename}`
+            : null;
+        const photoCniRectoUrl = `/uploads/cnis/${photoCniRectoFile.filename}`;
+        const photoCniVersoUrl = `/uploads/cnis/${photoCniVersoFile.filename}`;
 
         // Vérifier existence
         const existantEmail = await Recycleur.trouverParEmail(email);
@@ -527,7 +652,6 @@ static async creerRecycleur(req, res) {
         const salt = await bcrypt.genSalt(10);
         const motDePasseHash = await bcrypt.hash(motDePasse, salt);
 
-        // ✅ Les URLs sont déjà dans req.body, plus besoin de les construire
         console.log('📸 URLs des photos:');
         console.log('  - Profil:', photoProfilUrl || 'non fourni');
         console.log('  - CNI Recto:', photoCniRectoUrl);
@@ -544,9 +668,9 @@ static async creerRecycleur(req, res) {
             quartier: quartier || null,
             commune: commune || null,
             numeroIdentite: numeroIdentite || null,
-            photoProfilUrl: photoProfilUrl || null,  // ← URL Supabase
-            photoCniRectoUrl: photoCniRectoUrl,      // ← URL Supabase
-            photoCniVersoUrl: photoCniVersoUrl,      // ← URL Supabase
+            photoProfilUrl: photoProfilUrl,
+            photoCniRectoUrl: photoCniRectoUrl,
+            photoCniVersoUrl: photoCniVersoUrl,
             cguAcceptees: true,
             statut: 'actif',
             est_actif: true,
@@ -571,7 +695,6 @@ static async creerRecycleur(req, res) {
                 telephone: nouveauRecycleur.telephone,
                 nomEntreprise: nouveauRecycleur.nom_entreprise,
                 statut: nouveauRecycleur.statut,
-                // Retourner aussi les URLs pour vérification
                 photos: {
                     profil: photoProfilUrl,
                     cniRecto: photoCniRectoUrl,
@@ -590,7 +713,7 @@ static async creerRecycleur(req, res) {
     }
 }
 
-    // Dans AdminController.js
+
 static async supprimerRecycleur(req, res) {
     try {
         const { id } = req.params;
@@ -1716,21 +1839,20 @@ static async modifierOng(req, res) {
                 INSERT INTO producteurs_premium (
                     producteur_id, type_abonnement, frequence_collecte,
                     date_debut, date_fin, montant_abonnement,
-                    stripe_customer_id, stripe_subscription_id, statut,
+                     statut,
                     prochaine_collecte
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING *
             `, [
                 producteurId, typeAbonnement, frequenceCollecte,
-                dateDebut, dateFin, montantAbonnement,
-                stripeCustomerId, stripeSubscriptionId, 'actif',
+                dateDebut, dateFin, montantAbonnement, 'actif',
                 prochaineCollecte
             ]);
 
             // Mettre à jour le type de compte du producteur
             await pool.query(
-                'UPDATE producteurs SET type_compte = $1, stripe_customer_id = $2 WHERE id = $3',
-                ['premium', stripeCustomerId, producteurId]
+                'UPDATE producteurs SET type_compte = $1  WHERE id = $2',
+                ['premium', producteurId]
             );
 
             // Journaliser l'action
@@ -2053,104 +2175,59 @@ static async modifierOng(req, res) {
         }
     }
 
-    // ===== STATISTIQUES AVANCÉES =====
+
     static async statistiquesAvancees(req, res) {
-        try {
-            const stats = await pool.query(`
-                WITH stats_globales AS (
-                    SELECT 
-                        (SELECT COUNT(*) FROM producteurs) as total_producteurs,
-                        (SELECT COUNT(*) FROM collecteurs) as total_collecteurs,
-                        (SELECT COUNT(*) FROM gestionnaires_points) as total_gestionnaires,
-                        (SELECT COUNT(*) FROM superviseurs) as total_superviseurs,
-                        (SELECT COUNT(*) FROM recycleurs) as total_recycleurs,
-                        (SELECT COUNT(*) FROM sponsors) as total_sponsors,
-                        (SELECT COUNT(*) FROM ongs) as total_ongs,
-                        (SELECT COUNT(*) FROM campagnes) as total_campagnes,
-                        (SELECT COUNT(*) FROM missions) as total_missions,
-                        (SELECT COALESCE(SUM(poids_depose), 0) FROM missions WHERE statut = 'validee') as total_kg_collectes,
-                        (SELECT COALESCE(SUM(gains_attribues), 0) FROM missions WHERE statut = 'validee') as total_gains_collecteurs,
-                        (SELECT COALESCE(SUM(points), 0) FROM producteurs) as total_points_producteurs
-                ),
-                evolution_journaliere AS (
-                    SELECT 
-                        date_trunc('day', cree_le) as jour,
-                        COUNT(*) as inscriptions
-                    FROM producteurs
-                    WHERE cree_le >= CURRENT_DATE - INTERVAL '30 days'
-                    GROUP BY date_trunc('day', cree_le)
-                ),
-                repartition_producteurs AS (
-                    SELECT 
-                        type_producteur,
-                        COUNT(*) as nombre
-                    FROM producteurs
-                    GROUP BY type_producteur
-                ),
-                repartition_collecteurs AS (
-                    SELECT 
-                        statut,
-                        COUNT(*) as nombre
-                    FROM collecteurs
-                    GROUP BY statut
-                ),
-                top_producteurs AS (
-                    SELECT 
-                        p.nom_complet,
-                        p.email,
-                        p.points,
-                        COUNT(d.id) as declarations,
-                        COALESCE(SUM(d.quantite), 0) as kg_declares
-                    FROM producteurs p
-                    LEFT JOIN declarations_dechets d ON p.id = d.producteur_id
-                    GROUP BY p.id, p.nom_complet, p.email, p.points
-                    ORDER BY p.points DESC
-                    LIMIT 10
-                ),
-                top_collecteurs AS (
-                    SELECT 
-                        c.nom_complet,
-                        c.email,
-                        c.gains_total,
-                        COUNT(m.id) as missions_realisees,
-                        COALESCE(SUM(m.poids_depose), 0) as kg_collectes
-                    FROM collecteurs c
-                    LEFT JOIN missions m ON c.id = m.collecteur_id AND m.statut = 'validee'
-                    GROUP BY c.id, c.nom_complet, c.email, c.gains_total
-                    ORDER BY kg_collectes DESC
-                    LIMIT 10
-                ),
-                statistiques_campagnes AS (
-                    SELECT 
-                        AVG(CURRENT_DATE - date_debut) as duree_moyenne_jours,
-                        AVG(poids_attendue) as poids_moyen,
-                        COUNT(*) FILTER (WHERE statut = 'active') as actives,
-                        COUNT(*) FILTER (WHERE statut = 'terminee') as terminees
-                    FROM campagnes
-                )
-                SELECT 
-                    (SELECT row_to_json(stats_globales) FROM stats_globales) as globales,
-                    (SELECT json_agg(evolution_journaliere) FROM evolution_journaliere) as evolution,
-                    (SELECT json_agg(repartition_producteurs) FROM repartition_producteurs) as repartition_producteurs,
-                    (SELECT json_agg(repartition_collecteurs) FROM repartition_collecteurs) as repartition_collecteurs,
-                    (SELECT json_agg(top_producteurs) FROM top_producteurs) as top_producteurs,
-                    (SELECT json_agg(top_collecteurs) FROM top_collecteurs) as top_collecteurs,
-                    (SELECT row_to_json(statistiques_campagnes) FROM statistiques_campagnes) as campagnes
-            `);
+    try {
+        // Évolution mensuelle des inscriptions
+        const evolutionInscriptions = await pool.query(`
+            SELECT 
+                TO_CHAR(DATE_TRUNC('month', cree_le), 'Mon YYYY') as mois,
+                EXTRACT(MONTH FROM cree_le) as mois_num,
+                EXTRACT(YEAR FROM cree_le) as annee,
+                COUNT(*) as inscriptions,
+                COUNT(*) FILTER (WHERE type_compte = 'premium') as premium
+            FROM producteurs
+            WHERE cree_le >= DATE_TRUNC('year', CURRENT_DATE) - INTERVAL '1 year'
+            GROUP BY DATE_TRUNC('month', cree_le), 
+                     EXTRACT(MONTH FROM cree_le), 
+                     EXTRACT(YEAR FROM cree_le)
+            ORDER BY annee ASC, mois_num ASC
+        `);
 
-            res.json({
-                success: true,
-                statistiques: stats.rows[0]
-            });
+        // Évolution mensuelle des collectes
+        const evolutionCollectes = await pool.query(`
+            SELECT 
+                TO_CHAR(DATE_TRUNC('month', date_validation), 'Mon YYYY') as mois,
+                EXTRACT(MONTH FROM date_validation) as mois_num,
+                EXTRACT(YEAR FROM date_validation) as annee,
+                COALESCE(SUM(poids_depose), 0) as poids,
+                COUNT(*) as missions,
+                COALESCE(SUM(gains_attribues), 0) as gains
+            FROM missions
+            WHERE statut = 'validee' 
+                AND date_validation >= DATE_TRUNC('year', CURRENT_DATE) - INTERVAL '1 year'
+            GROUP BY DATE_TRUNC('month', date_validation), 
+                     EXTRACT(MONTH FROM date_validation), 
+                     EXTRACT(YEAR FROM date_validation)
+            ORDER BY annee ASC, mois_num ASC
+        `);
 
-        } catch (erreur) {
-            console.error('❌ Erreur statistiques avancées:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors de la récupération'
-            });
-        }
+        res.json({
+            success: true,
+            statistiques: {
+                evolution_inscriptions: evolutionInscriptions.rows,
+                evolution_collectes: evolutionCollectes.rows,
+                // Garder les autres statistiques existantes...
+            }
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur statistiques avancées:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération'
+        });
     }
+}
 
     static async supprimerCampagne(req, res) {
     try {
@@ -2187,8 +2264,6 @@ static async modifierOng(req, res) {
 }
 
 
-
-
 static async statistiquesAchats(req, res) {
     try {
         const result = await pool.query(`
@@ -2200,6 +2275,23 @@ static async statistiquesAchats(req, res) {
         `);
         const global = result.rows[0];
 
+        // Évolution mensuelle des achats (12 derniers mois)
+        const evolution = await pool.query(`
+            SELECT 
+                TO_CHAR(DATE_TRUNC('month', date_achat), 'Mon YYYY') as mois,
+                EXTRACT(MONTH FROM date_achat) as mois_num,
+                EXTRACT(YEAR FROM date_achat) as annee,
+                COALESCE(SUM(poids), 0) as poids_total,
+                COALESCE(SUM(total), 0) as montant_total,
+                COUNT(*) as nombre_achats
+            FROM achats_gestionnaires
+            WHERE date_achat >= DATE_TRUNC('year', CURRENT_DATE) - INTERVAL '1 year'
+            GROUP BY DATE_TRUNC('month', date_achat), 
+                     EXTRACT(MONTH FROM date_achat), 
+                     EXTRACT(YEAR FROM date_achat)
+            ORDER BY annee ASC, mois_num ASC
+        `);
+
         // Par gestionnaire
         const parGestionnaire = await pool.query(`
             SELECT 
@@ -2210,51 +2302,29 @@ static async statistiquesAchats(req, res) {
                 COALESCE(SUM(a.poids), 0) as poids_total,
                 COALESCE(SUM(a.total), 0) as montant_total
             FROM gestionnaires_points g
-            JOIN achats_gestionnaires a ON g.id = a.gestionnaire_id
-            JOIN points_depot_volontaire pdv ON a.point_depot_id = pdv.id
+            LEFT JOIN achats_gestionnaires a ON g.id = a.gestionnaire_id
+            LEFT JOIN points_depot_volontaire pdv ON a.point_depot_id = pdv.id
             GROUP BY g.id, g.nom_complet, pdv.nom
             ORDER BY poids_total DESC
-        `);
-
-        // Par point de collecte
-        const parPoint = await pool.query(`
-            SELECT 
-                pdv.id,
-                pdv.nom,
-                COUNT(a.id) as nombre_achats,
-                COALESCE(SUM(a.poids), 0) as poids_total,
-                COALESCE(SUM(a.total), 0) as montant_total
-            FROM points_depot_volontaire pdv
-            JOIN achats_gestionnaires a ON pdv.id = a.point_depot_id
-            GROUP BY pdv.id, pdv.nom
-            ORDER BY poids_total DESC
-        `);
-
-        // Évolution mensuelle
-        const evolution = await pool.query(`
-            SELECT 
-                DATE_TRUNC('month', date_achat) as mois,
-                COALESCE(SUM(poids), 0) as poids_total,
-                COALESCE(SUM(total), 0) as montant_total,
-                COUNT(*) as nombre_achats
-            FROM achats_gestionnaires
-            WHERE date_achat >= NOW() - INTERVAL '12 months'
-            GROUP BY DATE_TRUNC('month', date_achat)
-            ORDER BY mois DESC
+            LIMIT 10
         `);
 
         res.json({
             success: true,
             global,
-            par_gestionnaire: parGestionnaire.rows,
-            par_point: parPoint.rows,
-            evolution_mensuelle: evolution.rows
+            evolution_mensuelle: evolution.rows,
+            par_gestionnaire: parGestionnaire.rows
         });
     } catch (erreur) {
         console.error('❌ Erreur stats achats:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Erreur lors de la récupération des statistiques achats' 
+        });
     }
 }
+
+
 
 static async statistiquesCollectes(req, res) {
     try {
@@ -2262,11 +2332,29 @@ static async statistiquesCollectes(req, res) {
             SELECT 
                 COALESCE(SUM(poids_depose), 0) as poids_total_collecte,
                 COALESCE(SUM(gains_attribues), 0) as gains_total,
-                COUNT(*) as nombre_missions
+                COUNT(*) as nombre_missions,
+                COUNT(DISTINCT collecteur_id) as collecteurs_actifs
             FROM missions
             WHERE statut = 'validee'
         `);
         const global = result.rows[0];
+
+        // Évolution mensuelle des collectes (12 derniers mois)
+        const evolution = await pool.query(`
+            SELECT 
+                TO_CHAR(DATE_TRUNC('month', date_validation), 'Mon YYYY') as mois,
+                EXTRACT(MONTH FROM date_validation) as mois_num,
+                EXTRACT(YEAR FROM date_validation) as annee,
+                COALESCE(SUM(poids_depose), 0) as poids,
+                COUNT(*) as missions
+            FROM missions
+            WHERE statut = 'validee' 
+                AND date_validation >= DATE_TRUNC('year', CURRENT_DATE) - INTERVAL '1 year'
+            GROUP BY DATE_TRUNC('month', date_validation), 
+                     EXTRACT(MONTH FROM date_validation), 
+                     EXTRACT(YEAR FROM date_validation)
+            ORDER BY annee ASC, mois_num ASC
+        `);
 
         // Par collecteur
         const parCollecteur = await pool.query(`
@@ -2277,12 +2365,13 @@ static async statistiquesCollectes(req, res) {
                 COALESCE(SUM(m.poids_depose), 0) as poids_total,
                 COALESCE(SUM(m.gains_attribues), 0) as gains_total
             FROM collecteurs c
-            JOIN missions m ON c.id = m.collecteur_id AND m.statut = 'validee'
+            LEFT JOIN missions m ON c.id = m.collecteur_id AND m.statut = 'validee'
             GROUP BY c.id, c.nom_complet
             ORDER BY poids_total DESC
+            LIMIT 10
         `);
 
-        // Par point de collecte (dépôt)
+        // Par point de collecte
         const parPoint = await pool.query(`
             SELECT 
                 pdv.id,
@@ -2291,51 +2380,25 @@ static async statistiquesCollectes(req, res) {
                 COALESCE(SUM(m.poids_depose), 0) as poids_total,
                 COALESCE(SUM(m.gains_attribues), 0) as gains_total
             FROM points_depot_volontaire pdv
-            JOIN missions m ON pdv.id = m.point_depot_id AND m.statut = 'validee'
+            LEFT JOIN missions m ON pdv.id = m.point_depot_id AND m.statut = 'validee'
             GROUP BY pdv.id, pdv.nom
             ORDER BY poids_total DESC
-        `);
-
-        // Par gestionnaire (celui qui a validé)
-        const parGestionnaire = await pool.query(`
-            SELECT 
-                g.id,
-                g.nom_complet,
-                pdv.nom as point_depot_nom,
-                COUNT(m.id) as nombre_validations,
-                COALESCE(SUM(m.poids_depose), 0) as poids_total_valide,
-                COALESCE(SUM(m.gains_attribues), 0) as gains_total_valide
-            FROM gestionnaires_points g
-            JOIN missions m ON g.id = m.validee_par AND m.statut = 'validee'
-            JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
-            GROUP BY g.id, g.nom_complet, pdv.nom
-            ORDER BY poids_total_valide DESC
-        `);
-
-        // Évolution mensuelle
-        const evolution = await pool.query(`
-            SELECT 
-                DATE_TRUNC('month', date_validation) as mois,
-                COALESCE(SUM(poids_depose), 0) as poids_total,
-                COALESCE(SUM(gains_attribues), 0) as gains_total,
-                COUNT(*) as nombre_missions
-            FROM missions
-            WHERE statut = 'validee' AND date_validation >= NOW() - INTERVAL '12 months'
-            GROUP BY DATE_TRUNC('month', date_validation)
-            ORDER BY mois DESC
+            LIMIT 10
         `);
 
         res.json({
             success: true,
             global,
+            evolution_mensuelle: evolution.rows,
             par_collecteur: parCollecteur.rows,
-            par_point: parPoint.rows,
-            par_gestionnaire: parGestionnaire.rows,
-            evolution_mensuelle: evolution.rows
+            par_point: parPoint.rows
         });
     } catch (erreur) {
         console.error('❌ Erreur stats collectes:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Erreur lors de la récupération des statistiques collectes' 
+        });
     }
 }
 
@@ -2440,23 +2503,33 @@ static async stocksPoints(req, res) {
         const stocks = await pool.query(`
             SELECT 
                 pdv.id,
-                pdv.nom,
+                pdv.nom as point_depot_nom,
+                pdv.adresse,
                 pdv.commune,
                 pdv.quartier,
-                json_agg(
-                    json_build_object(
-                        'type_dechet', s.type_dechet,
-                        'quantite_disponible', s.quantite_disponible,
-                        'unite', s.unite,
-                        'prix_estime', s.prix_estime,
-                        'dernier_mouvement', s.dernier_mouvement
-                    )
-                ) as stocks
+                COALESCE(SUM(sd.quantite_disponible), 0) as quantite,
+                COUNT(DISTINCT sd.type_dechet) as types_dechets,
+                MAX(sd.dernier_mouvement) as derniere_mise_a_jour
             FROM points_depot_volontaire pdv
-            LEFT JOIN stocks_dechets s ON pdv.id = s.point_depot_id
-            WHERE s.quantite_disponible > 0
-            GROUP BY pdv.id, pdv.nom, pdv.commune, pdv.quartier
-            ORDER BY pdv.nom
+            LEFT JOIN stocks_dechets sd ON pdv.id = sd.point_depot_id
+            WHERE pdv.est_actif = true
+            GROUP BY pdv.id, pdv.nom, pdv.adresse, pdv.commune, pdv.quartier
+            ORDER BY quantite DESC
+        `);
+
+        // Détail par type de déchet
+        const stocksDetail = await pool.query(`
+            SELECT 
+                pdv.nom as point_depot_nom,
+                sd.type_dechet,
+                sd.quantite_disponible as quantite,
+                sd.unite,
+                sd.prix_estime,
+                sd.dernier_mouvement
+            FROM stocks_dechets sd
+            JOIN points_depot_volontaire pdv ON sd.point_depot_id = pdv.id
+            WHERE sd.quantite_disponible > 0
+            ORDER BY pdv.nom, sd.quantite_disponible DESC
         `);
 
         // Total global par type
@@ -2472,11 +2545,17 @@ static async stocksPoints(req, res) {
         res.json({
             success: true,
             stocks: stocks.rows,
-            total_par_type: totalParType.rows
+            stocks_detail: stocksDetail.rows,
+            total_par_type: totalParType.rows,
+            total_stock: stocks.rows.reduce((sum, s) => sum + (parseFloat(s.quantite) || 0), 0)
         });
+
     } catch (erreur) {
         console.error('❌ Erreur stocks points:', erreur);
-        res.status(500).json({ success: false, message: 'Erreur' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Erreur lors de la récupération des stocks' 
+        });
     }
 }
 
@@ -2499,7 +2578,7 @@ static async listerCollecteurs(req, res) {
     try {
         const collecteurs = await pool.query(`
             SELECT id, email, telephone, nom_complet, type_collecteur,
-                   statut, est_actif, points_total, gains_total, cree_le
+                   statut, est_actif, points_total, gains_total, zone_intervention_nom , communes_intervention , quartiers_habituels , cree_le
             FROM collecteurs
             ORDER BY cree_le DESC
         `);
@@ -2529,3 +2608,8 @@ static async listerGestionnaires(req, res) {
 }
 
 export default AdminController;
+
+
+
+
+// INSERT INTO admins ( id, email, telephone, mot_de_passe_hash, nom_complet, role, est_actif, type_utilisateur ) VALUES ( UUID(), 'admin@ecocollect.com', '691234567', '$2b$10$kCq1DyZn7ZDqHRyfksAkI.zyYJicJNq3jLaGnqMF38EoXfkizQ2Re', -- Admin123! 'Administrateur Principal', 'super_admin', TRUE, 'admin' );

@@ -9,6 +9,8 @@ import { pool } from '../config/database.js';
 import AchatGestionnaire from '../models/AchatGestionnaire.js';
 import StockDechet from '../models/StockDechet.js';
 
+
+
 class GestionnaireController {
     // Connexion
     static async connexion(req, res) {

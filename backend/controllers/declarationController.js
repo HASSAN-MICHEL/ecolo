@@ -3,6 +3,7 @@
 import DeclarationDechets from '../models/DeclarationDechets.js';
 import { pool } from '../config/database.js';
 
+
 class DeclarationController {
     // Créer une déclaration de déchets
     static async creerDeclaration(req, res) {
@@ -436,6 +437,54 @@ static getProchaineAction(statutDecla, statutMission) {
     };
     return actions[statutDecla] || 'Action inconnue';
 }
+
+// controllers/DeclarationController.js
+
+static async creerDeclarationAnnexe(req, res) {
+    try {
+        const producteurId = req.producteurId;
+        const {
+            typeDechet, quantite, unite, notes,
+            latitudeReelle, longitudeReelle, adresseReelle, photoUrl
+        } = req.body;
+
+        if (!typeDechet || !quantite || !unite || !latitudeReelle || !longitudeReelle || !photoUrl) {
+            return res.status(400).json({ message: 'Champs obligatoires manquants' });
+        }
+
+        const nouvelleDecla = await DeclarationDechets.creerDeclarationAnnexe({
+            producteurId,
+            typeDechet,
+            quantite: parseFloat(quantite),
+            unite,
+            notes,
+            latitudeReelle: parseFloat(latitudeReelle),
+            longitudeReelle: parseFloat(longitudeReelle),
+            adresseReelle,
+            photoUrl
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Déclaration annexe créée',
+            declaration: nouvelleDecla
+        });
+    } catch (erreur) {
+        console.error(erreur);
+        res.status(500).json({ message: 'Erreur lors de la création' });
+    }
+}
+
+static async getDeclarationsAnnexesDisponibles(req, res) {
+    try {
+        const declarations = await DeclarationDechets.getDeclarationsAnnexesDisponibles();
+        res.json({ success: true, declarations });
+    } catch (erreur) {
+        console.error(erreur);
+        res.status(500).json({ message: 'Erreur serveur' });
+    }
+}
+
 }
 
 export default DeclarationController;

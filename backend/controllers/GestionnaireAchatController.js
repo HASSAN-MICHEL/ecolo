@@ -310,6 +310,7 @@ import AchatGestionnaire from '../models/AchatGestionnaire.js';
 import StockDechet from '../models/StockDechet.js';
 import { pool } from '../config/database.js';
 
+
 class GestionnaireAchatController {
     // ✅ Créer un achat (vendeur non inscrit)
     static async creerAchat(req, res) {

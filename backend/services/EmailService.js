@@ -131,9 +131,12 @@ class EmailService {
                     </div>
                 `
             };
+ const emailEnvoye = await EmailService.envoyerCodeReinitialisation(email, code, utilisateur.nom_complet);
+ console.log('✅ Résultat envoi:', emailEnvoye);
 
             const info = await this.transporter.sendMail(mailOptions);
             console.log('✅ Email réel envoyé:', info.messageId);
+            
             return true;
             
         } catch (error) {
@@ -141,7 +144,7 @@ class EmailService {
             return false;
         }
     }
-
+     
     // Version simplifiée pour le développement (affiche le code dans la console)
     async envoyerCodeDev(email, code, nomComplet) {
         console.log('\n' + '🔐'.repeat(30));

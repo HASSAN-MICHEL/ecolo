@@ -14,6 +14,7 @@ import Ong from '../models/Ong.js';
 import Admin from '../models/Admin.js';
 import EmailService from '../services/EmailService.js';
 
+
 class AuthController {
     
     
@@ -318,7 +319,7 @@ class AuthController {
     }
 
    
-    static verifierToken(req, res, next) {
+    static async verifierToken(req, res, next) {
     // Routes publiques
     const publicRoutes = [
         '/api/collecteurs/connexion',
@@ -326,7 +327,9 @@ class AuthController {
         '/api/gestionnaires/connexion',
         '/api/superviseurs/connexion',
         '/api/producteurs/connexion',
-        '/api/producteurs/inscription'
+        '/api/producteurs/inscription',
+         '/api/admin/connexion',  
+        '/api/admin/inscription'
     ];
 
     if (publicRoutes.includes(req.path) || publicRoutes.includes(req.originalUrl)) {
@@ -373,11 +376,28 @@ class AuthController {
                 req.utilisateurType = 'gestionnaire';
             } else if (req.originalUrl.includes('/api/superviseurs/')) {
                 req.utilisateurType = 'superviseur';
+            } else if (req.originalUrl.includes('/api/admin/')) {
+                req.utilisateurType = 'admin';
             } else {
                 // Par défaut
                 req.utilisateurType = 'producteur';
             }
             console.log(`⚠️ Type déduit de l'URL: ${req.utilisateurType}`);
+        }
+        
+    if (req.utilisateurType === 'admin' && req.utilisateurId) {
+            // Récupérer l'admin depuis la base de données pour avoir toutes ses infos
+            const admin = await Admin.trouverParId(req.utilisateurId);
+            if (admin) {
+                req.admin = {
+                    id: admin.id,
+                    email: admin.email,
+                    nomComplet: admin.nom_complet,
+                    role: admin.role,
+                    est_actif: admin.est_actif
+                };
+                console.log(`✅ Admin chargé dans req.admin: ${admin.email}`);
+            }
         }
         
         console.log(`✅ Token valide - ${req.utilisateurEmail} (${req.utilisateurType})`);
@@ -596,37 +616,6 @@ class AuthController {
         return null;
     }
 
-
-    // static _verifierStatutUtilisateur(utilisateur, type) {
-    //     switch(type) {
-    //         case 'producteur':
-    //             if (!utilisateur.est_actif) {
-    //                 return { valide: false, message: 'Compte désactivé' };
-    //             }
-    //             break;
-            
-    //         case 'collecteur':
-    //             if (utilisateur.statut === 'en_attente') {
-    //                 return { valide: false, message: 'Compte en attente de validation' };
-    //             }
-    //             if (utilisateur.statut === 'suspendu') {
-    //                 return { valide: false, message: 'Compte suspendu' };
-    //             }
-    //             if (utilisateur.statut !== 'actif') {
-    //                 return { valide: false, message: 'Compte non actif' };
-    //             }
-    //             break;
-            
-    //         case 'gestionnaire':
-    //         case 'superviseur':
-    //             if (!utilisateur.est_actif) {
-    //                 return { valide: false, message: 'Compte désactivé' };
-    //             }
-    //             break;
-    //     }
-
-    //     return { valide: true };
-    // }
 
 
 static _verifierStatutUtilisateur(utilisateur, type) {

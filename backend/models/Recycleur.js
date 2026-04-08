@@ -1,64 +1,8 @@
 import { pool } from '../config/database.js';
 
 class Recycleur {
-    // Créer un nouveau recycleur
-    // static async creer(donnees) {
-    //     const requete = `
-    //         INSERT INTO recycleurs (
-    //             email, 
-    //             telephone, 
-    //             mot_de_passe_hash, 
-    //             nom_entreprise,
-    //             nom_responsable, 
-    //             adresse, 
-    //             quartier,
-    //             commune, 
-    //             numero_identite, 
-    //             photo_profil_url,
-    //             photo_cni_recto_url,
-    //             photo_cni_verso_url, 
-    //             statut,
-    //             est_actif, 
-    //             cgu_acceptees,
-    //             cgu_acceptees_le
-    //         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP)
-    //         RETURNING *
-    //     `;
-        
-    //     const valeurs = [
-    //         donnees.email,
-    //         donnees.telephone,
-    //         donnees.motDePasseHash,
-    //         donnees.nomEntreprise,
-    //         donnees.nomResponsable,
-    //         donnees.adresse,
-    //         donnees.quartier,
-    //         donnees.commune,
-    //         donnees.numeroIdentite,
-    //         donnees.photoProfilUrl,
-    //         donnees.photoCniRectoUrl,
-    //         donnees.photoCniVersoUrl,
-    //         donnees.statut || 'en_attente',
-    //         donnees.est_actif || false,
-    //         donnees.cguAcceptees || false
-    //     ];
+   
 
-    //     try {
-    //         console.log('📝 Exécution requête SQL avec valeurs:', {
-    //             ...valeurs,
-    //             motDePasseHash: '[HIDDEN]'
-    //         });
-            
-    //         const resultat = await pool.query(requete, valeurs);
-    //         console.log('✅ Recycleur créé avec succès:', resultat.rows[0].id);
-    //         return resultat.rows[0];
-    //     } catch (error) {
-    //         console.error('❌ Erreur SQL création recycleur:', error);
-    //         throw error;
-    //     }
-    // }
-
-    // models/Recycleur.js
 static async creer(donnees) {
     const requete = `
         INSERT INTO recycleurs (

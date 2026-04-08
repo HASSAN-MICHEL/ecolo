@@ -3,14 +3,14 @@
 import express from 'express';
 import CollecteurController from '../controllers/CollecteurController.js';
 
-import { uploadCollecteurFiles, processUploads } from '../middleware/uploadToSupabase.js';
+import { uploadCollecteurFiles } from '../middleware/upload.js';
 import  AuthCollecteur  from '../controllers/AuthController.js';
 
 const router = express.Router();
 
 router.post('/inscription', 
     uploadCollecteurFiles,    // Multer en mémoire
-    processUploads,           // Upload vers Supabase
+         // Upload vers Supabase
     CollecteurController.inscription
 );
 
@@ -34,5 +34,8 @@ router.post('/missions/:missionId/demarrer', CollecteurController.demarrerCollec
 router.post('/missions/:missionId/terminer', CollecteurController.terminerCollecte);
 router.post('/missions/:missionId/depot', CollecteurController.choisirPointDepot);
 router.post('/missions/:missionId/photo', CollecteurController.ajouterPhoto);
+
+router.get('/declarations-annexes', CollecteurController.declarationsAnnexesDisponibles);
+router.post('/declarations-annexes/:declarationId/accepter', CollecteurController.accepterDeclarationAnnexe);
 
 export default router;

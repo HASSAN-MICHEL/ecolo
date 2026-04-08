@@ -1,6 +1,7 @@
 import Notification from '../models/Notification.js';
 import { pool } from '../config/database.js';
 
+
 class NotificationController {
     // Récupérer les notifications de l'utilisateur connecté
     static async getMyNotifications(req, res) {

@@ -2,6 +2,7 @@ import express from 'express';
 import AuthController from '../controllers/AuthController.js';
 
  import ProdutionController from '../controllers/ProdutionController.js';
+ import DeclarationController from '../controllers/declarationController.js';
 
 const router = express.Router();
 
@@ -16,10 +17,9 @@ router.post('/reinitialiser-mdp-code', AuthController.reinitialiserMdpAvecCode);
 
 
 router.post('/connexion', AuthController.connecterProducteur);
-// Réinitialisation de mot de passe
-//router.post('/demande-reinitialisation-mdp', AuthController.demanderReinitialisationMdp);
 router.post('/reinitialiser-mdp', AuthController.reinitialiserMdp);
 
+router.post('/declaration-annexe', DeclarationController.creerDeclarationAnnexe);
 // Vérifier token (route test)
 router.get('/verifier-token', AuthController.verifierToken, (req, res) => {
     res.json({ 

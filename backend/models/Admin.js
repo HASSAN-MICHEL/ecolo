@@ -76,6 +76,50 @@ class Admin {
         return resultat.rows;
     }
 
+static async mettreAJour(id, donnees) {
+    // Construction dynamique des champs à mettre à jour
+    const champs = [];
+    const valeurs = [];
+    let index = 1;
+
+    if (donnees.nomComplet !== undefined) {
+        champs.push(`nom_complet = $${index++}`);
+        valeurs.push(donnees.nomComplet);
+    }
+    if (donnees.email !== undefined) {
+        champs.push(`email = $${index++}`);
+        valeurs.push(donnees.email);
+    }
+    if (donnees.telephone !== undefined) {
+        champs.push(`telephone = $${index++}`);
+        valeurs.push(donnees.telephone);
+    }
+    if (donnees.role !== undefined) {
+        champs.push(`role = $${index++}`);
+        valeurs.push(donnees.role);
+    }
+    if (donnees.motDePasseHash !== undefined) {
+        champs.push(`mot_de_passe_hash = $${index++}`);
+        valeurs.push(donnees.motDePasseHash);
+    }
+    // Ajoutez d'autres champs si nécessaire (par exemple 'est_actif' pour un super admin)
+
+    if (champs.length === 0) {
+        throw new Error('Aucune donnée à mettre à jour');
+    }
+
+    valeurs.push(id);
+    const requete = `
+        UPDATE admins
+        SET ${champs.join(', ')}, mis_a_jour_le = NOW()
+        WHERE id = $${index}
+        RETURNING id, email, telephone, nom_complet, role, est_actif, cree_le, mis_a_jour_le
+    `;
+
+    const resultat = await pool.query(requete, valeurs);
+    return resultat.rows[0];
+}
+
     // Désactiver un admin
     static async desactiver(id) {
         const requete = `

@@ -2,6 +2,7 @@
 import ProducteurPremium from '../models/ProducteurPremium.js';
 import { pool } from '../config/database.js';
 
+
 class ProducteurPremiumController {
     // Souscrire à un abonnement premium
     static async souscrire(req, res) {

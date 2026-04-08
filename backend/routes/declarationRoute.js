@@ -25,6 +25,8 @@ router.get('/declarations', DeclarationController.obtenirDeclarations);
 router.get('/declarations/:id', DeclarationController.obtenirDeclaration);
 router.get('/declarations/:id/suivre', DeclarationController.suivreDeclaration);
 
+router.post('/declaration-annexe', DeclarationController.creerDeclarationAnnexe);
+
 // Historique
 router.get('/historique', DeclarationController.obtenirHistorique);
 

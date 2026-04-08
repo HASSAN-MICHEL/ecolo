@@ -4,8 +4,7 @@ import { pool } from '../config/database.js';
 class DemandeEnlevement {
     // Créer une demande d'enlèvement
    
-    
-    // models/DemandeEnlevement.js - Version corrigée
+
 
 static async creer(donnees) {
     const client = await pool.connect();
