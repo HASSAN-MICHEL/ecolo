@@ -174,7 +174,7 @@ app.use(morgan('combined'));
 
 // CORS (IMPORTANT VPS)
 app.use(cors({
-    origin: '*', // 🔥 TEMPORAIRE pour debug (ensuite on sécurise)
+    origin: 'https://ecocollect.cm',
     credentials: true
 }));
 
@@ -190,7 +190,7 @@ serveStatic(app);
 
 app.use('/api/notifications', NotificationRoutes);
 app.use('/api/producteur-premium', producteurpremiumRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/admin', adminRoutes); 
 app.use('/api/sponsors', sponsorRoutes);
 app.use('/api/campagnes', campagneRoutes);
 app.use('/api/ongs', ongRoutes);

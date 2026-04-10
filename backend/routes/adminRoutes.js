@@ -73,11 +73,10 @@ import { uploadRecycleurFiles } from '../middleware/upload.js';
 import CampagneController from '../controllers/CampagneController.js'; 
 const router = express.Router();
 
-// Routes publiques
+
 router.post('/inscription', AdminController.creerAdmin);
 router.post('/connexion', AdminController.connexion);
 
-// Middleware de vérification de token
 router.use(AuthController.verifierToken);
 
 // Middleware de vérification du rôle admin
@@ -96,17 +95,17 @@ router.get('/profil',  AdminController.getProfil);
 router.put('/profil',  AdminController.modifierProfil);
 
 router.get('/tableau-bord', AdminController.tableauBord);
-router.get('/statistiques-avancees', AdminController.statistiquesAvancees); // Bien venue
+router.get('/statistiques-avancees', AdminController.statistiquesAvancees); 
 router.get('/historique', AdminController.historiqueComplet);
 
-// ===== GESTION DES SUPERVISEURS =====
+// GESTION DES SUPERVISEURS 
 router.post('/superviseurs', AdminController.creerSuperviseur);
 router.get('/superviseurs', AdminController.listerSuperviseurs);
 router.get('/superviseurs/:id', AdminController.detailsSuperviseur);
 router.put('/superviseurs/:id', AdminController.modifierSuperviseur);
 router.delete('/superviseurs/:id', AdminController.supprimerSuperviseur);
 
-// ===== GESTION DES RECYCLEURS =====
+// GESTION DES RECYCLEURS
 router.post('/recycleurs', uploadRecycleurFiles, AdminController.creerRecycleur);
 router.get('/recycleurs', AdminController.listerRecycleurs);
 router.get('/recycleurs/:id', AdminController.detailsRecycleur);

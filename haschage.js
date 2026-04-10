@@ -109,3 +109,15 @@ async function generateHashes() {
 }
 
 generateHashes();
+
+
+
+INSERT INTO admins (id, email, mot_de_passe_hash, nom_complet, role, est_actif)
+VALUES (
+  uuid_generate_v4(),
+  'admin@ecocollect.cm',
+  '$2b$10$bC1WHt5ducWsFC1grrAjeuVJnPfKkwwJl70FlBDgKipLRK4RixjKq',
+  'Administrateur',
+  'admin',
+  true
+);

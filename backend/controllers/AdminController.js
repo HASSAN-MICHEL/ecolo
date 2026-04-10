@@ -13,10 +13,6 @@ import { pool } from '../config/database.js';
 import jwt from 'jsonwebtoken';
 
 class AdminController {
-    // ===== Authentification
-
-    
-// backend/controllers/AdminController.js
 
 static async getProfil(req, res) {
     try {
