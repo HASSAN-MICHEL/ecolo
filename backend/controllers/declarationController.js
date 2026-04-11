@@ -440,9 +440,26 @@ static getProchaineAction(statutDecla, statutMission) {
 
 // controllers/DeclarationController.js
 
+// static async creerDeclarationAnnexe(req, res) {
+//     try {
+//         const producteurId = req.producteurId;
+//         const {
+//             typeDechet, quantite, unite, notes,
+//             latitudeReelle, longitudeReelle, adresseReelle, photoUrl
+//         } = req.body;
+
 static async creerDeclarationAnnexe(req, res) {
     try {
         const producteurId = req.producteurId;
+        
+        // Vérification obligatoire
+        if (!producteurId) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Utilisateur non authentifié ou ID producteur manquant' 
+            });
+        }
+
         const {
             typeDechet, quantite, unite, notes,
             latitudeReelle, longitudeReelle, adresseReelle, photoUrl

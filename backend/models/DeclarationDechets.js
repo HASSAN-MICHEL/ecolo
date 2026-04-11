@@ -207,11 +207,19 @@ class DeclarationDechets {
         const resultat = await pool.query(requete, [producteurId, limite]);
         return resultat.rows;
     }
+
+
 static async creerDeclarationAnnexe(data) {
     const {
         producteurId, typeDechet, quantite, unite, notes,
         latitudeReelle, longitudeReelle, adresseReelle, photoUrl
     } = data;
+
+    console.log('📝 Insertion annexe avec producteurId:', producteurId);
+
+    if (!producteurId) {
+        throw new Error('producteurId manquant – impossible d\'insérer la déclaration');
+    }
 
     const query = `
         INSERT INTO declarations_dechets (
@@ -229,22 +237,29 @@ static async creerDeclarationAnnexe(data) {
     return result.rows[0];
 }
 
-// static async getDeclarationsAnnexesDisponibles() {
+// static async creerDeclarationAnnexe(data) {
+//     const {
+//         producteurId, typeDechet, quantite, unite, notes,
+//         latitudeReelle, longitudeReelle, adresseReelle, photoUrl
+//     } = data;
+
 //     const query = `
-//         SELECT 
-//             d.*,
-//             p.nom_complet as producteur_nom,
-//             p.telephone as producteur_telephone
-//         FROM declarations_dechets d
-//         JOIN producteurs p ON d.producteur_id = p.id
-//         WHERE d.type_declaration = 'annexe'
-//           AND d.statut = 'disponible'
-//           AND d.date_creation >= NOW() - INTERVAL '7 days'
-//         ORDER BY d.date_creation ASC
+//         INSERT INTO declarations_dechets (
+//             producteur_id, type_dechet, quantite, unite, notes,
+//             latitude_reelle, longitude_reelle, adresse_reelle, photo_url,
+//             mode_collecte, type_declaration, statut
+//         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'depot_volontaire', 'annexe', 'en_attente')
+//         RETURNING *
 //     `;
-//     const result = await pool.query(query);
-//     return result.rows;
+//     const values = [
+//         producteurId, typeDechet, quantite, unite, notes,
+//         latitudeReelle, longitudeReelle, adresseReelle, photoUrl
+//     ];
+//     const result = await pool.query(query, values);
+//     return result.rows[0];
 // }
+
+
 
 static async getDeclarationsAnnexesDisponibles() {
     const query = `
