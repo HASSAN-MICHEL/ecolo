@@ -207,7 +207,6 @@ class DeclarationDechets {
         const resultat = await pool.query(requete, [producteurId, limite]);
         return resultat.rows;
     }
-
 static async creerDeclarationAnnexe(data) {
     const {
         producteurId, typeDechet, quantite, unite, notes,
@@ -218,8 +217,8 @@ static async creerDeclarationAnnexe(data) {
         INSERT INTO declarations_dechets (
             producteur_id, type_dechet, quantite, unite, notes,
             latitude_reelle, longitude_reelle, adresse_reelle, photo_url,
-            type_declaration, statut
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'annexe', 'en_attente')
+            mode_collecte, type_declaration, statut
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'depot_volontaire', 'annexe', 'en_attente')
         RETURNING *
     `;
     const values = [
