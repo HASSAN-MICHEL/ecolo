@@ -316,7 +316,54 @@ static async obtenirMissions(id, statut = null) {
     return resultat.rows;
 }
 
-// ✅ Obtenir toutes les missions du collecteur avec détails
+// // 
+// static async missionsAvecDetails(id, statut = null) {
+//     let requete = `
+//         SELECT 
+//             m.*,
+//             d.type_dechet,
+//             d.quantite,
+//             d.unite,
+//             p.nom_complet as producteur_nom,
+//             p.adresse as producteur_adresse,
+//             pdv.nom as point_depot_nom,
+//             gc.id as gain_id,
+//             gc.montant as gain_montant,
+//             gc.type_gain,
+//             gc.statut as gain_statut,
+//             gc.date_validation as gain_date
+//         FROM missions m
+//         JOIN declarations_dechets d ON m.declaration_id = d.id
+//         JOIN producteurs p ON d.producteur_id = p.id
+//         LEFT JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
+//         LEFT JOIN gains_collecteurs gc ON m.id = gc.mission_id
+//         WHERE m.collecteur_id = $1
+//     `;
+    
+//     const params = [id];
+    
+//     if (statut && statut !== 'tous') {
+//         requete += ` AND m.statut = $2`;
+//         params.push(statut);
+//     }
+    
+//     requete += ` ORDER BY 
+//         CASE 
+//             WHEN m.statut = 'en_cours' THEN 1
+//             WHEN m.statut = 'acceptee' THEN 2
+//             WHEN m.statut = 'deposee' THEN 3
+//             WHEN m.statut = 'validee' THEN 4
+//             ELSE 5
+//         END,
+//         m.date_validation DESC NULLS LAST,
+//         m.cree_le DESC
+//     `;
+    
+//     const resultat = await pool.query(requete, params);
+//     return resultat.rows;
+// }
+
+
 static async missionsAvecDetails(id, statut = null) {
     let requete = `
         SELECT 
@@ -324,19 +371,27 @@ static async missionsAvecDetails(id, statut = null) {
             d.type_dechet,
             d.quantite,
             d.unite,
+            d.photo_url,
+            d.latitude_reelle,
+            d.longitude_reelle,
             p.nom_complet as producteur_nom,
+            p.telephone as producteur_telephone,
             p.adresse as producteur_adresse,
             pdv.nom as point_depot_nom,
-            gc.id as gain_id,
-            gc.montant as gain_montant,
-            gc.type_gain,
-            gc.statut as gain_statut,
-            gc.date_validation as gain_date
+            pdv.adresse as point_depot_adresse,
+            COALESCE(
+                (SELECT json_agg(json_build_object(
+                    'id', gc.id,
+                    'montant', gc.montant,
+                    'type', gc.type_gain,
+                    'statut', gc.statut,
+                    'date', gc.date_validation
+                )) FROM gains_collecteurs gc WHERE gc.mission_id = m.id), '[]'
+            ) as gains
         FROM missions m
         JOIN declarations_dechets d ON m.declaration_id = d.id
         JOIN producteurs p ON d.producteur_id = p.id
         LEFT JOIN points_depot_volontaire pdv ON m.point_depot_id = pdv.id
-        LEFT JOIN gains_collecteurs gc ON m.id = gc.mission_id
         WHERE m.collecteur_id = $1
     `;
     
@@ -363,7 +418,6 @@ static async missionsAvecDetails(id, statut = null) {
     return resultat.rows;
 }
 
-// ✅ Obtenir toutes les missions du collecteur avec détails des gains
 static async missionsAvecDetails(id, statut = null) {
     let requete = `
         SELECT 
