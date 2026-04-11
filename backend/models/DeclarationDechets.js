@@ -120,28 +120,44 @@ class DeclarationDechets {
         client.release();
     }
  }
+
+
+    // static async trouverParProducteur(producteurId) {
+    //     const requete = `
+    //         SELECT dd.*, 
+    //                m.id as mission_id,
+    //                m.statut as statut_mission,
+    //                COALESCE(
+    //                    (SELECT json_agg(json_build_object(
+    //                        'type', tdd.type_dechet,
+    //                        'quantite', tdd.quantite,
+    //                        'unite', tdd.unite
+    //                    ))
+    //                    FROM types_dechets_declaration tdd
+    //                    WHERE tdd.declaration_id = dd.id), '[]'
+    //                ) as types_dechets
+    //         FROM declarations_dechets dd
+    //         LEFT JOIN missions m ON dd.id = m.declaration_id
+    //         WHERE dd.producteur_id = $1
+    //         ORDER BY dd.cree_le DESC
+    //     `;
+    //     const resultat = await pool.query(requete, [producteurId]);
+    //     return resultat.rows;
+    // }
+
     static async trouverParProducteur(producteurId) {
-        const requete = `
-            SELECT dd.*, 
-                   m.id as mission_id,
-                   m.statut as statut_mission,
-                   COALESCE(
-                       (SELECT json_agg(json_build_object(
-                           'type', tdd.type_dechet,
-                           'quantite', tdd.quantite,
-                           'unite', tdd.unite
-                       ))
-                       FROM types_dechets_declaration tdd
-                       WHERE tdd.declaration_id = dd.id), '[]'
-                   ) as types_dechets
-            FROM declarations_dechets dd
-            LEFT JOIN missions m ON dd.id = m.declaration_id
-            WHERE dd.producteur_id = $1
-            ORDER BY dd.cree_le DESC
-        `;
-        const resultat = await pool.query(requete, [producteurId]);
-        return resultat.rows;
-    }
+    const query = `
+        SELECT id, producteur_id, type_dechet, quantite, unite, mode_collecte,
+               date_souhaitee, creneau_horaire, notes, statut, cree_le,
+               latitude_reelle, longitude_reelle, adresse_reelle, photo_url,
+               type_declaration
+        FROM declarations_dechets
+        WHERE producteur_id = $1
+        ORDER BY cree_le DESC
+    `;
+    const result = await pool.query(query, [producteurId]);
+    return result.rows;
+}
 
     static async trouverParId(id) {
         const requete = `
@@ -203,6 +219,7 @@ class DeclarationDechets {
         const resultat = await pool.query(requete, [producteurId, limite]);
         return resultat.rows;
     }
+
 static async creerDeclarationAnnexe(data) {
     const {
         producteurId, typeDechet, quantite, unite, notes,
