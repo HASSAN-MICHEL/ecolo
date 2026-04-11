@@ -196,12 +196,10 @@ app.use('/api/campagnes', campagneRoutes);
 app.use('/api/ongs', ongRoutes);
 app.use('/api/points-depot', PointDepotRoutes);
 app.use('/api/recycleurs', RecycleurRoutes);
-
 app.use('/api/collecteurs', collecteurRoutes);
 app.use('/api/gestionnaires', gestionnaireRoutes);
 app.use('/api/achatsGestionnaire', gestionnaireAchatsRoutes);
 app.use('/api/superviseurs', superviseurRoutes);
-
 app.use('/api/auth', authRoutes);
 app.use('/api', declarationRoutes);
 app.use('/api', dashboardRoutes);
@@ -214,13 +212,19 @@ const frontendPath = path.join(__dirname, '../dort');
 
 app.use(express.static(frontendPath));
 
-// SPA fallback (IMPORTANT React)
+// // SPA fallback (IMPORTANT React)
+// app.get('*', (req, res) => {
+//     res.sendFile(path.join(frontendPath, 'index.html'));
+// });
 app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ 
+            success: false, 
+            message: `Route introuvable: ${req.path}` 
+        });
+    }
     res.sendFile(path.join(frontendPath, 'index.html'));
 });
-
-
-// ==================== ERREURS ====================
 
 app.use((err, req, res, next) => {
     console.error('❌ Erreur globale:', err);
