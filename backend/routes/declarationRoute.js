@@ -25,8 +25,11 @@ router.get('/declarations', DeclarationController.obtenirDeclarations);
 router.get('/declarations/:id', DeclarationController.obtenirDeclaration);
 router.get('/declarations/:id/suivre', DeclarationController.suivreDeclaration);
 
-router.post('/auth/declaration-annexe', DeclarationController.creerDeclarationAnnexe);
-
+router.post('/auth/declaration-annexe',
+    AuthController.verifierToken,      
+    compatibiliteProducteur,           
+    DeclarationController.creerDeclarationAnnexe
+);
 // Historique
 router.get('/historique', DeclarationController.obtenirHistorique);
 
