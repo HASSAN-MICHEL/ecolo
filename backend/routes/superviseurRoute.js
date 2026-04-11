@@ -88,13 +88,7 @@ router.post('/missions/:missionId/attribuer/:collecteurId', SuperviseurControlle
 // Statistiques
 router.get('/statistiques', SuperviseurController.statistiques);
 
-//géré les demandes des recycleur:
-
-
-// Liste toutes les demandes
 router.get('/demandes-recycleurs', SuperviseurController.getDemandesEnlevement);
-
-// Demandes traitées par le superviseur connecté
 router.get('/demandes-recycleurs/mes-traitements', SuperviseurController.mesDemandesTraitees);
 
 // Statistiques des demandes
