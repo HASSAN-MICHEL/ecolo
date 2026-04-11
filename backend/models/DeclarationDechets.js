@@ -209,32 +209,102 @@ class DeclarationDechets {
     }
 
 
+// static async creerDeclarationAnnexe(data) {
+//     const {
+//         producteurId, typeDechet, quantite, unite, notes,
+//         latitudeReelle, longitudeReelle, adresseReelle, photoUrl
+//     } = data;
+
+//     console.log('📝 Insertion annexe avec producteurId:', producteurId);
+
+//     if (!producteurId) {
+//         throw new Error('producteurId manquant – impossible d\'insérer la déclaration');
+//     }
+
+//     const query = `
+//         INSERT INTO declarations_dechets (
+//             producteur_id, type_dechet, quantite, unite, notes,
+//             latitude_reelle, longitude_reelle, adresse_reelle, photo_url,
+//             mode_collecte, type_declaration, statut
+//         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'depot_volontaire', 'annexe', 'en_attente')
+//         RETURNING *
+//     `;
+//     const values = [
+//         producteurId, typeDechet, quantite, unite, notes,
+//         latitudeReelle, longitudeReelle, adresseReelle, photoUrl
+//     ];
+//     const result = await pool.query(query, values);
+//     return result.rows[0];
+// }
+
+
 static async creerDeclarationAnnexe(data) {
-    const {
-        producteurId, typeDechet, quantite, unite, notes,
-        latitudeReelle, longitudeReelle, adresseReelle, photoUrl
-    } = data;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
 
-    console.log('📝 Insertion annexe avec producteurId:', producteurId);
+        const {
+            producteurId, typeDechet, quantite, unite, notes,
+            latitudeReelle, longitudeReelle, adresseReelle, photoUrl
+        } = data;
 
-    if (!producteurId) {
-        throw new Error('producteurId manquant – impossible d\'insérer la déclaration');
+        // 1. Insérer la déclaration annexe
+        const query = `
+            INSERT INTO declarations_dechets (
+                producteur_id, type_dechet, quantite, unite, notes,
+                latitude_reelle, longitude_reelle, adresse_reelle, photo_url,
+                mode_collecte, type_declaration, statut
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'depot_volontaire', 'annexe', 'en_attente')
+            RETURNING *
+        `;
+        const values = [
+            producteurId, typeDechet, quantite, unite, notes,
+            latitudeReelle, longitudeReelle, adresseReelle, photoUrl
+        ];
+        const result = await client.query(query, values);
+        const declaration = result.rows[0];
+
+        // 2. Créer une mission associée (comme pour les déclarations normales)
+        const missionQuery = `
+            INSERT INTO missions (declaration_id, statut, date_disponibilite)
+            VALUES ($1, 'disponible', CURRENT_TIMESTAMP)
+            RETURNING id
+        `;
+        const missionResult = await client.query(missionQuery, [declaration.id]);
+        const missionId = missionResult.rows[0].id;
+
+        // 3. Mettre à jour le statut de la déclaration à 'affecte' (facultatif)
+        await client.query(
+            'UPDATE declarations_dechets SET statut = $1 WHERE id = $2',
+            ['affecte', declaration.id]
+        );
+
+        // 4. Notifier le producteur (optionnel)
+        try {
+            await client.query(
+                `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification, reference_id, reference_type)
+                 VALUES ($1, 'producteur', 'Déclaration annexe enregistrée', 'Votre déclaration annexe a été créée. Un collecteur peut maintenant l’accepter.', 'succes', $2, 'declaration')`,
+                [producteurId, declaration.id]
+            );
+        } catch (notifErr) {
+            console.warn('⚠️ Erreur notification (non bloquante) :', notifErr);
+        }
+
+        await client.query('COMMIT');
+
+        return {
+            ...declaration,
+            missionId,
+            statut: 'affecte'
+        };
+
+    } catch (erreur) {
+        await client.query('ROLLBACK');
+        console.error('❌ Erreur création déclaration annexe :', erreur);
+        throw erreur;
+    } finally {
+        client.release();
     }
-
-    const query = `
-        INSERT INTO declarations_dechets (
-            producteur_id, type_dechet, quantite, unite, notes,
-            latitude_reelle, longitude_reelle, adresse_reelle, photo_url,
-            mode_collecte, type_declaration, statut
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'depot_volontaire', 'annexe', 'en_attente')
-        RETURNING *
-    `;
-    const values = [
-        producteurId, typeDechet, quantite, unite, notes,
-        latitudeReelle, longitudeReelle, adresseReelle, photoUrl
-    ];
-    const result = await pool.query(query, values);
-    return result.rows[0];
 }
 
 // static async creerDeclarationAnnexe(data) {
