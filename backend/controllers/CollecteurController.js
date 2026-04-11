@@ -1,6 +1,7 @@
 
 import bcrypt from 'bcrypt';
 import Collecteur from '../models/Collecteur.js';
+import DeclarationDechets from '../models/DeclarationDechets.js';
 import Mission from '../models/Mission.js';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';  
