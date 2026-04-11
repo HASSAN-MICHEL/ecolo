@@ -203,35 +203,23 @@ class DeclarationDechets {
         const resultat = await pool.query(requete, [producteurId, limite]);
         return resultat.rows;
     }
-static async creerDeclarationAnnexe(donnees) {
+static async creerDeclarationAnnexe(data) {
     const {
-        producteurId,
-        typeDechet,
-        quantite,
-        unite,
-        notes,
-        latitudeReelle,
-        longitudeReelle,
-        adresseReelle,
-        photoUrl
-    } = donnees;
-
-    // Valeur par défaut pour mode_collecte (choisir une valeur existante dans l'enum)
-    const modeCollecte = 'depot_volontaire'; // ou 'collecte_domicile'
+        producteurId, typeDechet, quantite, unite, notes,
+        latitudeReelle, longitudeReelle, adresseReelle, photoUrl
+    } = data;
 
     const query = `
         INSERT INTO declarations_dechets (
             producteur_id, type_dechet, quantite, unite, notes,
-            latitude_reelle, longitude_reelle, adresse_reelle,
-            photo_url, type_declaration, statut, mode_collecte
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'annexe', 'en_attente', $10)
+            latitude_reelle, longitude_reelle, adresse_reelle, photo_url,
+            type_declaration, statut
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'annexe', 'en_attente')
         RETURNING *
     `;
     const values = [
         producteurId, typeDechet, quantite, unite, notes,
-        latitudeReelle, longitudeReelle, adresseReelle,
-        photoUrl,
-        modeCollecte
+        latitudeReelle, longitudeReelle, adresseReelle, photoUrl
     ];
     const result = await pool.query(query, values);
     return result.rows[0];
