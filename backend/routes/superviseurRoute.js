@@ -56,7 +56,7 @@ router.post('/connexion', SuperviseurController.connexion);
 console.log('🔒 Application du middleware de protection...');
 router.use(AuthController.verifierToken);  
 
-// ============================================
+
 console.log('🔐 Routes protégées superviseur...');
 
 router.get('/profil', SuperviseurController.getProfil);
@@ -85,6 +85,11 @@ router.patch('/gestionnaires/:gestionnaireId/activer', SuperviseurController.act
 router.post('/missions', SuperviseurController.creerMission);
 router.post('/missions/:missionId/attribuer/:collecteurId', SuperviseurController.attribuerMission);
 
+
+// Gestion des missions disponibles
+router.get('/missions/disponibles', SuperviseurController.missionsDisponibles);
+
+router.get('/statistiques/evolution', SuperviseurController.evolutionHebdomadaire);
 // Statistiques
 router.get('/statistiques', SuperviseurController.statistiques);
 
@@ -94,13 +99,9 @@ router.get('/demandes-recycleurs/mes-traitements', SuperviseurController.mesDema
 // Statistiques des demandes
 router.get('/demandes-recycleurs/statistiques', SuperviseurController.statistiquesDemandes);
 
-// Détails d'une demande
+
 router.get('/demandes-recycleurs/:demandeId', SuperviseurController.detailsDemande);
-
-// Valider une demande
 router.post('/demandes-recycleurs/:demandeId/valider', SuperviseurController.validerDemandeEnlevement);
-
-
 
 router.get('/declarations-recyclage', SuperviseurController.getAllDeclarations);
 router.put('/declarations-recyclage/:declarationId/valider', SuperviseurController.validerDeclaration);
