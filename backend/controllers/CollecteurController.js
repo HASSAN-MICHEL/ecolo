@@ -482,37 +482,62 @@ class CollecteurController {
         }
     }
 
-    // Accepter une mission
+    // // Accepter une mission
+    // static async accepterMission(req, res) {
+    //     try {
+    //         const { missionId } = req.params;
+    //         const collecteurId = req.utilisateurId;
+
+    //         // Vérifier si le collecteur a déjà une mission en cours
+    //         const missionsEnCours = await Mission.obtenirParCollecteur(collecteurId, 'en_cours');
+    //         if (missionsEnCours.length > 0) {
+    //             return res.status(400).json({
+    //                 success: false,
+    //                 message: 'Vous avez déjà une mission en cours'
+    //             });
+    //         }
+
+    //         const mission = await Mission.attribuer(missionId, collecteurId);
+
+    //         res.json({
+    //             success: true,
+    //             message: 'Mission acceptée avec succès',
+    //             mission
+    //         });
+    //     } catch (erreur) {
+    //         console.error('Erreur acceptation mission:', erreur);
+    //         res.status(500).json({
+    //             success: false,
+    //             message: 'Erreur lors de l\'acceptation de la mission',
+    //             erreur: erreur.message
+    //         });
+    //     }
+    // }
+
     static async accepterMission(req, res) {
-        try {
-            const { missionId } = req.params;
-            const collecteurId = req.utilisateurId;
+    try {
+        const { missionId } = req.params;
+        const collecteurId = req.utilisateurId;
 
-            // Vérifier si le collecteur a déjà une mission en cours
-            const missionsEnCours = await Mission.obtenirParCollecteur(collecteurId, 'en_cours');
-            if (missionsEnCours.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Vous avez déjà une mission en cours'
-                });
-            }
+        // Option 1 : supprimer complètement la vérification
+        // (permet d’accepter plusieurs missions même si une est en cours)
 
-            const mission = await Mission.attribuer(missionId, collecteurId);
-
-            res.json({
-                success: true,
-                message: 'Mission acceptée avec succès',
-                mission
-            });
-        } catch (erreur) {
-            console.error('Erreur acceptation mission:', erreur);
-            res.status(500).json({
+        // Option 2 : limiter à 2 missions acceptées en parallèle
+        const missionsAcceptees = await Mission.obtenirParCollecteur(collecteurId, 'acceptee');
+        if (missionsAcceptees.length >= 2) {
+            return res.status(400).json({
                 success: false,
-                message: 'Erreur lors de l\'acceptation de la mission',
-                erreur: erreur.message
+                message: 'Vous avez déjà trop de missions en attente. Terminez-en une avant d’en accepter une nouvelle.'
             });
         }
+
+        const mission = await Mission.attribuer(missionId, collecteurId);
+        res.json({ success: true, message: 'Mission acceptée', mission });
+    } catch (erreur) {
+        console.error('Erreur acceptation mission:', erreur);
+        res.status(500).json({ success: false, message: erreur.message });
     }
+}
 
     // Démarrer une collecte
     static async demarrerCollecte(req, res) {
