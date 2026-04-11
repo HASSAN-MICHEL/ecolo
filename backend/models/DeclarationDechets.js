@@ -323,23 +323,25 @@ static async getDeclarationsAnnexesDisponibles() {
     const result = await pool.query(query);
     return result.rows;
 }
-
 static async accepterDeclarationAnnexe(declarationId, collecteurId) {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
         
+        // Vérifier que la déclaration existe et est disponible
         const check = await client.query(
             'SELECT id FROM declarations_dechets WHERE id = $1 AND type_declaration = $2 AND statut = $3',
             [declarationId, 'annexe', 'en_attente']
         );
         if (check.rows.length === 0) throw new Error('Déclaration non disponible');
         
+        // Mettre à jour la déclaration : statut = 'affecte' (valeur valide)
         await client.query(
-            `UPDATE declarations_dechets SET statut = 'acceptee', date_acceptation = NOW() WHERE id = $1`,
+            `UPDATE declarations_dechets SET statut = 'affecte', date_acceptation = NOW() WHERE id = $1`,
             [declarationId]
         );
         
+        // Créer la mission avec statut 'acceptee' (valide pour les missions)
         const missionResult = await client.query(
             `INSERT INTO missions (declaration_id, collecteur_id, statut, date_acceptation)
              VALUES ($1, $2, 'acceptee', NOW())

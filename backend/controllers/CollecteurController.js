@@ -882,11 +882,20 @@ static async declarationsAnnexesDisponibles(req, res) {
         res.status(500).json({ success: false, message: 'Erreur serveur' });
     }
 }
-
 static async accepterDeclarationAnnexe(req, res) {
     try {
         const { declarationId } = req.params;
         const collecteurId = req.utilisateurId;
+
+        // Vérifier si le collecteur a déjà une mission en cours
+        const missionsEnCours = await Mission.obtenirParCollecteur(collecteurId, 'en_cours');
+        if (missionsEnCours.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vous avez déjà une mission en cours'
+            });
+        }
+
         const mission = await DeclarationDechets.accepterDeclarationAnnexe(declarationId, collecteurId);
         res.json({
             success: true,
@@ -898,7 +907,6 @@ static async accepterDeclarationAnnexe(req, res) {
         res.status(500).json({ success: false, message: erreur.message });
     }
 }
-
 }
 
 export default CollecteurController;

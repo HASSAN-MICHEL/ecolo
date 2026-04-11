@@ -438,15 +438,7 @@ static getProchaineAction(statutDecla, statutMission) {
     return actions[statutDecla] || 'Action inconnue';
 }
 
-// controllers/DeclarationController.js
 
-// static async creerDeclarationAnnexe(req, res) {
-//     try {
-//         const producteurId = req.producteurId;
-//         const {
-//             typeDechet, quantite, unite, notes,
-//             latitudeReelle, longitudeReelle, adresseReelle, photoUrl
-//         } = req.body;
 
 static async creerDeclarationAnnexe(req, res) {
     try {
