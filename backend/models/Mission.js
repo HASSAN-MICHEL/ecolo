@@ -285,26 +285,40 @@ static async attribuer(missionId, collecteurId) {
 
    
 
-    static async disponiblesPourCollecteur(collecteurId) {
-    const requete = `
-        SELECT m.*, 
-               d.type_dechet, d.quantite, d.unite,
-               p.nom_complet as producteur_nom,
-               p.telephone as producteur_telephone,
-               p.adresse,  -- ✅ L'adresse vient de p
-               p.quartier, p.commune,
-               ST_AsGeoJSON(p.localisation_gps) as localisation_gps
+//     static async disponiblesPourCollecteur(collecteurId) {
+//     const requete = `
+//         SELECT m.*, 
+//                d.type_dechet, d.quantite, d.unite,
+//                p.nom_complet as producteur_nom,
+//                p.telephone as producteur_telephone,
+//                p.adresse,  -- ✅ L'adresse vient de p
+//                p.quartier, p.commune,
+//                ST_AsGeoJSON(p.localisation_gps) as localisation_gps
+//         FROM missions m
+//         JOIN declarations_dechets d ON m.declaration_id = d.id
+//         JOIN producteurs p ON d.producteur_id = p.id
+//         WHERE m.statut = 'disponible'
+//           AND (m.collecteur_id IS NULL OR m.collecteur_id != $1)
+//         ORDER BY m.cree_le ASC
+//     `;
+    
+//     const resultat = await pool.query(requete, [collecteurId]);
+//     return resultat.rows;
+//  }
+
+static async disponiblesPourCollecteur(collecteurId) {
+    const query = `
+        SELECT m.*, d.type_dechet, d.quantite, d.unite, d.photo_url, d.latitude_reelle, d.longitude_reelle,
+               p.nom_complet as producteur_nom, p.adresse as producteur_adresse
         FROM missions m
         JOIN declarations_dechets d ON m.declaration_id = d.id
         JOIN producteurs p ON d.producteur_id = p.id
         WHERE m.statut = 'disponible'
-          AND (m.collecteur_id IS NULL OR m.collecteur_id != $1)
-        ORDER BY m.cree_le ASC
+        ORDER BY m.cree_le DESC
     `;
-    
-    const resultat = await pool.query(requete, [collecteurId]);
-    return resultat.rows;
- }
+    const result = await pool.query(query);
+    return result.rows;
+}
 
   
 
