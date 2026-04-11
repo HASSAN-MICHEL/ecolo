@@ -210,7 +210,7 @@ app.use('/api', profileRoutes);
 
 // ==================== FRONTEND (React dist) ====================
 
-const frontendPath = path.join(__dirname, '../dort');
+const frontendPath = path.join(__dirname, '../dist');
 
 app.use(express.static(frontendPath));
 
