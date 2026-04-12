@@ -54,7 +54,6 @@
 // export default router;
 
 
-// routes/ongRoutes.js
 import express from 'express';
 import OngController from '../controllers/OngController.js';
 import AuthController from '../controllers/AuthController.js';

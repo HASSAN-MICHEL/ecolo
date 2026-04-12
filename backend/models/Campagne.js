@@ -385,9 +385,7 @@ static async getEtatCampagnes(promoteurId = null, promoteurType = null) {
     const resultat = await pool.query(requete, valeurs);
     return resultat.rows;
 }
-
-    // Obtenir l'évolution journalière
-    static async getEvolutionJournaliere(campagneId) {
+static async getEvolutionJournaliere(campagneId) {
         const requete = `
             SELECT 
                 DATE(m.date_validation) as jour,
@@ -497,7 +495,6 @@ static async getEtatCampagnes(promoteurId = null, promoteurType = null) {
     // }
 
 
-    // models/Campagne.js - Version corrigée de trouverParId
 
 static async trouverParId(id) {
     const client = await pool.connect();
@@ -653,9 +650,6 @@ static async getCampagnesActivesPourPoint(pointDepotId, typeDechet) {
     return resultat.rows;
 }
 
-
-
-// Mettre à jour le suivi d'une campagne à partir d'une mission validée
 static async mettreAJourDepuisMission(campagneId, missionId, pointDepotId, typeDechet, poids, montant) {
     const client = await pool.connect();
     
@@ -916,7 +910,7 @@ static async mettreAJourObjectif(campagneId, typeDechet, poids, montant) {
     }
 }
 
-// Remplacer trouverParId pour inclure les objectifs
+
 static async trouverParId(id) {
     const requete = `
         SELECT 
@@ -954,6 +948,128 @@ static async trouverParId(id) {
 
     const resultat = await pool.query(requete, [id]);
     return resultat.rows[0];
+}
+
+static async getRapportComplet(campagneId) {
+    const client = await pool.connect();
+    
+    try {
+        // Récupérer toutes les données en parallèle
+        const [
+            campagne,
+            promoteurs,
+            statistiques,
+            pointsCollecte,
+            evolutionJournaliere,
+            suivi,
+            objectifs
+        ] = await Promise.all([
+            this.trouverParId(campagneId),
+            this.getPromoteurs(campagneId),
+            this.getStatistiques(campagneId),
+            this.getDetailsParPoint(campagneId),
+            this.getEvolutionJournaliere(campagneId),
+            this.getSuivi(campagneId),
+            this.getObjectifs(campagneId)
+        ]);
+
+        // Calculer des indicateurs supplémentaires
+        const tauxRealisation = statistiques?.poids_total_collecte && statistiques?.poids_attendue
+            ? (statistiques.poids_total_collecte / statistiques.poids_attendue * 100).toFixed(2)
+            : 0;
+
+        const joursRestants = campagne?.date_fin
+            ? Math.max(0, Math.ceil((new Date(campagne.date_fin) - new Date()) / (1000 * 60 * 60 * 24)))
+            : 0;
+
+        const rapport = {
+            campagne: {
+                id: campagne.id,
+                nom: campagne.nom,
+                description: campagne.description,
+                date_debut: campagne.date_debut,
+                date_fin: campagne.date_fin,
+                statut: campagne.statut,
+                poids_attendue: parseFloat(campagne.poids_attendue || 0),
+                prix_par_kg: parseFloat(campagne.prix_par_kg || 0),
+                budget_total: parseFloat(campagne.budget_total || 0),
+                zones_intervention: campagne.zones_intervention || [],
+                types_dechets: campagne.types_dechets || []
+            },
+            objectifs: objectifs.map(obj => ({
+                type_dechet: obj.type_dechet,
+                poids_attendue: parseFloat(obj.poids_attendue),
+                poids_collecte: parseFloat(obj.poids_collecte_actuel || 0),
+                pourcentage: obj.pourcentage_realisation,
+                prix_par_kg: parseFloat(obj.prix_par_kg)
+            })),
+            statistiques: {
+                poids_total_collecte: parseFloat(statistiques?.poids_total_collecte || 0),
+                montant_total_utilise: parseFloat(statistiques?.montant_total_utilise || 0),
+                points_couverts: parseInt(statistiques?.points_couverts || 0),
+                missions_realisees: parseInt(statistiques?.missions_realisees || 0),
+                poids_restant: parseFloat(statistiques?.poids_restant || 0),
+                pourcentage_realisation: parseFloat(tauxRealisation),
+                jours_restants: joursRestants
+            },
+            points_collecte: pointsCollecte.map(point => ({
+                id: point.point_id,
+                nom: point.point_nom,
+                commune: point.commune,
+                quartier: point.quartier,
+                poids_collecte: parseFloat(point.poids_collecte || 0),
+                nombre_missions: parseInt(point.nombre_missions || 0),
+                collecteurs_actifs: parseInt(point.collecteurs_actifs || 0),
+                premiere_collecte: point.premiere_collecte,
+                derniere_collecte: point.derniere_collecte
+            })),
+            evolution_journaliere: evolutionJournaliere.map(jour => ({
+                date: jour.jour,
+                poids: parseFloat(jour.poids_total || 0),
+                missions: parseInt(jour.nombre_missions || 0),
+                gains: parseFloat(jour.gains_total || 0),
+                points_actifs: parseInt(jour.points_actifs || 0)
+            })),
+            suivi: suivi.map(s => ({
+                date: s.date_suivi,
+                poids_collecte: parseFloat(s.poids_collecte || 0),
+                montant_utilise: parseFloat(s.montant_utilise || 0),
+                points_concernes: parseInt(s.points_concernes || 0),
+                details: s.details
+            })),
+            promoteurs: promoteurs.map(p => ({
+                id: p.id,
+                type: p.promoteur_type,
+                nom: p.nom_promoteur,
+                email: p.email_promoteur,
+                contribution: parseFloat(p.contribution_financiere || 0),
+                date_ajout: p.date_ajout
+            })),
+            date_generation: new Date().toISOString()
+        };
+
+        return rapport;
+
+    } catch (erreur) {
+        console.error('❌ Erreur dans getRapportComplet:', erreur);
+        throw erreur;
+    } finally {
+        client.release();
+    }
+}
+
+static async retirerPromoteur(campagneId, promoteurId, promoteurType) {
+    const requete = `
+        DELETE FROM promoteurs_campagne
+        WHERE campagne_id = $1 AND promoteur_id = $2 AND promoteur_type = $3
+        RETURNING *
+    `;
+    const resultat = await pool.query(requete, [campagneId, promoteurId, promoteurType]);
+    return resultat.rows[0];
+}
+
+static async lister(filtres = {}) {
+    return await this.rechercher(filtres);
 }
 
 }
