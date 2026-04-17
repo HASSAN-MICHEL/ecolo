@@ -580,7 +580,7 @@ static async tableauBord(req, res) {
             }
 
             const donnees = { email, telephone, nomComplet, est_actif };
-            const superviseurModifie = await Superviseur.mettreAJour(id, donnees);
+            const superviseurModifie = await Superviseur.modifierSuperviseur(id, donnees);
 
             res.json({
                 success: true,

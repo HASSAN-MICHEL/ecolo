@@ -693,6 +693,43 @@ static async statistiquesDemandes(superviseurId = null) {
     return resultat.rows[0];
 }
 
+static async modifierSuperviseur(req, res) {
+    try {
+        const { id } = req.params;
+        const { email, telephone, nomComplet, est_actif } = req.body;
+
+        const superviseur = await Superviseur.trouverParId(id);
+        if (!superviseur) {
+            return res.status(404).json({
+                success: false,
+                message: 'Superviseur non trouvé'
+            });
+        }
+
+        // Construire les données à mettre à jour (uniquement les champs fournis)
+        const donnees = {};
+        if (email !== undefined) donnees.email = email;
+        if (telephone !== undefined) donnees.telephone = telephone;
+        if (nomComplet !== undefined) donnees.nom_complet = nomComplet;
+        if (est_actif !== undefined) donnees.est_actif = est_actif;
+
+        // Appel à la méthode update existante
+        const superviseurModifie = await Superviseur.update(id, donnees);
+
+        res.json({
+            success: true,
+            message: 'Superviseur modifié avec succès',
+            superviseur: superviseurModifie
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur modification superviseur:', erreur);
+        res.status(500).json({
+            success: false,
+            message: erreur.message || 'Erreur lors de la modification'
+        });
+    }
+}
 
 
 }
