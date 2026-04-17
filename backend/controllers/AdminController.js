@@ -448,64 +448,123 @@ static async tableauBord(req, res) {
       message: 'Erreur lors de la récupération des superviseurs'
     });
   }
-}
- 
-    static async detailsSuperviseur(req, res) {
-        try {
-            const { id } = req.params;
+  }
+
+
+    // static async detailsSuperviseur(req, res) {
+    //     try {
+    //         const { id } = req.params;
             
-            const superviseur = await Superviseur.trouverParId(id);
-            if (!superviseur) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Superviseur non trouvé'
-                });
-            }
+    //         const superviseur = await Superviseur.trouverParId(id);
+    //         if (!superviseur) {
+    //             return res.status(404).json({
+    //                 success: false,
+    //                 message: 'Superviseur non trouvé'
+    //             });
+    //         }
 
-            // Récupérer toutes les activités du superviseur
-            const activites = await pool.query(`
-                SELECT 
-                    (SELECT json_agg(row_to_json(c)) FROM (
-                        SELECT * FROM campagnes 
-                        WHERE createur_id = $1 AND createur_type = 'superviseur'
-                        ORDER BY cree_le DESC
-                    ) c) as campagnes,
-                    (SELECT json_agg(row_to_json(g)) FROM (
-                        SELECT * FROM gestionnaires_points 
-                        WHERE cree_par = $1
-                        ORDER BY cree_le DESC
-                    ) g) as gestionnaires,
-                    (SELECT json_agg(row_to_json(p)) FROM (
-                        SELECT * FROM points_depot_volontaire 
-                        WHERE cree_par = $1
-                        ORDER BY cree_le DESC
-                    ) p) as points_collecte,
-                    (SELECT json_agg(row_to_json(col)) FROM (
-                        SELECT * FROM collecteurs 
-                        WHERE valide_par = $1
-                        ORDER BY valide_le DESC
-                    ) col) as collecteurs_valides,
-                    (SELECT json_agg(row_to_json(d)) FROM (
-                        SELECT * FROM demandes_suppression 
-                        WHERE superviseur_id = $1
-                        ORDER BY cree_le DESC
-                    ) d) as demandes_suppression
-            `, [id]);
+    //         // Récupérer toutes les activités du superviseur
+    //         const activites = await pool.query(`
+    //             SELECT 
+    //                 (SELECT json_agg(row_to_json(c)) FROM (
+    //                     SELECT * FROM campagnes 
+    //                     WHERE createur_id = $1 AND createur_type = 'superviseur'
+    //                     ORDER BY cree_le DESC
+    //                 ) c) as campagnes,
+    //                 (SELECT json_agg(row_to_json(g)) FROM (
+    //                     SELECT * FROM gestionnaires_points 
+    //                     WHERE cree_par = $1
+    //                     ORDER BY cree_le DESC
+    //                 ) g) as gestionnaires,
+    //                 (SELECT json_agg(row_to_json(p)) FROM (
+    //                     SELECT * FROM points_depot_volontaire 
+    //                     WHERE cree_par = $1
+    //                     ORDER BY cree_le DESC
+    //                 ) p) as points_collecte,
+    //                 (SELECT json_agg(row_to_json(col)) FROM (
+    //                     SELECT * FROM collecteurs 
+    //                     WHERE valide_par = $1
+    //                     ORDER BY valide_le DESC
+    //                 ) col) as collecteurs_valides,
+    //                 (SELECT json_agg(row_to_json(d)) FROM (
+    //                     SELECT * FROM demandes_suppression 
+    //                     WHERE superviseur_id = $1
+    //                     ORDER BY cree_le DESC
+    //                 ) d) as demandes_suppression
+    //         `, [id]);
 
-            res.json({
-                success: true,
-                superviseur,
-                activites: activites.rows[0]
-            });
+    //         res.json({
+    //             success: true,
+    //             superviseur,
+    //             activites: activites.rows[0]
+    //         });
 
-        } catch (erreur) {
-            console.error('❌ Erreur détails superviseur:', erreur);
-            res.status(500).json({
+    //     } catch (erreur) {
+    //         console.error('❌ Erreur détails superviseur:', erreur);
+    //         res.status(500).json({
+    //             success: false,
+    //             message: 'Erreur lors de la récupération'
+    //         });
+    //     }
+    // }
+
+    static async detailsSuperviseur(req, res) {
+    try {
+        const { id } = req.params;
+        
+        const superviseur = await Superviseur.trouverParId(id);
+        if (!superviseur) {
+            return res.status(404).json({
                 success: false,
-                message: 'Erreur lors de la récupération'
+                message: 'Superviseur non trouvé'
             });
         }
+
+        // Récupérer les activités (sans la table points_depot_volontaire qui pose problème)
+        const activites = await pool.query(`
+            SELECT 
+                (SELECT json_agg(row_to_json(c)) FROM (
+                    SELECT * FROM campagnes 
+                    WHERE createur_id = $1 AND createur_type = 'superviseur'
+                    ORDER BY cree_le DESC
+                ) c) as campagnes,
+                (SELECT json_agg(row_to_json(g)) FROM (
+                    SELECT * FROM gestionnaires_points 
+                    WHERE cree_par = $1
+                    ORDER BY cree_le DESC
+                ) g) as gestionnaires,
+                -- (SELECT json_agg(row_to_json(p)) FROM (
+                --     SELECT * FROM points_depot_volontaire 
+                --     WHERE cree_par = $1
+                --     ORDER BY cree_le DESC
+                -- ) p) as points_collecte,
+                (SELECT json_agg(row_to_json(col)) FROM (
+                    SELECT * FROM collecteurs 
+                    WHERE valide_par = $1
+                    ORDER BY valide_le DESC
+                ) col) as collecteurs_valides,
+                (SELECT json_agg(row_to_json(d)) FROM (
+                    SELECT * FROM demandes_suppression 
+                    WHERE superviseur_id = $1
+                    ORDER BY cree_le DESC
+                ) d) as demandes_suppression
+        `, [id]);
+
+        res.json({
+            success: true,
+            superviseur,
+            activites: activites.rows[0]
+        });
+
+    } catch (erreur) {
+        console.error('❌ Erreur détails superviseur:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération'
+        });
     }
+}
+
 
     static async modifierSuperviseur(req, res) {
         try {
@@ -1298,7 +1357,7 @@ static async modifierSponsor(req, res) {
             });
         }
     }
-    
+
 static async creerOng(req, res) {
     try {
         const {
