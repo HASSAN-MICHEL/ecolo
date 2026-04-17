@@ -359,7 +359,7 @@ static async statistiques(req, res) {
     }
 }
 
-// ✅ Récupérer les détails d'un gestionnaire spécifique
+
 static async getGestionnaireDetails(req, res) {
     try {
         const { gestionnaireId } = req.params;

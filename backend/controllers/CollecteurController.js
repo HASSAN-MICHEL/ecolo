@@ -358,109 +358,107 @@ class CollecteurController {
     }
 
  
-// Méthode pour obtenir le profil complet
- static async monProfil(req, res) {
-    try {
-        const collecteurId = req.utilisateurId;
-        const collecteur = await Collecteur.trouverParId(collecteurId);
+// // Méthode pour obtenir le profil complet
+//  static async monProfil(req, res) {
+//     try {
+//         const collecteurId = req.utilisateurId;
+//         const collecteur = await Collecteur.trouverParId(collecteurId);
 
-        if (!collecteur) {
-            return res.status(404).json({
-                success: false,
-                message: 'Collecteur non trouvé'
-            });
-        }
+//         if (!collecteur) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Collecteur non trouvé'
+//             });
+//         }
 
-        // Ne pas renvoyer les informations sensibles
-        delete collecteur.mot_de_passe_hash;
+//         // Ne pas renvoyer les informations sensibles
+//         delete collecteur.mot_de_passe_hash;
 
-        res.json({
-            success: true,
-            collecteur
-        });
-    } catch (erreur) {
-        console.error('Erreur récupération profil:', erreur);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la récupération du profil',
-            erreur: erreur.message
-        });
-    }
-}
+//         res.json({
+//             success: true,
+//             collecteur
+//         });
+//     } catch (erreur) {
+//         console.error('Erreur récupération profil:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de la récupération du profil',
+//             erreur: erreur.message
+//         });
+//     }
+// }
 
-    // Connexion
-   // Dans collecteurController.js - méthode connexion
- static async connexion(req, res) {
-    try {
-        const { identifiant, motDePasse } = req.body;
+//  static async connexion(req, res) {
+//     try {
+//         const { identifiant, motDePasse } = req.body;
 
-        let collecteur = await Collecteur.trouverParEmail(identifiant);
-        if (!collecteur) {
-            collecteur = await Collecteur.trouverParTelephone(identifiant);
-        }
+//         let collecteur = await Collecteur.trouverParEmail(identifiant);
+//         if (!collecteur) {
+//             collecteur = await Collecteur.trouverParTelephone(identifiant);
+//         }
 
-        if (!collecteur) {
-            return res.status(401).json({
-                success: false,
-                message: 'Identifiants incorrects'
-            });
-        }
+//         if (!collecteur) {
+//             return res.status(401).json({
+//                 success: false,
+//                 message: 'Identifiants incorrects'
+//             });
+//         }
 
-        // Vérifier le mot de passe
-        const motDePasseValide = await bcrypt.compare(motDePasse, collecteur.mot_de_passe_hash);
-        if (!motDePasseValide) {
-            return res.status(401).json({
-                success: false,
-                message: 'Identifiants incorrects'
-            });
-        }
+//         // Vérifier le mot de passe
+//         const motDePasseValide = await bcrypt.compare(motDePasse, collecteur.mot_de_passe_hash);
+//         if (!motDePasseValide) {
+//             return res.status(401).json({
+//                 success: false,
+//                 message: 'Identifiants incorrects'
+//             });
+//         }
 
-        // Vérifier le statut
-        if (collecteur.statut !== 'actif') {
-            return res.status(403).json({
-                success: false,
-                message: 'Votre compte est en attente de validation ou a été suspendu'
-            });
-        }
+//         // Vérifier le statut
+//         if (collecteur.statut !== 'actif') {
+//             return res.status(403).json({
+//                 success: false,
+//                 message: 'Votre compte est en attente de validation ou a été suspendu'
+//             });
+//         }
 
-        // Mettre à jour la connexion
-        await Collecteur.mettreAJourConnexion(collecteur.id);
+//         // Mettre à jour la connexion
+//         await Collecteur.mettreAJourConnexion(collecteur.id);
 
-        // ✅ CORRECTION: Générer token JWT directement avec jwt.sign
-        const token = jwt.sign(
-            { 
-                id: collecteur.id, 
-                email: collecteur.email, 
-                type: 'collecteur' 
-            },
-            process.env.JWT_SECRET || 'votre_cle_secrete',
-            { expiresIn: process.env.JWT_EXPIRE || '7d' }
-        );
+//         // ✅ CORRECTION: Générer token JWT directement avec jwt.sign
+//         const token = jwt.sign(
+//             { 
+//                 id: collecteur.id, 
+//                 email: collecteur.email, 
+//                 type: 'collecteur' 
+//             },
+//             process.env.JWT_SECRET || 'votre_cle_secrete',
+//             { expiresIn: process.env.JWT_EXPIRE || '7d' }
+//         );
 
-        res.json({
-            success: true,
-            message: 'Connexion réussie',
-            token,
-            collecteur: {
-                id: collecteur.id,
-                email: collecteur.email,
-                telephone: collecteur.telephone,
-                nomComplet: collecteur.nom_complet,
-                typeCollecteur: collecteur.type_collecteur,
-                statut: collecteur.statut,
-                points: collecteur.points_total,
-                gains: collecteur.gains_total
-            }
-        });
-    } catch (erreur) {
-        console.error('Erreur connexion collecteur:', erreur);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la connexion',
-            erreur: erreur.message
-        });
-    }
-  }
+//         res.json({
+//             success: true,
+//             message: 'Connexion réussie',
+//             token,
+//             collecteur: {
+//                 id: collecteur.id,
+//                 email: collecteur.email,
+//                 telephone: collecteur.telephone,
+//                 nomComplet: collecteur.nom_complet,
+//                 typeCollecteur: collecteur.type_collecteur,
+//                 statut: collecteur.statut,
+//                 points: collecteur.points_total,
+//                 gains: collecteur.gains_total
+//             }
+//         });
+//     } catch (erreur) {
+//         console.error('Erreur connexion collecteur:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de la connexion',
+//             erreur: erreur.message
+//         });
+//     }
+//   }
 
     // Obtenir les missions disponibles
     static async missionsDisponibles(req, res) {

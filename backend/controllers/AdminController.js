@@ -574,9 +574,6 @@ static async tableauBord(req, res) {
         }
     }
 
-// VERSION en locale
-
-// Dans AdminController.js
 static async creerRecycleur(req, res) {
     try {
         console.log('📦 Données reçues:', req.body);
@@ -1301,6 +1298,7 @@ static async modifierSponsor(req, res) {
             });
         }
     }
+    
 static async creerOng(req, res) {
     try {
         const {
