@@ -5,6 +5,7 @@ import Admin from '../models/Admin.js';
 import Superviseur from '../models/Superviseur.js';
 import Recycleur from '../models/Recycleur.js';
 import Sponsor from '../models/Sponsor.js';
+import Collecteur from '../models/Collecteur.js';
 import Ong from '../models/Ong.js';
 import Campagne from '../models/Campagne.js';
 import DemandeSuppression from '../models/DemandeSupression.js';
@@ -2655,6 +2656,102 @@ static async listerGestionnaires(req, res) {
     } catch (erreur) {
         console.error('❌ Erreur liste gestionnaires:', erreur);
         res.status(500).json({ success: false, message: 'Erreur' });
+    }
+}
+
+
+static async getCollecteurDetails(req, res) {
+    try {
+        const { id } = req.params;
+        const collecteur = await Collecteur.trouverParId(id);
+        if (!collecteur) {
+            return res.status(404).json({ success: false, message: 'Collecteur non trouvé' });
+        }
+        res.json({ success: true, collecteur });
+    } catch (erreur) {
+        console.error('Erreur getCollecteurDetails:', erreur);
+        res.status(500).json({ success: false, message: erreur.message });
+    }
+}
+
+
+static async activerCollecteur(req, res) {
+    const { id } = req.params;
+    const adminId = req.utilisateurId;
+    const { notes } = req.body;
+
+    try {
+        const collecteur = await Collecteur.trouverParId(id);
+        if (!collecteur) {
+            return res.status(404).json({ success: false, message: 'Collecteur non trouvé' });
+        }
+
+        // Mise à jour du statut et validation
+        const result = await pool.query(
+            `UPDATE collecteurs 
+             SET statut = 'actif', 
+                 est_actif = true, 
+                 valide_par = $1, 
+                 valide_le = NOW(), 
+                 notes_validation = $2 
+             WHERE id = $3
+             RETURNING *`,
+            [adminId, notes || null, id]
+        );
+
+        // Notification au collecteur
+        await pool.query(
+            `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification)
+             VALUES ($1, 'collecteur', 'Compte validé', 
+                     'Félicitations ! Votre compte a été validé par l’administrateur. Vous pouvez maintenant recevoir des missions.',
+                     'compte_valide')`,
+            [id]
+        );
+
+        res.json({ success: true, collecteur: result.rows[0] });
+    } catch (erreur) {
+        console.error('Erreur activation collecteur:', erreur);
+        res.status(500).json({ success: false, message: erreur.message });
+    }
+}
+
+
+static async rejeterCollecteur(req, res) {
+    const { id } = req.params;
+    const adminId = req.utilisateurId;
+    const { notes } = req.body;
+
+    try {
+        const collecteur = await Collecteur.trouverParId(id);
+        if (!collecteur) {
+            return res.status(404).json({ success: false, message: 'Collecteur non trouvé' });
+        }
+
+        const result = await pool.query(
+            `UPDATE collecteurs 
+             SET statut = 'inactif', 
+                 est_actif = false, 
+                 valide_par = $1, 
+                 valide_le = NOW(), 
+                 notes_validation = $2 
+             WHERE id = $3
+             RETURNING *`,
+            [adminId, notes || 'Rejeté par administrateur', id]
+        );
+
+        // Notification au collecteur
+        await pool.query(
+            `INSERT INTO notifications (utilisateur_id, type_utilisateur, titre, message, type_notification)
+             VALUES ($1, 'collecteur', 'Compte non validé', 
+                     'Votre demande d’inscription a été rejetée par l’administrateur. Contactez le support pour plus d’informations.',
+                     'compte_rejete')`,
+            [id]
+        );
+
+        res.json({ success: true, collecteur: result.rows[0] });
+    } catch (erreur) {
+        console.error('Erreur rejet collecteur:', erreur);
+        res.status(500).json({ success: false, message: erreur.message });
     }
 }
 

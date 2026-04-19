@@ -166,4 +166,13 @@ router.get('/producteurs', AdminController.listerProducteurs);
 router.get('/collecteurs', AdminController.listerCollecteurs);
 router.get('/gestionnaires', AdminController.listerGestionnaires);
 
+// collecteurs
+router.get('/collecteurs/:id/details', AdminController.getCollecteurDetails);
+// Activer un collecteur
+router.post('/collecteurs/:id/activer', AdminController.activerCollecteur);
+// Rejeter un collecteur
+router.post('/collecteurs/:id/rejeter', AdminController.rejeterCollecteur);
 export default router;
+
+
+
