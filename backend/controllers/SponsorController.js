@@ -141,34 +141,6 @@ class SponsorController {
         }
     }
 
-    // Mes campagnes
-    // static async mesCampagnes(req, res) {
-    //     try {
-    //         const sponsorId = req.utilisateurId;
-    //         const campagnes = await Sponsor.obtenirCampagnes(sponsorId);
-
-    //         // Ajouter le suivi pour chaque campagne
-    //         for (let campagne of campagnes) {
-    //             const suivi = await Campagne.getSuivi(campagne.id);
-    //             campagne.suivi = suivi;
-    //         }
-
-    //         res.json({
-    //             success: true,
-    //             campagnes
-    //         });
-    //     } catch (erreur) {
-    //         console.error('❌ Erreur récupération campagnes:', erreur);
-    //         res.status(500).json({
-    //             success: false,
-    //             message: 'Erreur lors de la récupération',
-    //             erreur: erreur.message
-    //         });
-    //     }
-    // }
-
-
-    // controllers/SponsorController.js
 static async mesCampagnes(req, res) {
     try {
         const sponsorId = req.utilisateurId;

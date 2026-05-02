@@ -223,61 +223,7 @@ class Campagne {
         return resultat.rows[0];
     }
 
-    // // Obtenir les statistiques d'une campagne
-    // static async getStatistiques(campagneId) {
-    //     const requete = `
-    //         WITH stats AS (
-    //             SELECT 
-    //                 c.*,
-    //                 COALESCE(SUM(s.poids_collecte), 0) as poids_total_collecte,
-    //                 COALESCE(SUM(s.montant_utilise), 0) as montant_total_utilise,
-    //                 COUNT(DISTINCT s.point_depot_id) as points_couverts,
-    //                 COUNT(DISTINCT m.id) as missions_realisees,
-    //                 c.poids_attendue - COALESCE(SUM(s.poids_collecte), 0) as poids_restant,
-    //                 CASE 
-    //                     WHEN COALESCE(SUM(s.poids_collecte), 0) >= c.poids_attendue THEN 100
-    //                     ELSE ROUND((COALESCE(SUM(s.poids_collecte), 0) / c.poids_attendue * 100)::numeric, 2)
-    //                 END as pourcentage_realisation
-    //             FROM campagnes c
-    //             LEFT JOIN missions m ON m.campagne_id = c.id AND m.statut = 'validee'
-    //             LEFT JOIN suivi_campagne s ON c.id = s.campagne_id
-    //             WHERE c.id = $1
-    //             GROUP BY c.id
-    //         )
-    //         SELECT * FROM stats
-    //     `;
 
-    //     const resultat = await pool.query(requete, [campagneId]);
-    //     return resultat.rows[0];
-    // }
-
-    // // Obtenir les détails par point de collecte
-    // static async getDetailsParPoint(campagneId) {
-    //     const requete = `
-    //         SELECT 
-    //             pdv.id as point_id,
-    //             pdv.nom as point_nom,
-    //             pdv.commune,
-    //             pdv.quartier,
-    //             COALESCE(SUM(m.poids_depose), 0) as poids_collecte,
-    //             COUNT(DISTINCT m.id) as nombre_missions,
-    //             COUNT(DISTINCT m.collecteur_id) as collecteurs_actifs,
-    //             MIN(m.date_validation) as premiere_collecte,
-    //             MAX(m.date_validation) as derniere_collecte
-    //         FROM points_depot_volontaire pdv
-    //         LEFT JOIN missions m ON pdv.id = m.point_depot_id 
-    //             AND m.campagne_id = $1 
-    //             AND m.statut = 'validee'
-    //         GROUP BY pdv.id, pdv.nom, pdv.commune, pdv.quartier
-    //         ORDER BY poids_collecte DESC
-    //     `;
-
-    //     const resultat = await pool.query(requete, [campagneId]);
-    //     return resultat.rows;
-    // }
-
-
-// Ou la version corrigée qui enlève la référence à point_depot_id dans suivi_campagne
 static async getStatistiques(campagneId) {
     const requete = `
         WITH stats AS (
@@ -461,39 +407,6 @@ static async getEvolutionJournaliere(campagneId) {
         const resultat = await pool.query(requete, valeurs);
         return resultat.rows;
     }
-
-    // Obtenir une campagne par ID avec tous ses détails
-    // static async trouverParId(id) {
-    //     const requete = `
-    //         SELECT 
-    //             c.*,
-    //             json_agg(DISTINCT jsonb_build_object(
-    //                 'id', pc.id,
-    //                 'promoteur_id', pc.promoteur_id,
-    //                 'promoteur_type', pc.promoteur_type,
-    //                 'contribution', pc.contribution_financiere,
-    //                 'date_ajout', pc.date_ajout
-    //             )) FILTER (WHERE pc.id IS NOT NULL) as promoteurs,
-    //             COALESCE(sc.poids_collecte, 0) as poids_collecte_actuel,
-    //             COALESCE(sc.montant_utilise, 0) as montant_utilise
-    //         FROM campagnes c
-    //         LEFT JOIN promoteurs_campagne pc ON c.id = pc.campagne_id
-    //         LEFT JOIN (
-    //             SELECT 
-    //                 campagne_id,
-    //                 SUM(poids_collecte) as poids_collecte,
-    //                 SUM(montant_utilise) as montant_utilise
-    //             FROM suivi_campagne
-    //             GROUP BY campagne_id
-    //         ) sc ON c.id = sc.campagne_id
-    //         WHERE c.id = $1
-    //         GROUP BY c.id, sc.poids_collecte, sc.montant_utilise
-    //     `;
-
-    //     const resultat = await pool.query(requete, [id]);
-    //     return resultat.rows[0];
-    // }
-
 
 
 static async trouverParId(id) {

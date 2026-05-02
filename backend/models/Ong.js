@@ -212,25 +212,25 @@ class Ong {
         await pool.query(requete, [id]);
     }
 
-    // static async getDashboard(id) {
-    //     const requete = `
-    //         WITH stats_campagnes AS (
-    //             SELECT 
-    //                 COUNT(DISTINCT c.id) as total_campagnes,
-    //                 COALESCE(SUM(sc.poids_collecte), 0) as total_kg_collectes,
-    //                 COUNT(DISTINCT pdv.id) as points_concernes
-    //             FROM promoteurs_campagne pc
-    //             JOIN campagnes c ON pc.campagne_id = c.id
-    //             LEFT JOIN suivi_campagne sc ON c.id = sc.campagne_id
-    //             LEFT JOIN points_depot_volontaire pdv ON pdv.commune = ANY(c.zones_intervention)
-    //             WHERE pc.promoteur_id = $1 AND pc.promoteur_type = 'ong'
-    //             GROUP BY pc.promoteur_id
-    //         )
-    //         SELECT * FROM stats_campagnes
-    //     `;
-    //     const resultat = await pool.query(requete, [id]);
-    //     return resultat.rows[0];
-    // }
+    static async getDashboard(id) {
+        const requete = `
+            WITH stats_campagnes AS (
+                SELECT 
+                    COUNT(DISTINCT c.id) as total_campagnes,
+                    COALESCE(SUM(sc.poids_collecte), 0) as total_kg_collectes,
+                    COUNT(DISTINCT pdv.id) as points_concernes
+                FROM promoteurs_campagne pc
+                JOIN campagnes c ON pc.campagne_id = c.id
+                LEFT JOIN suivi_campagne sc ON c.id = sc.campagne_id
+                LEFT JOIN points_depot_volontaire pdv ON pdv.commune = ANY(c.zones_intervention)
+                WHERE pc.promoteur_id = $1 AND pc.promoteur_type = 'ong'
+                GROUP BY pc.promoteur_id
+            )
+            SELECT * FROM stats_campagnes
+        `;
+        const resultat = await pool.query(requete, [id]);
+        return resultat.rows[0];
+    }
 
     static async ajouterRapport(ongId, donnees) {
         const requete = `
