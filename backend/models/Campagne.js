@@ -258,6 +258,103 @@ static async getStatistiques(campagneId) {
     return resultat.rows[0];
 }
 
+// models/Campagne.js - Ajouter cette méthode
+static async trouverParOng(ongId, filtres = {}) {
+    let query = `
+        SELECT 
+            c.*,
+            COALESCE(
+                (SELECT json_agg(
+                    json_build_object(
+                        'type_dechet', co.type_dechet,
+                        'poids_attendue', co.poids_attendue,
+                        'poids_collecte_actuel', co.poids_collecte_actuel,
+                        'prix_par_kg', co.prix_par_kg
+                    )
+                ) FROM campagne_objectifs co WHERE co.campagne_id = c.id
+            ), '[]'::json) as objectifs,
+            COALESCE(c.types_dechets, '[]'::json) as types_dechets,
+            COALESCE(c.zones_intervention, '[]'::json) as zones_intervention,
+            c.poids_attendue,
+            COALESCE(sc.poids_collecte, 0) as poids_collecte_actuel
+        FROM campagnes c
+        LEFT JOIN (
+            SELECT 
+                campagne_id,
+                SUM(poids_collecte) as poids_collecte
+            FROM suivi_campagne
+            GROUP BY campagne_id
+        ) sc ON c.id = sc.campagne_id
+        WHERE c.ong_id = $1
+    `;
+    
+    const params = [ongId];
+    let paramIndex = 2;
+    
+    if (filtres.statut) {
+        query += ` AND c.statut = $${paramIndex}`;
+        params.push(filtres.statut);
+        paramIndex++;
+    }
+    
+    if (filtres.typeDechet) {
+        query += ` AND $${paramIndex} = ANY(c.types_dechets)`;
+        params.push(filtres.typeDechet);
+        paramIndex++;
+    }
+    
+    query += ` ORDER BY c.created_at DESC`;
+    
+    const result = await pool.query(query, params);
+    return result.rows;
+}
+
+// campagne par ONGS
+static async trouverParIdEtOng(campagneId, ongId) {
+    const query = `
+        SELECT 
+            c.*,
+            COALESCE(
+                (SELECT json_agg(
+                    json_build_object(
+                        'type_dechet', co.type_dechet,
+                        'poids_attendue', co.poids_attendue,
+                        'poids_collecte_actuel', co.poids_collecte_actuel,
+                        'prix_par_kg', co.prix_par_kg
+                    )
+                ) FROM campagne_objectifs co WHERE co.campagne_id = c.id
+            ), '[]'::json) as objectifs,
+            COALESCE(
+                (SELECT json_agg(
+                    json_build_object(
+                        'point_id', pd.id,
+                        'point_nom', pd.nom,
+                        'commune', pd.commune,
+                        'quartier', pd.quartier,
+                        'adresse', pd.adresse,
+                        'poids_collecte', COALESCE(
+                            (SELECT SUM(poids_collecte) 
+                             FROM suivi_campagne 
+                             WHERE campagne_id = c.id AND point_depot_id = pd.id), 0
+                        ),
+                        'nombre_missions', COALESCE(
+                            (SELECT COUNT(*) 
+                             FROM missions 
+                             WHERE campagne_id = c.id AND point_depot_id = pd.id AND statut = 'validee'), 0
+                        )
+                    )
+                ) FROM points_depot pd WHERE pd.campagne_id = c.id
+            ), '[]'::json) as points_couverts,
+            COALESCE(c.types_dechets, '[]'::json) as types_dechets,
+            COALESCE(c.zones_intervention, '[]'::json) as zones_intervention
+        FROM campagnes c
+        WHERE c.id = $1 AND c.ong_id = $2
+    `;
+    
+    const result = await pool.query(query, [campagneId, ongId]);
+    return result.rows[0];
+}
+
 // Si vous voulez aussi récupérer les objectifs dans les statistiques
 static async getStatistiquesCompletes(campagneId) {
     const client = await pool.connect();
