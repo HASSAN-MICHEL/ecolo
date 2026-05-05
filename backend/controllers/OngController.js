@@ -262,89 +262,89 @@ static async detailsCampagne(req, res) {
     }
 }
 
-// Tableau de bord complet avec données personnalisées
-static async tableauBord(req, res) {
-    try {
-        const ongId = req.utilisateurId;
+// // Tableau de bord complet avec données personnalisées
+// static async tableauBord(req, res) {
+//     try {
+//         const ongId = req.utilisateurId;
         
-        // Récupérer les campagnes de l'ONG
-        const campagnes = await Campagne.trouverParOng(ongId);
+//         // Récupérer les campagnes de l'ONG
+//         const campagnes = await Campagne.trouverParOng(ongId);
         
-        let totalPoids = 0;
-        let campagnesActives = 0;
-        const poidsTypes = {};
-        let totalPoints = 0;
-        let totalCollecteurs = 0;
+//         let totalPoids = 0;
+//         let campagnesActives = 0;
+//         const poidsTypes = {};
+//         let totalPoints = 0;
+//         let totalCollecteurs = 0;
         
-        for (const campagne of campagnes) {
-            if (campagne.statut === 'active') campagnesActives++;
+//         for (const campagne of campagnes) {
+//             if (campagne.statut === 'active') campagnesActives++;
             
-            // Poids total collecté
-            const poidsCollecte = campagne.objectifs?.reduce((sum, obj) => 
-                sum + (obj.poids_collecte_actuel || 0), 0) || 0;
-            totalPoids += poidsCollecte;
+//             // Poids total collecté
+//             const poidsCollecte = campagne.objectifs?.reduce((sum, obj) => 
+//                 sum + (obj.poids_collecte_actuel || 0), 0) || 0;
+//             totalPoids += poidsCollecte;
             
-            // Points de collecte
-            if (campagne.points_couverts) {
-                totalPoints += campagne.points_couverts.length;
-            }
+//             // Points de collecte
+//             if (campagne.points_couverts) {
+//                 totalPoints += campagne.points_couverts.length;
+//             }
             
-            // Agrégation par type de déchet
-            if (campagne.objectifs) {
-                campagne.objectifs.forEach(obj => {
-                    const type = obj.type_dechet;
-                    if (!poidsTypes[type]) poidsTypes[type] = 0;
-                    poidsTypes[type] += obj.poids_collecte_actuel || 0;
-                });
-            }
-        }
+//             // Agrégation par type de déchet
+//             if (campagne.objectifs) {
+//                 campagne.objectifs.forEach(obj => {
+//                     const type = obj.type_dechet;
+//                     if (!poidsTypes[type]) poidsTypes[type] = 0;
+//                     poidsTypes[type] += obj.poids_collecte_actuel || 0;
+//                 });
+//             }
+//         }
         
-        // Évolution mensuelle des campagnes
-        const evolutionMensuelle = await pool.query(`
-            SELECT 
-                DATE_TRUNC('month', created_at) as mois,
-                COUNT(*) as nombre
-            FROM campagnes
-            WHERE ong_id = $1
-            GROUP BY DATE_TRUNC('month', created_at)
-            ORDER BY mois DESC
-            LIMIT 6
-        `, [ongId]);
+//         // Évolution mensuelle des campagnes
+//         const evolutionMensuelle = await pool.query(`
+//             SELECT 
+//                 DATE_TRUNC('month', created_at) as mois,
+//                 COUNT(*) as nombre
+//             FROM campagnes
+//             WHERE ong_id = $1
+//             GROUP BY DATE_TRUNC('month', created_at)
+//             ORDER BY mois DESC
+//             LIMIT 6
+//         `, [ongId]);
         
-        // Impact environnemental
-        const impact = {
-            co2Evite: (totalPoids * 0.5).toFixed(1),
-            arbresSauves: Math.floor(totalPoids / 100),
-            energieEconomisee: (totalPoids * 2.5).toFixed(1),
-            eauEconomisee: (totalPoids * 50).toFixed(1)
-        };
+//         // Impact environnemental
+//         const impact = {
+//             co2Evite: (totalPoids * 0.5).toFixed(1),
+//             arbresSauves: Math.floor(totalPoids / 100),
+//             energieEconomisee: (totalPoids * 2.5).toFixed(1),
+//             eauEconomisee: (totalPoids * 50).toFixed(1)
+//         };
         
-        res.json({
-            success: true,
-            campagnes,
-            statsGlobales: {
-                totalCampagnes: campagnes.length,
-                campagnesActives,
-                poidsTotalCollecte: totalPoids,
-                pointsCouverts: totalPoints,
-                collecteursActifs: totalCollecteurs
-            },
-            poidsParType: poidsTypes,
-            impact,
-            evolutionMensuelle: evolutionMensuelle.rows.map(row => ({
-                mois: new Date(row.mois).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }),
-                nombre: parseInt(row.nombre)
-            })).reverse()
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur tableau bord:', erreur);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la récupération',
-            erreur: erreur.message
-        });
-    }
-}
+//         res.json({
+//             success: true,
+//             campagnes,
+//             statsGlobales: {
+//                 totalCampagnes: campagnes.length,
+//                 campagnesActives,
+//                 poidsTotalCollecte: totalPoids,
+//                 pointsCouverts: totalPoints,
+//                 collecteursActifs: totalCollecteurs
+//             },
+//             poidsParType: poidsTypes,
+//             impact,
+//             evolutionMensuelle: evolutionMensuelle.rows.map(row => ({
+//                 mois: new Date(row.mois).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }),
+//                 nombre: parseInt(row.nombre)
+//             })).reverse()
+//         });
+//     } catch (erreur) {
+//         console.error('❌ Erreur tableau bord:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de la récupération',
+//             erreur: erreur.message
+//         });
+//     }
+// }
 
 // Télécharger un rapport
 static async telechargerRapport(req, res) {
@@ -605,59 +605,59 @@ static async telechargerRapport(req, res) {
         }
     }
 
-    // // Tableau de bord ONG
-    // static async tableauBord(req, res) {
-    //     try {
-    //         const ongId = req.utilisateurId;
+    // Tableau de bord ONG
+    static async tableauBord(req, res) {
+        try {
+            const ongId = req.utilisateurId;
             
-    //         // Statistiques de l'ONG
-    //         const stats = await pool.query(`
-    //             SELECT 
-    //                 COUNT(DISTINCT id) as total_rapports,
-    //                 COUNT(DISTINCT CASE WHEN type_rapport = 'alerte' THEN id END) as total_alertes,
-    //                 MAX(cree_le) as dernier_rapport
-    //             FROM rapports_ong
-    //             WHERE ong_id = $1
-    //         `, [ongId]);
+            // Statistiques de l'ONG
+            const stats = await pool.query(`
+                SELECT 
+                    COUNT(DISTINCT id) as total_rapports,
+                    COUNT(DISTINCT CASE WHEN type_rapport = 'alerte' THEN id END) as total_alertes,
+                    MAX(cree_le) as dernier_rapport
+                FROM rapports_ong
+                WHERE ong_id = $1
+            `, [ongId]);
 
-    //         // Participations actives
-    //         const participations = await pool.query(`
-    //             SELECT c.*
-    //             FROM campagnes c
-    //             JOIN promoteurs_campagne pc ON c.id = pc.campagne_id
-    //             WHERE pc.promoteur_id = $1 
-    //               AND pc.promoteur_type = 'ong'
-    //               AND c.statut = 'active'
-    //             ORDER BY c.date_fin ASC
-    //         `, [ongId]);
+            // Participations actives
+            const participations = await pool.query(`
+                SELECT c.*
+                FROM campagnes c
+                JOIN promoteurs_campagne pc ON c.id = pc.campagne_id
+                WHERE pc.promoteur_id = $1 
+                  AND pc.promoteur_type = 'ong'
+                  AND c.statut = 'active'
+                ORDER BY c.date_fin ASC
+            `, [ongId]);
 
-    //         // Indicateurs globaux
-    //         const indicateurs = await pool.query(`
-    //             SELECT 
-    //                 COALESCE(SUM(s.poids_collecte), 0) as total_dechets_collectes,
-    //                 COUNT(DISTINCT m.point_depot_id) as points_actifs,
-    //                 COUNT(DISTINCT m.collecteur_id) as collecteurs_actifs
-    //             FROM campagnes c
-    //             LEFT JOIN suivi_campagne s ON c.id = s.campagne_id
-    //             LEFT JOIN missions m ON c.id = m.campagne_id AND m.statut = 'validee'
-    //             WHERE c.statut = 'active'
-    //         `);
+            // Indicateurs globaux
+            const indicateurs = await pool.query(`
+                SELECT 
+                    COALESCE(SUM(s.poids_collecte), 0) as total_dechets_collectes,
+                    COUNT(DISTINCT m.point_depot_id) as points_actifs,
+                    COUNT(DISTINCT m.collecteur_id) as collecteurs_actifs
+                FROM campagnes c
+                LEFT JOIN suivi_campagne s ON c.id = s.campagne_id
+                LEFT JOIN missions m ON c.id = m.campagne_id AND m.statut = 'validee'
+                WHERE c.statut = 'active'
+            `);
 
-    //         res.json({
-    //             success: true,
-    //             statistiques: stats.rows[0] || { total_rapports: 0, total_alertes: 0, dernier_rapport: null },
-    //             participationsActives: participations.rows,
-    //             indicateursGlobaux: indicateurs.rows[0] || { total_dechets_collectes: 0, points_actifs: 0, collecteurs_actifs: 0 }
-    //         });
-    //     } catch (erreur) {
-    //         console.error('❌ Erreur tableau bord:', erreur);
-    //         res.status(500).json({
-    //             success: false,
-    //             message: 'Erreur lors de la récupération',
-    //             erreur: erreur.message
-    //         });
-    //     }
-    // }
+            res.json({
+                success: true,
+                statistiques: stats.rows[0] || { total_rapports: 0, total_alertes: 0, dernier_rapport: null },
+                participationsActives: participations.rows,
+                indicateursGlobaux: indicateurs.rows[0] || { total_dechets_collectes: 0, points_actifs: 0, collecteurs_actifs: 0 }
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur tableau bord:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération',
+                erreur: erreur.message
+            });
+        }
+    }
 
     // Profil
     static async getProfil(req, res) {

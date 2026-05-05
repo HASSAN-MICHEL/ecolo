@@ -258,7 +258,6 @@ static async getStatistiques(campagneId) {
     return resultat.rows[0];
 }
 
-// models/Campagne.js - Ajouter cette méthode
 static async trouverParOng(ongId, filtres = {}) {
     let query = `
         SELECT 
@@ -308,6 +307,7 @@ static async trouverParOng(ongId, filtres = {}) {
     const result = await pool.query(query, params);
     return result.rows;
 }
+
 
 // campagne par ONGS
 static async trouverParIdEtOng(campagneId, ongId) {
