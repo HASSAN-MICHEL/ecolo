@@ -73,6 +73,8 @@ class Ong {
         const resultat = await pool.query(requete, valeurs);
         return resultat.rows;
     }
+
+
 static async mettreAJour(id, donnees) {
     const champs = [];
     const valeurs = [];
@@ -91,11 +93,18 @@ static async mettreAJour(id, donnees) {
 
     for (const [dbField, dataField] of Object.entries(champsModifiables)) {
         if (donnees[dataField] !== undefined) {
-            // Pour domaine_intervention, s'assurer que c'est un tableau JSON valide
+            // Pour domaine_intervention
             if (dbField === 'domaine_intervention') {
-                const value = Array.isArray(donnees[dataField]) ? donnees[dataField] : [];
-                champs.push(`${dbField} = $${index++}::jsonb`);
-                valeurs.push(JSON.stringify(value));
+                // Convertir en tableau PostgreSQL (format text[])
+                let value = donnees[dataField];
+                if (typeof value === 'string') {
+                    value = value.split(',').map(d => d.trim()).filter(d => d);
+                }
+                if (!Array.isArray(value)) {
+                    value = [];
+                }
+                champs.push(`${dbField} = $${index++}`);
+                valeurs.push(value); // PostgreSQL accepte directement les array JavaScript
             } else {
                 champs.push(`${dbField} = $${index++}`);
                 valeurs.push(donnees[dataField]);
@@ -106,6 +115,11 @@ static async mettreAJour(id, donnees) {
     if (donnees.localisation_gps) {
         champs.push(`localisation_gps = ST_GeogFromText($${index++})`);
         valeurs.push(`POINT(${donnees.localisation_gps.lng} ${donnees.localisation_gps.lat})`);
+    }
+
+    if (donnees.photoLogoUrl) {
+        champs.push(`photo_logo_url = $${index++}`);
+        valeurs.push(donnees.photoLogoUrl);
     }
 
     if (champs.length === 0) return null;
