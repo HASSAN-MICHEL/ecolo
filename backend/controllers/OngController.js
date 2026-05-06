@@ -687,60 +687,76 @@ static async telechargerRapport(req, res) {
             });
         }
     }
+static async mettreAJourProfil(req, res) {
+    try {
+        const ongId = req.utilisateurId;
+        const {
+            nomOng,
+            nomResponsable,
+            telephone,
+            adresse,
+            domaineIntervention
+        } = req.body;
 
-    // Mettre à jour le profil
-    static async mettreAJourProfil(req, res) {
-        try {
-            const ongId = req.utilisateurId;
-            const {
-                nomOng,
-                nomResponsable,
-                telephone,
-                adresse,
-                domaineIntervention
-            } = req.body;
+        console.log('📝 Données reçues pour mise à jour profil:', { 
+            nomOng, nomResponsable, telephone, adresse, domaineIntervention 
+        });
 
-            // Vérifier l'unicité du téléphone si modifié
-            if (telephone) {
-                const existant = await Ong.trouverParTelephone(telephone);
-                if (existant && existant.id !== ongId) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Ce téléphone est déjà utilisé'
-                    });
-                }
+        // Vérifier l'unicité du téléphone si modifié
+        if (telephone) {
+            const existant = await Ong.trouverParTelephone(telephone);
+            if (existant && existant.id !== ongId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Ce téléphone est déjà utilisé'
+                });
             }
-
-            const donnees = {
-                nomOng,
-                nomResponsable,
-                telephone,
-                adresse,
-                domaineIntervention: domaineIntervention ? domaineIntervention.split(',').map(d => d.trim()) : undefined
-            };
-
-            if (req.file) {
-                donnees.photoLogoUrl = `/uploads/logos/${req.file.filename}`;
-            }
-
-            const ong = await Ong.mettreAJour(ongId, donnees);
-
-            delete ong.mot_de_passe_hash;
-
-            res.json({
-                success: true,
-                message: 'Profil mis à jour avec succès',
-                ong
-            });
-        } catch (erreur) {
-            console.error('❌ Erreur mise à jour profil:', erreur);
-            res.status(500).json({
-                success: false,
-                message: 'Erreur lors de la mise à jour',
-                erreur: erreur.message
-            });
         }
+
+        const donnees = {
+            nomOng,
+            nomResponsable,
+            telephone,
+            adresse,
+        };
+
+        // Gérer domaineIntervention (peut être string ou tableau)
+        if (domaineIntervention !== undefined) {
+            if (Array.isArray(domaineIntervention)) {
+                // Si c'est déjà un tableau, l'utiliser directement
+                donnees.domaineIntervention = domaineIntervention;
+            } else if (typeof domaineIntervention === 'string') {
+                // Si c'est une string, la convertir en tableau
+                donnees.domaineIntervention = domaineIntervention.split(',').map(d => d.trim()).filter(d => d);
+            } else {
+                donnees.domaineIntervention = [];
+            }
+        }
+
+        if (req.file) {
+            donnees.photoLogoUrl = `/uploads/logos/${req.file.filename}`;
+        }
+
+        console.log('📦 Données préparées pour mise à jour:', donnees);
+
+        const ong = await Ong.mettreAJour(ongId, donnees);
+
+        delete ong.mot_de_passe_hash;
+
+        res.json({
+            success: true,
+            message: 'Profil mis à jour avec succès',
+            ong
+        });
+    } catch (erreur) {
+        console.error('❌ Erreur mise à jour profil:', erreur);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la mise à jour',
+            erreur: erreur.message
+        });
     }
+}
 }
 
 export default OngController;

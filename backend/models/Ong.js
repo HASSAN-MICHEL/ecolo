@@ -73,49 +73,57 @@ class Ong {
         const resultat = await pool.query(requete, valeurs);
         return resultat.rows;
     }
+static async mettreAJour(id, donnees) {
+    const champs = [];
+    const valeurs = [];
+    let index = 1;
 
-   static async mettreAJour(id, donnees) {
-        const champs = [];
-        const valeurs = [];
-        let index = 1;
+    const champsModifiables = {
+        nom_ong: 'nomOng',
+        numero_agrement: 'numeroAgrement',
+        domaine_intervention: 'domaineIntervention',
+        nom_responsable: 'nomResponsable',
+        adresse: 'adresse',
+        telephone: 'telephone',
+        statut: 'statut',
+        est_actif: 'est_actif'
+    };
 
-        const champsModifiables = {
-            nom_ong: 'nomOng',
-            numero_agrement: 'numeroAgrement',
-            domaine_intervention: 'domaineIntervention',
-            nom_responsable: 'nomResponsable',
-            adresse: 'adresse',
-            telephone: 'telephone',
-            
-            statut: 'statut',
-            est_actif: 'est_actif'
-        };
-
-        for (const [dbField, dataField] of Object.entries(champsModifiables)) {
-            if (donnees[dataField] !== undefined) {
+    for (const [dbField, dataField] of Object.entries(champsModifiables)) {
+        if (donnees[dataField] !== undefined) {
+            // Pour domaine_intervention, s'assurer que c'est un tableau JSON valide
+            if (dbField === 'domaine_intervention') {
+                const value = Array.isArray(donnees[dataField]) ? donnees[dataField] : [];
+                champs.push(`${dbField} = $${index++}::jsonb`);
+                valeurs.push(JSON.stringify(value));
+            } else {
                 champs.push(`${dbField} = $${index++}`);
                 valeurs.push(donnees[dataField]);
             }
         }
-
-        if (donnees.localisation_gps) {
-            champs.push(`localisation_gps = ST_GeogFromText($${index++})`);
-            valeurs.push(`POINT(${donnees.localisation_gps.lng} ${donnees.localisation_gps.lat})`);
-        }
-
-        if (champs.length === 0) return null;
-
-        valeurs.push(id);
-        const requete = `
-            UPDATE ongs 
-            SET ${champs.join(', ')}, modifie_le = CURRENT_TIMESTAMP
-            WHERE id = $${index}
-            RETURNING *
-        `;
-
-        const resultat = await pool.query(requete, valeurs);
-        return resultat.rows[0];
     }
+
+    if (donnees.localisation_gps) {
+        champs.push(`localisation_gps = ST_GeogFromText($${index++})`);
+        valeurs.push(`POINT(${donnees.localisation_gps.lng} ${donnees.localisation_gps.lat})`);
+    }
+
+    if (champs.length === 0) return null;
+
+    valeurs.push(id);
+    const requete = `
+        UPDATE ongs 
+        SET ${champs.join(', ')}, modifie_le = CURRENT_TIMESTAMP
+        WHERE id = $${index}
+        RETURNING *
+    `;
+
+    console.log('🔧 Requête SQL mise à jour:', requete);
+    console.log('📊 Valeurs:', valeurs);
+
+    const resultat = await pool.query(requete, valeurs);
+    return resultat.rows[0];
+}
 
     static async getCampagnes(id) {
         const requete = `
