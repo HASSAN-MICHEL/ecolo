@@ -309,51 +309,51 @@ static async getStatistiques(campagneId) {
 // }
 
 
-// // campagne par ONGS
-// static async trouverParIdEtOng(campagneId, ongId) {
-//     const query = `
-//         SELECT 
-//             c.*,
-//             COALESCE(
-//                 (SELECT json_agg(
-//                     json_build_object(
-//                         'type_dechet', co.type_dechet,
-//                         'poids_attendue', co.poids_attendue,
-//                         'poids_collecte_actuel', co.poids_collecte_actuel,
-//                         'prix_par_kg', co.prix_par_kg
-//                     )
-//                 ) FROM campagne_objectifs co WHERE co.campagne_id = c.id
-//             ), '[]'::json) as objectifs,
-//             COALESCE(
-//                 (SELECT json_agg(
-//                     json_build_object(
-//                         'point_id', pd.id,
-//                         'point_nom', pd.nom,
-//                         'commune', pd.commune,
-//                         'quartier', pd.quartier,
-//                         'adresse', pd.adresse,
-//                         'poids_collecte', COALESCE(
-//                             (SELECT SUM(poids_collecte) 
-//                              FROM suivi_campagne 
-//                              WHERE campagne_id = c.id AND point_depot_id = pd.id), 0
-//                         ),
-//                         'nombre_missions', COALESCE(
-//                             (SELECT COUNT(*) 
-//                              FROM missions 
-//                              WHERE campagne_id = c.id AND point_depot_id = pd.id AND statut = 'validee'), 0
-//                         )
-//                     )
-//                 ) FROM points_depot pd WHERE pd.campagne_id = c.id
-//             ), '[]'::json) as points_couverts,
-//             COALESCE(c.types_dechets, '[]'::json) as types_dechets,
-//             COALESCE(c.zones_intervention, '[]'::json) as zones_intervention
-//         FROM campagnes c
-//         WHERE c.id = $1 AND c.ong_id = $2
-//     `;
+// campagne par ONGS
+static async trouverParIdEtOng(campagneId, ongId) {
+    const query = `
+        SELECT 
+            c.*,
+            COALESCE(
+                (SELECT json_agg(
+                    json_build_object(
+                        'type_dechet', co.type_dechet,
+                        'poids_attendue', co.poids_attendue,
+                        'poids_collecte_actuel', co.poids_collecte_actuel,
+                        'prix_par_kg', co.prix_par_kg
+                    )
+                ) FROM campagne_objectifs co WHERE co.campagne_id = c.id
+            ), '[]'::json) as objectifs,
+            COALESCE(
+                (SELECT json_agg(
+                    json_build_object(
+                        'point_id', pd.id,
+                        'point_nom', pd.nom,
+                        'commune', pd.commune,
+                        'quartier', pd.quartier,
+                        'adresse', pd.adresse,
+                        'poids_collecte', COALESCE(
+                            (SELECT SUM(poids_collecte) 
+                             FROM suivi_campagne 
+                             WHERE campagne_id = c.id AND point_depot_id = pd.id), 0
+                        ),
+                        'nombre_missions', COALESCE(
+                            (SELECT COUNT(*) 
+                             FROM missions 
+                             WHERE campagne_id = c.id AND point_depot_id = pd.id AND statut = 'validee'), 0
+                        )
+                    )
+                ) FROM points_depot pd WHERE pd.campagne_id = c.id
+            ), '[]'::json) as points_couverts,
+            COALESCE(c.types_dechets, '[]'::json) as types_dechets,
+            COALESCE(c.zones_intervention, '[]'::json) as zones_intervention
+        FROM campagnes c
+        WHERE c.id = $1 AND c.ong_id = $2
+    `;
     
-//     const result = await pool.query(query, [campagneId, ongId]);
-//     return result.rows[0];
-// }
+    const result = await pool.query(query, [campagneId, ongId]);
+    return result.rows[0];
+}
 
 // trouverParOng
 
@@ -412,54 +412,54 @@ static async trouverParOng(ongId, filtres = {}) {
     return result.rows;
 }
 
-// trouverParIdEtOng
-static async trouverParIdEtOng(campagneId, ongId) {
-    const query = `
-        SELECT 
-            c.*,
-            COALESCE(
-                (SELECT json_agg(
-                    json_build_object(
-                        'type_dechet', co.type_dechet,
-                        'poids_attendue', co.poids_attendue,
-                        'poids_collecte_actuel', co.poids_collecte_actuel,
-                        'prix_par_kg', co.prix_par_kg
-                    )
-                ) FROM campagne_objectifs co WHERE co.campagne_id = c.id
-            ), '[]'::json) as objectifs,
-            COALESCE(
-                (SELECT json_agg(
-                    json_build_object(
-                        'point_id', pd.id,
-                        'point_nom', pd.nom,
-                        'commune', pd.commune,
-                        'quartier', pd.quartier,
-                        'adresse', pd.adresse,
-                        'poids_collecte', COALESCE(
-                            (SELECT SUM(poids_collecte) 
-                             FROM suivi_campagne 
-                             WHERE campagne_id = c.id AND point_depot_id = pd.id), 0
-                        ),
-                        'nombre_missions', COALESCE(
-                            (SELECT COUNT(*) 
-                             FROM missions 
-                             WHERE campagne_id = c.id AND point_depot_id = pd.id AND statut = 'validee'), 0
-                        )
-                    )
-                ) FROM points_depot pd WHERE pd.campagne_id = c.id
-            ), '[]'::json) as points_couverts,
-            COALESCE(c.types_dechets, '[]'::json) as types_dechets,
-            COALESCE(c.zones_intervention, '[]'::json) as zones_intervention
-        FROM campagnes c
-        INNER JOIN promoteurs_campagne pc ON c.id = pc.campagne_id 
-            AND pc.promoteur_id = $2 
-            AND pc.promoteur_type = 'ong'
-        WHERE c.id = $1
-    `;
+// // trouverParIdEtOng
+// static async trouverParIdEtOng(campagneId, ongId) {
+//     const query = `
+//         SELECT 
+//             c.*,
+//             COALESCE(
+//                 (SELECT json_agg(
+//                     json_build_object(
+//                         'type_dechet', co.type_dechet,
+//                         'poids_attendue', co.poids_attendue,
+//                         'poids_collecte_actuel', co.poids_collecte_actuel,
+//                         'prix_par_kg', co.prix_par_kg
+//                     )
+//                 ) FROM campagne_objectifs co WHERE co.campagne_id = c.id
+//             ), '[]'::json) as objectifs,
+//             COALESCE(
+//                 (SELECT json_agg(
+//                     json_build_object(
+//                         'point_id', pd.id,
+//                         'point_nom', pd.nom,
+//                         'commune', pd.commune,
+//                         'quartier', pd.quartier,
+//                         'adresse', pd.adresse,
+//                         'poids_collecte', COALESCE(
+//                             (SELECT SUM(poids_collecte) 
+//                              FROM suivi_campagne 
+//                              WHERE campagne_id = c.id AND point_depot_id = pd.id), 0
+//                         ),
+//                         'nombre_missions', COALESCE(
+//                             (SELECT COUNT(*) 
+//                              FROM missions 
+//                              WHERE campagne_id = c.id AND point_depot_id = pd.id AND statut = 'validee'), 0
+//                         )
+//                     )
+//                 ) FROM points_depot pd WHERE pd.campagne_id = c.id
+//             ), '[]'::json) as points_couverts,
+//             COALESCE(c.types_dechets, '[]'::json) as types_dechets,
+//             COALESCE(c.zones_intervention, '[]'::json) as zones_intervention
+//         FROM campagnes c
+//         INNER JOIN promoteurs_campagne pc ON c.id = pc.campagne_id 
+//             AND pc.promoteur_id = $2 
+//             AND pc.promoteur_type = 'ong'
+//         WHERE c.id = $1
+//     `;
     
-    const result = await pool.query(query, [campagneId, ongId]);
-    return result.rows[0];
-}
+//     const result = await pool.query(query, [campagneId, ongId]);
+//     return result.rows[0];
+// }
 
 
 static async getStatistiquesCompletes(campagneId) {
