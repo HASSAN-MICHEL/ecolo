@@ -145,85 +145,29 @@ class OngController {
 
 
 
-// static async consulterCampagnes(req, res) {
-//     try {
-//         const { statut, typeDechet } = req.query;
-
-//         const filtres = {};
-//         if (statut) filtres.statut = statut;
-//         if (typeDechet) filtres.typeDechet = typeDechet;
-        
-//         const campagnes = await Campagne.rechercher(filtres);
-
-//         // Formater les types_dechets pour qu'ils soient toujours des tableaux
-//         const campagnesFormatees = campagnes.map(c => ({
-//             ...c,
-//             types_dechets: Array.isArray(c.types_dechets) ? c.types_dechets : 
-//                            (c.types_dechets ? [c.types_dechets] : [])
-//         }));
-
-//         res.json({
-//             success: true,
-//             campagnes: campagnesFormatees
-//         });
-//     } catch (erreur) {
-//         console.error('❌ Erreur consultation campagnes:', erreur);
-//         res.status(500).json({
-//             success: false,
-//             message: 'Erreur lors de la consultation',
-//             erreur: erreur.message
-//         });
-//     }
-// }
-
-//     // AJOUTÉ : Obtenir les détails d'une campagne spécifique
-//     static async detailsCampagne(req, res) {
-//         try {
-//             const { campagneId } = req.params;
-            
-//             const campagne = await Campagne.trouverParId(campagneId);
-            
-//             if (!campagne) {
-//                 return res.status(404).json({
-//                     success: false,
-//                     message: 'Campagne non trouvée'
-//                 });
-//             }
-
-//             res.json({
-//                 success: true,
-//                 campagne
-//             });
-//         } catch (erreur) {
-//             console.error('❌ Erreur détails campagne:', erreur);
-//             res.status(500).json({
-//                 success: false,
-//                 message: 'Erreur lors de la récupération',
-//                 erreur: erreur.message
-//             });
-//         }
-//     }
-
-
-// Consultation des CAMPAGNES DE L'ONG (pas toutes)
 static async consulterCampagnes(req, res) {
     try {
-        const ongId = req.utilisateurId;
         const { statut, typeDechet } = req.query;
 
         const filtres = {};
         if (statut) filtres.statut = statut;
         if (typeDechet) filtres.typeDechet = typeDechet;
         
-        // Utiliser trouverParOng au lieu de rechercher()
-        const campagnes = await Campagne.trouverParOng(ongId, filtres);
+        const campagnes = await Campagne.rechercher(filtres);
+
+        // Formater les types_dechets pour qu'ils soient toujours des tableaux
+        const campagnesFormatees = campagnes.map(c => ({
+            ...c,
+            types_dechets: Array.isArray(c.types_dechets) ? c.types_dechets : 
+                           (c.types_dechets ? [c.types_dechets] : [])
+        }));
 
         res.json({
             success: true,
-            campagnes: campagnes
+            campagnes: campagnesFormatees
         });
     } catch (erreur) {
-        console.error('❌ Erreur consultation campagnes ONG:', erreur);
+        console.error('❌ Erreur consultation campagnes:', erreur);
         res.status(500).json({
             success: false,
             message: 'Erreur lors de la consultation',
@@ -232,35 +176,92 @@ static async consulterCampagnes(req, res) {
     }
 }
 
-// Détails d'une campagne avec vérification propriété
-static async detailsCampagne(req, res) {
-    try {
-        const ongId = req.utilisateurId;
-        const { campagneId } = req.params;
-        
-        // Vérifier que la campagne appartient bien à l'ONG
-        const campagne = await Campagne.trouverParIdEtOng(campagneId, ongId);
-        
-        if (!campagne) {
-            return res.status(404).json({
+    // AJOUTÉ : Obtenir les détails d'une campagne spécifique
+    static async detailsCampagne(req, res) {
+        try {
+            const { campagneId } = req.params;
+            
+            const campagne = await Campagne.trouverParId(campagneId);
+            
+            if (!campagne) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campagne non trouvée'
+                });
+            }
+
+            res.json({
+                success: true,
+                campagne
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur détails campagne:', erreur);
+            res.status(500).json({
                 success: false,
-                message: 'Campagne non trouvée ou accès non autorisé'
+                message: 'Erreur lors de la récupération',
+                erreur: erreur.message
             });
         }
-
-        res.json({
-            success: true,
-            campagne
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur détails campagne:', erreur);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la récupération',
-            erreur: erreur.message
-        });
     }
-}
+
+
+// // Consultation des CAMPAGNES DE L'ONG (pas toutes)
+// static async consulterCampagnes(req, res) {
+//     try {
+//         const ongId = req.utilisateurId;
+//         const { statut, typeDechet } = req.query;
+
+//         const filtres = {};
+//         if (statut) filtres.statut = statut;
+//         if (typeDechet) filtres.typeDechet = typeDechet;
+        
+//         // Utiliser trouverParOng au lieu de rechercher()
+//         const campagnes = await Campagne.trouverParOng(ongId, filtres);
+
+//         res.json({
+//             success: true,
+//             campagnes: campagnes
+//         });
+//     } catch (erreur) {
+//         console.error('❌ Erreur consultation campagnes ONG:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de la consultation',
+//             erreur: erreur.message
+//         });
+//     }
+// }
+
+// // Détails d'une campagne avec vérification propriété
+// static async detailsCampagne(req, res) {
+//     try {
+//         const ongId = req.utilisateurId;
+//         const { campagneId } = req.params;
+        
+//         // Vérifier que la campagne appartient bien à l'ONG
+//         const campagne = await Campagne.trouverParIdEtOng(campagneId, ongId);
+        
+//         if (!campagne) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Campagne non trouvée ou accès non autorisé'
+//             });
+//         }
+
+//         res.json({
+//             success: true,
+//             campagne
+//         });
+//     } catch (erreur) {
+//         console.error('❌ Erreur détails campagne:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de la récupération',
+//             erreur: erreur.message
+//         });
+//     }
+// }
+
 
 // // Tableau de bord complet avec données personnalisées
 // static async tableauBord(req, res) {
