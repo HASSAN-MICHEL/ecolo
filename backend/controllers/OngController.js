@@ -176,33 +176,33 @@ class OngController {
 //     }
 // }
 
-//     // AJOUTÉ : Obtenir les détails d'une campagne spécifique
-//     static async detailsCampagne(req, res) {
-//         try {
-//             const { campagneId } = req.params;
+    // AJOUTÉ : Obtenir les détails d'une campagne spécifique
+    static async detailsCampagne(req, res) {
+        try {
+            const { campagneId } = req.params;
             
-//             const campagne = await Campagne.trouverParId(campagneId);
+            const campagne = await Campagne.trouverParId(campagneId);
             
-//             if (!campagne) {
-//                 return res.status(404).json({
-//                     success: false,
-//                     message: 'Campagne non trouvée'
-//                 });
-//             }
+            if (!campagne) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campagne non trouvée'
+                });
+            }
 
-//             res.json({
-//                 success: true,
-//                 campagne
-//             });
-//         } catch (erreur) {
-//             console.error('❌ Erreur détails campagne:', erreur);
-//             res.status(500).json({
-//                 success: false,
-//                 message: 'Erreur lors de la récupération',
-//                 erreur: erreur.message
-//             });
-//         }
-//     }
+            res.json({
+                success: true,
+                campagne
+            });
+        } catch (erreur) {
+            console.error('❌ Erreur détails campagne:', erreur);
+            res.status(500).json({
+                success: false,
+                message: 'Erreur lors de la récupération',
+                erreur: erreur.message
+            });
+        }
+    }
 
 
 // Consultation des CAMPAGNES DE L'ONG
@@ -232,35 +232,35 @@ static async consulterCampagnes(req, res) {
     }
 }
 
-// Détails d'une campagne avec vérification propriété
-static async detailsCampagne(req, res) {
-    try {
-        const ongId = req.utilisateurId;
-        const { campagneId } = req.params;
+// // Détails d'une campagne avec vérification propriété
+// static async detailsCampagne(req, res) {
+//     try {
+//         const ongId = req.utilisateurId;
+//         const { campagneId } = req.params;
         
-        // Vérifier que la campagne appartient bien à l'ONG
-        const campagne = await Campagne.trouverParIdEtOng(campagneId, ongId);
+//         // Vérifier que la campagne appartient bien à l'ONG
+//         const campagne = await Campagne.trouverParIdEtOng(campagneId, ongId);
         
-        if (!campagne) {
-            return res.status(404).json({
-                success: false,
-                message: 'Campagne non trouvée ou accès non autorisé'
-            });
-        }
+//         if (!campagne) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Campagne non trouvée ou accès non autorisé'
+//             });
+//         }
 
-        res.json({
-            success: true,
-            campagne
-        });
-    } catch (erreur) {
-        console.error('❌ Erreur détails campagne:', erreur);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la récupération',
-            erreur: erreur.message
-        });
-    }
-}
+//         res.json({
+//             success: true,
+//             campagne
+//         });
+//     } catch (erreur) {
+//         console.error('❌ Erreur détails campagne:', erreur);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de la récupération',
+//             erreur: erreur.message
+//         });
+//     }
+// }
 
 
 // // Tableau de bord complet avec données personnalisées
