@@ -723,40 +723,6 @@ static _verifierStatutUtilisateur(utilisateur, type) {
 
     return { valide: true };
 }
-
-    // static async _mettreAJourDerniereConnexion(id, type) {
-    //     try {
-    //         const date = new Date();
-    //         let table;
-            
-    //         switch(type) {
-    //             case 'producteur':
-    //                 table = 'producteurs';
-    //                 break;
-    //             case 'collecteur':
-    //                 table = 'collecteurs';
-    //                 break;
-    //             case 'gestionnaire':
-    //                 table = 'gestionnaires_points';
-    //                 break;
-    //             case 'superviseur':
-    //                 table = 'superviseurs';
-    //                 break;
-    //             default:
-    //                 return;
-    //         }
-            
-    //         await pool.query(
-    //             `UPDATE ${table} SET derniere_connexion = $1 WHERE id = $2`,
-    //             [date, id]
-    //         );
-    //     } catch (erreur) {
-    //         console.error('⚠️ Erreur mise à jour connexion:', erreur);
-    //     }
-    // }
-
-
-    
     static async _mettreAJourDerniereConnexion(id, type) {
         try {
             const date = new Date();
